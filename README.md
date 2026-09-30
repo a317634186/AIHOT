@@ -23,7 +23,7 @@
   <a href="docs/customize.md">改成你的行业</a> ·
   <a href="#它是怎么工作的">它是怎么工作的</a> ·
   <a href="#文档">文档</a> ·
-  <a href="https://github.com/KKKKhazix/AIHOT/discussions">社区交流</a>
+  <a href="https://github.com/a317634186/AIHOT/discussions">社区交流</a>
 </p>
 
 <br>
@@ -114,7 +114,7 @@
 需要 [Docker](https://docs.docker.com/get-docker/)，和一个 OpenAI 兼容的模型 API Key（DeepSeek、千问、智谱都可以）。
 
 ```bash
-git clone https://github.com/KKKKhazix/AIHOT.git myhot
+git clone https://github.com/a317634186/AIHOT.git myhot
 cd myhot
 node scripts/init-env.ts --llm-key <你的模型 API Key>
 docker compose up -d --build
