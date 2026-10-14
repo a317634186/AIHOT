@@ -1,7 +1,7 @@
 // The single shopping read layer used by pages, feeds, API, MCP and briefings.
 import { isReviewContent } from '@aihot/contracts/reviews';
-import { SHOPPING } from '@aihot/industry/shopping';
-import { effectiveStatus, flashDealEvidence, sourceDealPick, isProductActivity, isOffer, safeCopy, plainTitle, offerTiming, type Offer, type OfferTiming, type PriceObservation, type FlashDealEvidence, type DealPick } from '@aihot/contracts/shopping';
+import { SHOPPING, MERCHANTS } from '@aihot/industry/shopping';
+import { effectiveStatus, flashDealEvidence, sourceDealPick, isProductActivity, isOffer, safeCopy, plainTitle, offerTiming, flashSavings, type Offer, type OfferTiming, type PriceObservation, type FlashDealEvidence, type DealPick } from '@aihot/contracts/shopping';
 import { sql } from '../db.ts';
 import { proxiedImage, proxiedImageSet } from '../media/imgproxy.ts';
 /**
@@ -12,7 +12,12 @@ import { proxiedImage, proxiedImageSet } from '../media/imgproxy.ts';
 const SCAN_LIMIT = 20_000;
 /** Image addresses for the page: our signed proxy (cached, resized) in front of the source image. `offer.imageUrl` stays the original for metadata. */
 export interface ItemImage {src:string;srcSet:string|null;hero:string}
-export interface ShoppingItem {productActivity?:boolean;indexable?:boolean;updatedAt?:string;dealPick?:DealPick;sourcePublishedAt?:string|null;flashDeal?:FlashDealEvidence;timing:OfferTiming|null;image:ItemImage|null; id:string;title:string;summary:string;reason:string|null;category:string|null;tags:string[];score:number|null;selected:boolean;source:string;sourceUrl:string;publishedAt:string;offer:Offer;sources:Array<{name:string;url:string}>; }
+/** Why an offer sits in the limited-time strip; every flag is backed by stored evidence. */
+export interface FlashHighlight {percent:number;recordedLow:boolean;popular:boolean;clicks:number;likes:number}
+export interface ShoppingItem {flash?:FlashHighlight;productActivity?:boolean;indexable?:boolean;updatedAt?:string;dealPick?:DealPick;sourcePublishedAt?:string|null;flashDeal?:FlashDealEvidence;timing:OfferTiming|null;image:ItemImage|null; id:string;title:string;summary:string;reason:string|null;category:string|null;tags:string[];score:number|null;selected:boolean;source:string;sourceUrl:string;publishedAt:string;offer:Offer;sources:Array<{name:string;url:string}>; }
+/** Sold by a retailer in the registry: the link resolves there, or the source names it as the seller (DealNews-style redirects). */
+const retailerName=(v:string|null|undefined)=>(v??'').toLowerCase().replace(/[’']/g,'').replace(/\s+/g,' ').trim();
+const knownRetailer=(d:Offer)=>!!d.merchantId||!!d.seller&&MERCHANTS.some(m=>{const a=retailerName(m.name),b=retailerName(d.seller);return a===b||b.startsWith(a+' ')||a.startsWith(b+' ');});
 const live=(x:ShoppingItem)=>!x.timing||x.timing.state==='current'||x.timing.state==='ending';
 const endsMs=(x:ShoppingItem)=>x.timing?.endsAt?Date.parse(x.timing.endsAt):x.timing?.endsDay?Date.parse(x.timing.endsDay+'T23:59:59-04:00'):Number.MAX_SAFE_INTEGER;
 function itemImage(url:unknown):ItemImage|null {
@@ -62,8 +67,32 @@ export async function shoppingItems(opts:{view?:string;category?:string;merchant
   else if(view==='news')items=items.filter(x=>!isOffer(x.offer)&&!isReviewContent(x.offer,x.title));
   else if(view==='coupons')items=items.filter(x=>(['coupon_offer','cashback_offer','freebie'].includes(x.offer.kind)||x.offer.coupon||x.offer.cashback)&&live(x));
   else if(view==='ending'){
-   // Offers with a stated end within two days, soonest first: the only honest "limited time" strip.
-   items=items.filter(x=>x.timing?.state==='ending').sort((a,b)=>endsMs(a)-endsMs(b)||(b.score??0)-(a.score??0));
+   // The limited-time strip: a stated deadline, a single product with a purchase link, and a real
+   // markdown (flashSavings). Offers ending within two days lead, soonest first; when fewer than ten
+   // qualify, later-dated offers with the biggest markdowns fill the strip, never beyond twenty.
+   // A recognised retailer, no subscription or auto-renewal attached (a free store loyalty programme
+   // is fine): the strip is for things a reader buys once, and a markdown against a small store's
+   // own list price is not evidence of a flash sale.
+   const worthy=(x:ShoppingItem)=>!!x.offer.buyUrl&&knownRetailer(x.offer)&&!x.offer.subscription&&!x.offer.renewal&&!!flashSavings(x.offer)&&isProductActivity(x.offer,x.sourcePublishedAt??x.publishedAt,x.title,now);
+   const pool=items.filter(x=>(x.timing?.state==='ending'||x.timing?.state==='current'&&!!(x.timing.endsAt||x.timing.endsDay))&&worthy(x));
+   const [histories,engagement]=await Promise.all([priceHistories(pool.map(x=>x.id)),itemEngagement(pool.map(x=>x.id))]);
+   // Ranked by a composite the reader can see on the card: the markdown, the lowest price in our own
+   // records (two or more observations, never a market claim), source-stated popularity, and the
+   // site's own clicks and likes; offers ending within two days get a push. Twenty at most.
+   const ranked=pool.map(x=>{
+    const d=x.offer;const percent=flashSavings(d)!.percent;const current=d.checkoutPriceCents??d.listedPriceCents!;
+    const prices=(histories.get(x.id)??[]).map(h=>d.checkoutPriceCents!==null?h.checkoutPriceCents:h.listedPriceCents).filter((p):p is number=>p!==null);
+    const recordedLow=prices.length>=2&&current<=Math.min(...prices);
+    const e=engagement.get(x.id)??{clicks:0,likes:0};
+    const popular=d.promotion?.kind==='popular'||e.clicks>=3||e.likes>=2;
+    // The markdown counts up to 60 points so an inflated list price cannot outrank real signals.
+    const score=Math.min(percent,60)+(recordedLow?25:0)+(popular?15:0)+Math.min(20,e.clicks*2+e.likes*3)+(x.timing?.state==='ending'?15:0);
+    return {item:{...x,flash:{percent,recordedLow,popular,clicks:e.clicks,likes:e.likes}},score};
+   }).sort((a,b)=>b.score-a.score||endsMs(a.item)-endsMs(b.item));
+   // At most five from one retailer, so one store's sale does not fill the strip.
+   const perRetailer=new Map<string,number>();const picked:ShoppingItem[]=[];
+   for(const {item} of ranked){const key=retailerName(item.offer.merchant??item.offer.seller);const n=perRetailer.get(key)??0;if(n>=5)continue;perRetailer.set(key,n+1);picked.push(item);if(picked.length===20)break;}
+   items=picked;
   }
   else if(view==='archive')items=items.filter(x=>['Expired','Out of Stock'].includes(x.offer.status)||x.timing?.state==='ended');
   else items=items.filter(x=>isOffer(x.offer)&&!['Expired','Out of Stock'].includes(x.offer.status)&&(x.offer.kind!=='product_deal'||x.offer.checkoutPriceCents!==null||x.offer.listedPriceCents!==null));
@@ -100,6 +129,18 @@ async function priceHistories(ids:string[]):Promise<Map<string,PriceObservation[
  const histories=new Map<string,PriceObservation[]>();
  for(const r of rows){const list=histories.get(r.article_id)??[];list.push({at:r.observed_at.toISOString(),listedPriceCents:r.listed_price_cents===null?null:Number(r.listed_price_cents),checkoutPriceCents:r.checkout_price_cents===null?null:Number(r.checkout_price_cents),currency:r.currency,basis:r.basis,sourceUrl:r.source_url});histories.set(r.article_id,list);}
  return histories;
+}
+/** The site's own signals for an item: outbound clicks in the last 7 days and likes. */
+async function itemEngagement(ids:string[]):Promise<Map<string,{clicks:number;likes:number}>> {
+ const map=new Map<string,{clicks:number;likes:number}>();if(!ids.length)return map;
+ const paths=ids.map(id=>'/items/'+id);
+ const [clicks,likes]=await Promise.all([
+  sql`SELECT split_part(path,'→',1) AS path, sum(hits)::int AS n FROM traffic_hits WHERE kind='click' AND day>=current_date-7 AND split_part(path,'→',1)=ANY(${paths}::text[]) GROUP BY 1`,
+  sql`SELECT article_id, count(*)::int AS n FROM shopping_likes WHERE article_id=ANY(${ids}::text[]) GROUP BY 1`,
+ ]);
+ for(const r of clicks){const id=String(r.path).slice('/items/'.length);map.set(id,{clicks:Number(r.n),likes:0});}
+ for(const r of likes){const prior=map.get(r.article_id)??{clicks:0,likes:0};map.set(r.article_id,{...prior,likes:Number(r.n)});}
+ return map;
 }
 export async function shoppingPriceHistory(item:ShoppingItem):Promise<PriceObservation[]> {
  return (await priceHistories([item.id])).get(item.id)??[];

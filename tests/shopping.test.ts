@@ -1,7 +1,7 @@
 import {offerPriceText,offerQuestions} from '@aihot/contracts/shopping-facts';
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { isProductActivity, sourceDealPick, supportedPromotion, reportedDeadlineDay, flashDealEvidence, cents, checkoutTotal, effectiveStatus, offerIdentity, safeCopy, offerTiming, offerSavings, plainTitle, type Offer } from '@aihot/contracts/shopping';
+import { isProductActivity, sourceDealPick, supportedPromotion, reportedDeadlineDay, flashDealEvidence, cents, checkoutTotal, effectiveStatus, offerIdentity, safeCopy, offerTiming, offerSavings, flashSavings, plainTitle, type Offer } from '@aihot/contracts/shopping';
 import { isReviewContent, type ReviewSummary } from '@aihot/contracts/reviews';
 import { localHour, beijingDate } from '@aihot/contracts/time';
 import { merchantFor, guideFor, redirectorFor } from '@aihot/industry/shopping';
@@ -150,11 +150,15 @@ test('timing labels come only from stated deadlines or age, and savings only fro
  assert.equal(offerSavings({listedPriceCents:2499,checkoutPriceCents:2450}),null);
  assert.equal(offerSavings({listedPriceCents:null,checkoutPriceCents:1000}),null);
  assert.equal(offerSavings({listedPriceCents:1000,checkoutPriceCents:1200}),null);
+ assert.equal(flashSavings({listedPriceCents:10000,checkoutPriceCents:8500,promotion:null}),null);
+ assert.equal(flashSavings({listedPriceCents:10000,checkoutPriceCents:8000,promotion:null})?.percent,20);
+ assert.equal(flashSavings({listedPriceCents:10000,checkoutPriceCents:8900,promotion:{kind:'platform_sale',quote:'Lightning deal'}})?.percent,11);
 });
 test('headlines read as a shopper would say them, and announcements are not shelved as reviews',()=>{
  assert.equal(plainTitle('Lisen Tablet Holder Reported at $17 at Amazon (Price Unspecified)'),'Lisen Tablet Holder at $17 at Amazon');
  assert.equal(plainTitle("Select Women's Jeans Starting at a Reported $8.45 at Walmart"),"Select Women's Jeans Starting at $8.45 at Walmart");
  assert.equal(plainTitle('Anker 35W Charger Reported $23.99 on Amazon'),'Anker 35W Charger at $23.99 on Amazon');
+ assert.equal(plainTitle("Men's Shirts: Reported 2 for $12 at Walmart"),"Men's Shirts: 2 for $12 at Walmart");
  assert.equal(plainTitle("Tom's Guide Reports New Apple TV 4K at $299"),"Tom's Guide Reports New Apple TV 4K at $299");
  const review:ReviewSummary={format:'media_review',author:null,verdict:'v',bestFor:null,strengths:[],limitations:[],testingNote:null,questions:[],videoUrl:null,basis:'source_text'};
  assert.ok(!isReviewContent({kind:'buying_guide',review},"Tom's Guide Reports New Apple TV 4K at $299 Alongside $149 HomePod Mini 2"));

@@ -73,3 +73,4 @@
  .db-ending-card{flex-basis:150px}.db-ending-card img{height:90px}
  .db-card .db-meta{display:flex;justify-content:space-between}
 }
+.db-ending-tag{font-style:normal;font-size:10px;font-weight:650;color:#8a5a0c;background:#fff3d8;border-radius:4px;padding:2px 6px;align-self:flex-start}

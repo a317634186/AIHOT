@@ -89,6 +89,15 @@ export function offerSavings(d:Pick<Offer,'listedPriceCents'|'checkoutPriceCents
  return percent>=5&&percent<=95?{wasCents:was,nowCents:now,percent}:null;
 }
 /**
+ * The markdown that qualifies an offer for the limited-time strip: both prices stated by the source
+ * and at least 20% off, or 10% when the source itself calls it a platform flash sale. A deadline
+ * alone is not a flash deal.
+ */
+export function flashSavings(d:Pick<Offer,'listedPriceCents'|'checkoutPriceCents'|'promotion'>):OfferSavings|null {
+ const saving=offerSavings(d);if(!saving)return null;
+ return saving.percent>=(d.promotion?.kind==='platform_sale'?10:20)?saving:null;
+}
+/**
  * Headline wording for readers: the site labels sourcing separately, so "Reported at $20" reads as
  * "at $20" and an unknown price no longer carries a parenthetical. Older stored headlines keep their
  * text; this is applied where they are read.
@@ -99,6 +108,7 @@ export function plainTitle(title:string):string {
   .replace(/\b(at|for|from|on|starting at|starting from|to|down to)\s+a\s+reported\b/gi,'$1')
   .replace(/\breported\s+(at|for|from|on|to|starting|available|down|priced|listed|selling|offered|now)\b/gi,'$1')
   .replace(/\breported\s+(?=\$)/gi,'at ')
+  .replace(/\b(?:is |are )?reported\s+(?=\d)/gi,'')
   .replace(/\s{2,}/g,' ').trim();
 }
 export function unitPrice(price:number|null, quantity:number|null):number|null { return price===null||quantity===null||!Number.isFinite(quantity)||quantity<=0?null:Math.round(price/quantity); }
