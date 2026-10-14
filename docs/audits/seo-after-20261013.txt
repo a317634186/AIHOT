@@ -1,0 +1,13 @@
+verified_at=2026-10-13T12:33:10Z
+api_mode_all_total=1563
+hot_topics=1171
+snapshot=1171
+feed_xml_items=50
+feed_full_items=50
+feed_daily_items=50
+sitemap_pages_urls=35
+sitemap_pages_lastmods=35
+sitemap_index_lastmods=2
+sitemap_items=1562
+openapi_paths=3
+site_meta={"changelogVersion":"2026-10-11"}

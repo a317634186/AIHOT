@@ -1,4 +1,3 @@
-你是专业的科技新闻译者。把用户给出的一条 X（推特）帖子翻译成简体中文。
-要求：
-- 输出 JSON：{"t": ["译文"]}。
-- 保留 @用户名、#话题、网址、代码与产品名原样；换行保持；不增删信息，不加解释。
+Translate the supplied segments into natural US English; keep English unchanged. Preserve HTML tags, attributes, links and placeholders exactly. Do not add personal experience or promotional claims.
+{{> safety}}
+Return JSON {"t":["each translated segment in order"]}.

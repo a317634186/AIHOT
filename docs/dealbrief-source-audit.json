@@ -1,0 +1,1005 @@
+{
+  "checkedOn": "2026-10-11",
+  "access": [
+    {
+      "name": "Amazon",
+      "url": "https://www.amazon.com/gp/goldbox",
+      "checkedAt": "2026-10-11T04:52:15.449501+00:00",
+      "status": 200,
+      "finalUrl": "https://www.amazon.com/gp/goldbox",
+      "contentType": "text/html;charset=UTF-8",
+      "bytes": 413660,
+      "title": "Today's Deals",
+      "feeds": [],
+      "links": [
+        "https://www.amazon.com/ap/signin?openid.return_to=https%3A%2F%2Fwww.amazon.com%2Fdeals%2F%3F_encoding%3DUTF8%26bubble-id%3Ddeals-collection-coupons%26ref_%3Dnav_ya_signin&openid.identity=http%3A%2F%2Fspecs.openid.net%2Fauth%2F2.0%2Fidentifier_select&openid.assoc_handle=usflex&openid.mode=checkid_setup&openid.claimed_id=http%3A%2F%2Fspecs.openid.net%2Fauth%2F2.0%2Fidentifier_select&openid.ns=http%3A%2F%2Fspecs.openid.net%2Fauth%2F2.0",
+        "https://www.amazon.com/deals?ref_=nav_cs_gb",
+        "https://www.amazon.com/deals/ref=tdpoverstock?_encoding=UTF8&bubble-id=us-outlet&pd_rd_w=ea3Mr&content-id=amzn1.sym.88cbb7c3-a945-4786-ae19-323b46bbe89c&pf_rd_p=88cbb7c3-a945-4786-ae19-323b46bbe89c&pf_rd_r=BW7EPPTFKGZ4RHX0S1J1&pd_rd_wg=boT3d&pd_rd_r=c15ef842-bcdf-429e-834e-74bce938d71e#dealsGridLinkAnchor",
+        "https://www.amazon.com/deals/ref=tdpbeauty?_encoding=UTF8&bubble-id=beauty&discounts-widget=%2522%257B%255C%2522state%255C%2522%253A%257B%255C%2522refinementFilters%255C%2522%253A%257B%255C%2522price%255C%2522%253A%255B%255C%25221%255C%2522%255D%257D%257D%252C%255C%2522version%255C%2522%253A1%257D%2522&pd_rd_w=qJqjn&content-id=amzn1.sym.24c1885c-307b-4c5b-a65b-d7beef2558a4&pf_rd_p=24c1885c-307b-4c5b-a65b-d7beef2558a4&pf_rd_r=BW7EPPTFKGZ4RHX0S1J1&pd_rd_wg=boT3d&pd_rd_r=c15ef842-bcdf-429e-834e-74bce938d71e#dealsGridLinkAnchor",
+        "https://www.amazon.com/deals/ref=tdpelectronics?_encoding=UTF8&ref_=nav_cs_gb&bubble-id=electronics&discounts-widget=%2522%257B%255C%2522state%255C%2522%253A%257B%255C%2522rangeRefinementFilters%255C%2522%253A%257B%255C%2522percentOff%255C%2522%253A%257B%255C%2522min%255C%2522%253A25%252C%255C%2522max%255C%2522%253A100%257D%257D%257D%252C%255C%2522version%255C%2522%253A1%257D%2522&pd_rd_w=yWPo0&content-id=amzn1.sym.4243373a-f60e-47bc-a354-c04f5a0a04ce&pf_rd_p=4243373a-f60e-47bc-a354-c04f5a0a04ce&pf_rd_r=BW7EPPTFKGZ4RHX0S1J1&pd_rd_wg=boT3d&pd_rd_r=c15ef842-bcdf-429e-834e-74bce938d71e#dealsGridLinkAnchor",
+        "https://www.amazon.com/deals/ref=tdpelectronics/ref=tdphome?_encoding=UTF8&_encoding=UTF8&discounts-widget=%2522%257B%255C%2522state%255C%2522%253A%257B%255C%2522refinementFilters%255C%2522%253A%257B%255C%2522percentOff%255C%2522%253A%255B%255C%25222%255C%2522%255D%257D%257D%252C%255C%2522version%255C%2522%253A1%257D%2522&bubble-id=home&pd_rd_w=dNH4D&content-id=amzn1.sym.b047814a-7910-44f9-8fae-4b24c2cff398&pf_rd_p=b047814a-7910-44f9-8fae-4b24c2cff398&pf_rd_r=BW7EPPTFKGZ4RHX0S1J1&pd_rd_wg=boT3d&pd_rd_r=c15ef842-bcdf-429e-834e-74bce938d71e#dealsGridLinkAnchor",
+        "https://www.amazon.com/deals/ref=tdplightningdeals?_encoding=UTF8&ref_=nav_cs_gb&bubble-id=deals-collection-lightning-deals&discounts-widget=%2522%257B%255C%2522state%255C%2522%253A%257B%255C%2522refinementFilters%255C%2522%253A%257B%255C%2522price%255C%2522%253A%255B%255D%252C%255C%2522percentOff%255C%2522%253A%255B%255C%25223%255C%2522%255D%257D%257D%252C%255C%2522version%255C%2522%253A1%257D%2522&pd_rd_w=kSXVb&content-id=amzn1.sym.cd8a82b1-e9ef-46e9-a027-01fe84927920&pf_rd_p=cd8a82b1-e9ef-46e9-a027-01fe84927920&pf_rd_r=BW7EPPTFKGZ4RHX0S1J1&pd_rd_wg=boT3d&pd_rd_r=c15ef842-bcdf-429e-834e-74bce938d71e#dealsGridLinkAnchor"
+      ],
+      "restriction": false
+    },
+    {
+      "name": "Walmart",
+      "url": "https://www.walmart.com/shop/deals",
+      "checkedAt": "2026-10-11T04:52:15.450361+00:00",
+      "status": 200,
+      "finalUrl": "https://www.walmart.com/shop/deals",
+      "contentType": "text/html; charset=utf-8",
+      "bytes": 1579861,
+      "title": "Shop Deals & More - Walmart.com",
+      "feeds": [],
+      "links": [
+        "https://www.walmart.com/shop/deals/fall-frenzy",
+        "https://www.walmart.com/shop/deals/top100",
+        "https://www.walmart.com/shop/deals/new-deals",
+        "https://www.walmart.com/shop/deals/clothing-and-accessories",
+        "https://www.walmart.com/shop/deals/food",
+        "https://www.walmart.com/shop/deals/toys",
+        "https://www.walmart.com/shop/deals/electronics",
+        "https://www.walmart.com/shop/deals/sports-and-outdoors",
+        "https://www.walmart.com/shop/deals/auto",
+        "https://www.walmart.com/shop/deals/all-home",
+        "https://www.walmart.com/shop/deals/baby",
+        "https://www.walmart.com/shop/deals/home-improvement",
+        "https://www.walmart.com/shop/deals/stock-up",
+        "https://www.walmart.com/shop/deals/seasonal-decor",
+        "https://www.walmart.com/shop/deals/beauty-and-personal-care",
+        "https://www.walmart.com/shop/deals/pets",
+        "https://www.walmart.com/shop/deals/patio-and-garden",
+        "https://www.walmart.com/shop/deals/health-and-wellness",
+        "https://www.walmart.com/shop/deals/household-essentials",
+        "https://www.walmart.com/shop/deals/school-office-art"
+      ],
+      "restriction": false
+    },
+    {
+      "name": "Target",
+      "url": "https://www.target.com/c/top-deals/-/N-4xw74",
+      "checkedAt": "2026-10-11T04:52:15.450932+00:00",
+      "status": 200,
+      "finalUrl": "https://www.target.com/c/top-deals/-/N-4xw74",
+      "contentType": "text/html; charset=utf-8",
+      "bytes": 221669,
+      "title": "",
+      "feeds": [],
+      "links": [
+        "https://www.target.com/c/top-deals/-/N-4xw74?prehydrateClick=true"
+      ],
+      "restriction": false
+    },
+    {
+      "name": "Best Buy",
+      "url": "https://www.bestbuy.com/site/top-deals/pcmcat1563302963224.c",
+      "checkedAt": "2026-10-11T04:52:15.451801+00:00",
+      "error": "HTTP Error 404: Not Found"
+    },
+    {
+      "name": "Costco",
+      "url": "https://www.costco.com/warehouse-savings.html",
+      "checkedAt": "2026-10-11T04:52:15.452583+00:00",
+      "status": 200,
+      "finalUrl": "https://www.costco.com/o/-/warehouse-savings",
+      "contentType": "text/html; charset=utf-8",
+      "bytes": 3000000,
+      "title": "",
+      "feeds": [],
+      "links": [
+        "https://citicards.citi.com/usc/LPACA/Costco/cards/Dual/PartnerPS/index.html?promocode=Membership58N"
+      ],
+      "restriction": false
+    },
+    {
+      "name": "Sam\u2019s Club",
+      "url": "https://www.samsclub.com/",
+      "checkedAt": "2026-10-11T04:52:17.170635+00:00",
+      "status": 200,
+      "finalUrl": "https://www.samsclub.com/",
+      "contentType": "text/html; charset=utf-8",
+      "bytes": 444413,
+      "title": "Sam's Club - Wholesale Prices on Top Brands",
+      "feeds": [],
+      "links": [],
+      "restriction": false
+    },
+    {
+      "name": "Newegg",
+      "url": "https://www.newegg.com/",
+      "checkedAt": "2026-10-11T04:52:17.191985+00:00",
+      "status": 200,
+      "finalUrl": "https://www.newegg.com/",
+      "contentType": "text/html; charset=UTF-8",
+      "bytes": 823066,
+      "title": "PC Parts, Computers, Workstations & AI PCs | Newegg",
+      "feeds": [],
+      "links": [
+        "https://www.newegg.com/Fantastech-Sale-II/EventSaleStore/ID-1137?cm_sp=Head_Navigation-_-Under_Search_Bar-_-FantasTech+Sale+II&icid=804136",
+        "https://www.newegg.com/Shell-Shocker/EventSaleStore/ID-10381?cm_sp=Head_Navigation-_-Under_Search_Bar-_-Shell+Shocker&icid=720202",
+        "https://www.newegg.com/promotions/nepro/18-1881/index.html?cm_sp=Head_Navigation-_-Under_Search_Bar-_-Newegg+Card&icid=779480&sitecode=neacol002&cm_sp=Head_Navigation-_-Under_Search_Bar-_-Newegg+Card&icid=779480",
+        "https://www.newegg.com/promotions/nepro/23-1322/index.html?cm_sp=Head_Navigation-_-Under_Search_Bar-_-Trade-In&icid=794618",
+        "https://www.newegg.com/AMD-CPU-Free-Storage/EventSaleStore/ID-10389?cm_sp=Cat_CPU-Processor-_-amd%2f25-0616-_-%2f%2fpromotions.newegg.com%2famd%2f25-0616%2f1920x360.jpg&icid=786087&cm_sp=Head_Navigation-_-Under_Search_Bar-_-Free+Gift+w%2f+AMD&icid=804154",
+        "https://www.newegg.com/Intel-Extreme-Masters-2026/EventSaleStore/ID-4438?cm_sp=Head_Navigation-_-Under_Search_Bar-_-Free+Gift+w%2f+Intel&icid=804156",
+        "https://www.newegg.com/Newegg-Select/EventSaleStore/ID-1836?cm_sp=Head_Navigation-_-Under_Search_Bar-_-Newegg+Select",
+        "https://www.newegg.com/NEW-AT-NEWEGG/EventSaleStore/ID-10462?cm_sp=Head_Navigation-_-Under_Search_Bar-_-New+at+Newegg",
+        "https://www.newegg.com/ABS-AI-Workstation/EventSaleStore/ID-2689?cm_sp=Head_Navigation-_-Under_Search_Bar-_-ABS+AI+Workstation",
+        "https://www.newegg.com/Newegg-Deals/EventSaleStore/ID-9447?cm_sp=Head_Navigation-_-Under_Search_Bar-_-Newegg+Deals",
+        "https://www.newegg.com/Shell-Shocker/EventSaleStore/ID-10381?cm_sp=Head_Navigation-_-Under_Search_Bar-_-Shell+Shocker",
+        "https://www.newegg.com/p/pl?N=4812&cm_sp=Head_Navigation-_-Under_Search_Bar-_-Combo+deals",
+        "https://www.newegg.com/Newegg-Outlet/EventSaleStore/ID-697?Order=2&cm_sp=Head_Navigation-_-Under_Search_Bar-_-Newegg+outlet",
+        "https://www.newegg.com/Newegg-Deals/EventSaleStore/ID-9447?N=4890&cm_sp=Head_Navigation-_-Under_Search_Bar-_-Coupons",
+        "https://www.newegg.com/Email-Deals/EventSaleStore/ID-10382?cm_sp=Head_Navigation-_-Under_Search_Bar-_-Email+discount",
+        "https://www.newegg.com/promotions/nepro/23-1322/index.html?cm_sp=Head_Navigation-_-Under_Search_Bar-_-Trade-In",
+        "https://www.newegg.com/promotions/nepro/18-1881/index.html?cm_sp=Head_Navigation-_-Under_Search_Bar-_-Store+credit+card",
+        "https://promotions.newegg.com/ai-mode/index.html",
+        "https://www.newegg.com/Fantastech-Sale-II/EventSaleStore/ID-1137?cm_sp=Homepage-Top2021-_-top-_-fantastech%2f26-0926-_-%2f%2fpromotions.newegg.com%2ffantastech%2f26-0926%2f1300x320.jpg",
+        "https://www.newegg.com/Fantastech-Sale-II/EventSaleStore/ID-1137?N=100006519"
+      ],
+      "restriction": false
+    },
+    {
+      "name": "B&H Photo",
+      "url": "https://www.bhphotovideo.com/",
+      "checkedAt": "2026-10-11T04:52:18.560345+00:00",
+      "error": "HTTP Error 403: Forbidden"
+    },
+    {
+      "name": "Home Depot",
+      "url": "https://www.homedepot.com/",
+      "checkedAt": "2026-10-11T04:52:18.773707+00:00",
+      "error": "HTTP Error 403: Forbidden"
+    },
+    {
+      "name": "Lowe\u2019s",
+      "url": "https://www.lowes.com/",
+      "checkedAt": "2026-10-11T04:52:19.123596+00:00",
+      "status": 200,
+      "finalUrl": "https://www.lowes.com/",
+      "contentType": "text/html",
+      "bytes": 5038,
+      "title": "Access Denied",
+      "feeds": [],
+      "links": [],
+      "restriction": true
+    },
+    {
+      "name": "CVS",
+      "url": "https://www.cvs.com/",
+      "checkedAt": "2026-10-11T04:52:19.382261+00:00",
+      "status": 200,
+      "finalUrl": "https://www.cvs.com/",
+      "contentType": "text/html; charset=utf-8",
+      "bytes": 3000000,
+      "title": "CVS - Online Drugstore, Pharmacy, Prescriptions & Health Information",
+      "feeds": [],
+      "links": [],
+      "restriction": false
+    },
+    {
+      "name": "Walgreens",
+      "url": "https://www.walgreens.com/",
+      "checkedAt": "2026-10-11T04:52:19.383053+00:00",
+      "status": 200,
+      "finalUrl": "https://www.walgreens.com/",
+      "contentType": "text/html;charset=utf-8",
+      "bytes": 412224,
+      "title": "Walgreens: Pharmacy, Health & Wellness, Photo & More for You",
+      "feeds": [],
+      "links": [
+        "https://www.walgreens.com/store/store/save/sale.jsp?ban=dl_dlsp_ShopProducts_Sale",
+        "https://www.walgreens.com/shop#shop-deals-hub-container",
+        "https://www.walgreens.com/topic/promotion/mywalgreens.jsp",
+        "https://photo.walgreens.com/store/deals",
+        "https://www.walgreens.com/promotion/walgreens-gift-cards",
+        "https://www.walgreens.com/topic/promotion/reloadablecards.jsp",
+        "https://www.walgreens.com/topic/promotion/western-union.jsp",
+        "https://www.walgreens.com/topic/promotion/mywalgreens.jsp?ban=HP_Tertiary_3152026_JoinMyw",
+        "https://www.walgreens.com/promotion/walgreens-app?ban=HP_Tertiary_3152026_AppDownload",
+        "https://www.walgreens.com/topic/promotion/api.jsp",
+        "https://www.walgreens.com/promotion/offer-details"
+      ],
+      "restriction": false
+    },
+    {
+      "name": "Sephora",
+      "url": "https://www.sephora.com/",
+      "checkedAt": "2026-10-11T04:52:19.893880+00:00",
+      "error": "HTTP Error 403: Forbidden"
+    },
+    {
+      "name": "Ulta Beauty",
+      "url": "https://www.ulta.com/",
+      "checkedAt": "2026-10-11T04:52:20.465326+00:00",
+      "status": 200,
+      "finalUrl": "https://www.ulta.com/",
+      "contentType": "text/html",
+      "bytes": 1490446,
+      "title": "Ulta Beauty | Makeup, Skin Care, Fragrance, Hair Care & Beauty ProductsGo to Ulta Beauty homepageUltamateRewardsCreditCardFacebookInstagramPinterestTi",
+      "feeds": [],
+      "links": [
+        "https://www.ulta.com/promotion/sale?category=makeup",
+        "https://www.ulta.com/promotion/sale?category=skin-care",
+        "https://www.ulta.com/promotion/sale?category=hair",
+        "https://www.ulta.com/promotion/sale?category=fragrance",
+        "https://www.ulta.com/promotion/sale?category=body-care",
+        "https://www.ulta.com/promotion/sale?category=wellness-by-ulta-beauty",
+        "https://www.ulta.com/promotion/sale?category=men",
+        "https://www.ulta.com/promotion/sale?category=tools-brushes",
+        "https://www.ulta.com/promotion/sale?category=travel-size-mini",
+        "https://www.ulta.com/promotion/sale?category=gifts",
+        "https://www.ulta.com/promotion/all",
+        "https://www.ulta.com/promotion/sale?category=wellness-by-ulta-beauty%2Cnutrition-supplements",
+        "https://www.ulta.com/promotion/gift-with-purchase",
+        "https://www.ulta.com/promotion/buy-more-save-more",
+        "https://www.ulta.com/promotion/coupon",
+        "https://www.ulta.com/promotion/sale"
+      ],
+      "restriction": false
+    },
+    {
+      "name": "Nike",
+      "url": "https://www.nike.com/w/sale-3yaep",
+      "checkedAt": "2026-10-11T04:52:20.688710+00:00",
+      "status": 200,
+      "finalUrl": "https://www.nike.com/w/sale-3yaep",
+      "contentType": "text/html; charset=UTF-8",
+      "bytes": 1060752,
+      "title": "Clearance Outlet Deals & Discounts. Nike.com",
+      "feeds": [],
+      "links": [
+        "https://www.nike.com/promo-code",
+        "https://www.nike.com/w/sale-3yaep#site-feedback",
+        "https://www.nike.com/w/mens-sale-3yaepznik1",
+        "https://www.nike.com/w/womens-sale-3yaepz5e1x6",
+        "https://www.nike.com/w/kids-sale-3yaepzv4dh",
+        "https://www.nike.com/w/sale-jordan-37eefz3yaep",
+        "https://www.nike.com/w/sale-3yaep",
+        "https://www.nike.com/w/mens-sale-shoes-3yaepznik1zy7ok",
+        "https://www.nike.com/w/mens-sale-clothing-3yaepz6ymx6znik1",
+        "https://www.nike.com/w/mens-sale-accessories-equipment-3yaepzawwpwznik1",
+        "https://www.nike.com/w/womens-sale-shoes-3yaepz5e1x6zy7ok",
+        "https://www.nike.com/w/womens-sale-clothing-3yaepz5e1x6z6ymx6",
+        "https://www.nike.com/w/womens-sale-accessories-equipment-3yaepz5e1x6zawwpw",
+        "https://www.nike.com/w/kids-sale-shoes-3yaepzv4dhzy7ok",
+        "https://www.nike.com/w/kids-sale-clothing-3yaepz6ymx6zv4dh",
+        "https://www.nike.com/w/kids-sale-accessories-equipment-3yaepzawwpwzv4dh",
+        "https://www.nike.com/w/sale-jordan-shoes-37eefz3yaepzy7ok",
+        "https://www.nike.com/w/sale-jordan-clothing-37eefz3yaepz6ymx6",
+        "https://www.nike.com/w/sale-jordan-accessories-equipment-37eefz3yaepzawwpw",
+        "https://www.nike.com/w/sale-shoes-3yaepzy7ok"
+      ],
+      "restriction": false
+    },
+    {
+      "name": "Adidas",
+      "url": "https://www.adidas.com/us/sale",
+      "checkedAt": "2026-10-11T04:52:21.181064+00:00",
+      "error": "HTTP Error 403: Forbidden"
+    },
+    {
+      "name": "Slickdeals",
+      "url": "https://slickdeals.net/",
+      "checkedAt": "2026-10-11T04:52:22.071205+00:00",
+      "status": 200,
+      "finalUrl": "https://slickdeals.net/",
+      "contentType": "text/html;charset=utf-8",
+      "bytes": 2692710,
+      "title": "Slickdeals: The Best Deals, Coupons, Promo Codes & Discounts",
+      "feeds": [
+        "https://slickdeals.net/newsearch.php?mode=frontpage&searcharea=deals&searchin=first&rss=1"
+      ],
+      "links": [
+        "https://slickdeals.net/deal-alerts/",
+        "https://slickdeals.net/forums/newthread.php?do=newthread&f=9&action_source=Header+Post+Deal",
+        "https://slickdeals.net/giveaway/daily-draw/2026-10-10/?src=giveaway-nav-icon",
+        "https://slickdeals.net/deals/",
+        "https://slickdeals.net/deals/apple/",
+        "https://slickdeals.net/deals/auto/",
+        "https://slickdeals.net/deals/children/",
+        "https://slickdeals.net/deals/bags/",
+        "https://slickdeals.net/deals/books-magazines/",
+        "https://slickdeals.net/computer-deals/",
+        "https://slickdeals.net/deals/education/",
+        "https://slickdeals.net/deals/finance/",
+        "https://slickdeals.net/deals/flowers-gifts/",
+        "https://slickdeals.net/deals/beauty/",
+        "https://slickdeals.net/deals/home/",
+        "https://slickdeals.net/deals/movie/",
+        "https://slickdeals.net/deals/seasonal/",
+        "https://slickdeals.net/deals/office/",
+        "https://slickdeals.net/deals/other/",
+        "https://slickdeals.net/deals/pets/"
+      ],
+      "restriction": false
+    },
+    {
+      "name": "DealNews",
+      "url": "https://www.dealnews.com/pages/rss.html",
+      "checkedAt": "2026-10-11T04:52:22.086072+00:00",
+      "status": 200,
+      "finalUrl": "https://www.dealnews.com/pages/rss.html",
+      "contentType": "text/html; charset=utf-8",
+      "bytes": 594698,
+      "title": "DealNews RSS",
+      "feeds": [
+        "http://www.dealnews.com/?rss=1"
+      ],
+      "links": [
+        "https://www.dealnews.com/disclaimer.html",
+        "https://www.dealnews.com/mydealnews/signin/",
+        "https://www.dealnews.com/c487/Clothing-Accessories/Activewear/f1/Mens/",
+        "https://www.dealnews.com/s5796/Crocs/",
+        "https://www.dealnews.com/s682/Finish-Line/",
+        "https://www.dealnews.com/s279/J-Crew/",
+        "https://www.dealnews.com/s320/JCPenney/",
+        "https://www.dealnews.com/s288/Macys/",
+        "https://www.dealnews.com/s415/Apple/",
+        "https://www.dealnews.com/s560/Best-Buy/",
+        "https://www.dealnews.com/s1662/Lenovo/",
+        "https://www.dealnews.com/s504/Newegg/",
+        "https://www.dealnews.com/s321/Walmart/",
+        "https://www.dealnews.com/c142/Electronics/",
+        "https://www.dealnews.com/s6058/Samsung/",
+        "https://www.dealnews.com/c159/Electronics/TVs/s321/Walmart/",
+        "https://www.dealnews.com/c213/Home-Garden/Food-Drink/",
+        "https://www.dealnews.com/c213/Home-Garden/Food-Drink/s61024/Door-Dash/",
+        "https://www.dealnews.com/c213/Home-Garden/Food-Drink/s57521/Instacart-Inc/",
+        "https://www.dealnews.com/c213/Home-Garden/Food-Drink/s60572/Uber-Eats/"
+      ],
+      "restriction": false
+    },
+    {
+      "name": "Hip2Save",
+      "url": "https://hip2save.com/",
+      "checkedAt": "2026-10-11T04:52:22.234658+00:00",
+      "status": 200,
+      "finalUrl": "https://hip2save.com/",
+      "contentType": "text/html; charset=UTF-8",
+      "bytes": 281061,
+      "title": "Hip2Save - The Best Deals, Coupons, Promo Codes, & FreebiesHip2Save - The Best Deals, Coupons, Promo Codes, & Freebies",
+      "feeds": [
+        "https://hip2save.com/feed/",
+        "https://hip2save.com/comments/feed/"
+      ],
+      "links": [
+        "https://hip2save.com/sales-deals/",
+        "https://hip2save.com/promo-codes/?utm_source=navbar",
+        "https://www.facebook.com/groups/hip2savedeals",
+        "https://hip2save.com/deals/free-audible-books/?utm_source=header",
+        "https://hip2save.com/deals/cs-celersport-socks/?utm_source=header",
+        "https://hip2save.com/deals/savings-walmart-gerberlyte/?utm_source=header",
+        "https://hip2save.com/deals/savings-walmart-pedigree-dog-food/?utm_source=header",
+        "https://hip2save.com/deals/under-armour-hoodie/",
+        "https://hip2save.com/deals/under-armour-hoodie/?share=facebook",
+        "https://hip2save.com/deals/under-armour-hoodie/?share=pinterest",
+        "https://hip2save.com/deals/under-armour-hoodie/?share=custom-1610490496",
+        "https://hip2save.com/deals/under-armour-hoodie/?share=sms",
+        "https://hip2save.com/deals/under-armour-hoodie/#respond",
+        "https://hip2save.com/deals/oath-clear-protein/",
+        "https://hip2save.com/deals/oath-clear-protein/?share=facebook",
+        "https://hip2save.com/deals/oath-clear-protein/?share=pinterest",
+        "https://hip2save.com/deals/oath-clear-protein/?share=custom-1610490496",
+        "https://hip2save.com/deals/oath-clear-protein/?share=sms",
+        "https://hip2save.com/deals/oath-clear-protein/#comments",
+        "https://hip2save.com/deals/kohls-clearance/"
+      ],
+      "restriction": false
+    },
+    {
+      "name": "The Krazy Coupon Lady",
+      "url": "https://thekrazycouponlady.com/",
+      "checkedAt": "2026-10-11T04:52:23.361585+00:00",
+      "status": 200,
+      "finalUrl": "https://thekrazycouponlady.com/",
+      "contentType": "text/html; charset=utf-8",
+      "bytes": 783717,
+      "title": "The Krazy Coupon Lady: Free Coupons, Best Deals, & Promo CodesCalendar",
+      "feeds": [],
+      "links": [
+        "https://thekrazycouponlady.com/deals/clearance",
+        "https://thekrazycouponlady.com/deals/freebies",
+        "https://thekrazycouponlady.com/deals/extreme-couponing",
+        "https://thekrazycouponlady.com/deals/online-deals",
+        "https://thekrazycouponlady.com/deals/apparel",
+        "https://thekrazycouponlady.com/deals/baby",
+        "https://thekrazycouponlady.com/deals/coffee",
+        "https://thekrazycouponlady.com/deals/home",
+        "https://thekrazycouponlady.com/deals/lego",
+        "https://thekrazycouponlady.com/deals/nike",
+        "https://thekrazycouponlady.com/deals/shoes",
+        "https://thekrazycouponlady.com/deals/toys",
+        "https://thekrazycouponlady.com/deals",
+        "https://thekrazycouponlady.com/tips/money/best-walmart-prime-day-deals",
+        "https://thekrazycouponlady.com/tips/store-hacks/wayfair-five-days-of-deals",
+        "https://thekrazycouponlady.com/tips/store-hacks/kroger-halloween-candy-sale",
+        "https://thekrazycouponlady.com/tips/store-hacks/dollar-general-deal-days",
+        "https://thekrazycouponlady.com/tips/store-hacks/top-costco-black-friday-deals",
+        "https://thekrazycouponlady.com/deals/back-to-school",
+        "https://thekrazycouponlady.com/best-black-friday-sales"
+      ],
+      "restriction": false
+    },
+    {
+      "name": "9to5Toys",
+      "url": "https://9to5toys.com/",
+      "checkedAt": "2026-10-11T04:52:23.560990+00:00",
+      "status": 200,
+      "finalUrl": "https://9to5toys.com/",
+      "contentType": "text/html; charset=UTF-8",
+      "bytes": 282445,
+      "title": "9to5Toys - New Gear, reviews and deals9to5Google Logo9to5Mac LogoDrone DJ Logo",
+      "feeds": [
+        "https://9to5toys.com/feed/",
+        "https://9to5toys.com/comments/feed/",
+        "https://9to5toys.com/web-stories/feed/"
+      ],
+      "links": [
+        "https://9to5toys.com/guides/best-smart-tv-deals/",
+        "https://9to5toys.com/deals/",
+        "https://9to5toys.com/2026/10/09/best-buy-updates-massive-techtober-prime-day-sale/",
+        "https://9to5toys.com/2026/10/09/apple-magic-mouse-deals-2/",
+        "https://9to5toys.com/2026/10/10/this-weeks-best-deals-10/",
+        "https://9to5toys.com/2026/10/10/this-weeks-best-ev-and-e-bike-deals-6/",
+        "https://9to5toys.com/2026/10/10/this-weeks-best-apple-deals-3/",
+        "https://9to5toys.com/2026/10/10/apple-watch-ultra-4-all-time-low-price-deals/",
+        "https://9to5toys.com/2026/10/08/exclusive-nomad-iphone-18-pro-case-promo-code/",
+        "https://9to5toys.com/2026/10/08/anker-prime-deals-encore-sale-2048wh-c2000-gen-2-station-400w-panel/",
+        "https://9to5toys.com/2026/10/09/best-prime-day-deal-still-live-new-m6-mac-mini/",
+        "https://9to5toys.com/2026/10/09/battlestation-upgrades-start-at-just-5-in-best-buys-techtober-sale/",
+        "https://9to5toys.com/2026/10/09/under-armour-apparel-and-footwear-deals/",
+        "https://9to5toys.com/2026/10/09/todays-highlight-google-play-deals-25/",
+        "https://9to5toys.com/2026/10/09/apple-tv-movie-deals-naruto-horror-aviator/",
+        "https://9to5toys.com/2026/10/09/fall-prime-day-best-nas-deals-is-still-live-on-ugreen-latest-dxp2800-gt/",
+        "https://9to5toys.com/2026/10/09/mid-range-512gb-m5-ipad-pro-deal/",
+        "https://9to5toys.com/2026/10/09/app-store-deals-mutropolis-ios/",
+        "https://9to5toys.com/2026/10/09/too-good-to-pass-up-the-deal-on-rtx-5060-ti-gaming-pc-cyberpowerpc/",
+        "https://9to5toys.com/2026/10/09/fridays-switch-2-game-deals-monster-hunter-stories-3-final-fantasy-vii-madden-nfl-27-zelda-more/"
+      ],
+      "restriction": false
+    },
+    {
+      "name": "Doctor of Credit",
+      "url": "https://www.doctorofcredit.com/category/deals/",
+      "checkedAt": "2026-10-11T04:52:24.417214+00:00",
+      "status": 200,
+      "finalUrl": "https://www.doctorofcredit.com/category/deals/",
+      "contentType": "text/html; charset=UTF-8",
+      "bytes": 192702,
+      "title": "Category: Deals - Doctor Of Credit",
+      "feeds": [
+        "https://www.doctorofcredit.com/feed/",
+        "https://www.doctorofcredit.com/comments/feed/",
+        "https://www.doctorofcredit.com/category/deals/feed/"
+      ],
+      "links": [
+        "https://www.doctorofcredit.com/daily-deals-updated-constantly-new-deals/",
+        "https://www.doctorofcredit.com/deal-calendar-full-list-deals-credit-card-bank-bonuses-expiry-dates/",
+        "https://www.doctorofcredit.com/category/deals/",
+        "https://www.doctorofcredit.com/ebay-20-off-select-items-with-promo-code-countdown20/",
+        "https://www.doctorofcredit.com/ebay-20-off-select-items-with-promo-code-countdown20/#comments",
+        "https://www.doctorofcredit.com/category/deals/page/2/",
+        "https://www.doctorofcredit.com/category/deals/page/3/",
+        "https://www.doctorofcredit.com/category/deals/page/843/",
+        "https://www.doctorofcredit.com/category/gift-card-deals/",
+        "https://www.doctorofcredit.com/category/free-money/giftcard-deals/"
+      ],
+      "restriction": false
+    },
+    {
+      "name": "r/buildapcsales",
+      "url": "https://www.reddit.com/r/buildapcsales/.rss",
+      "checkedAt": "2026-10-11T04:52:24.746260+00:00",
+      "status": 200,
+      "finalUrl": "https://www.reddit.com/r/buildapcsales/.rss",
+      "contentType": "application/atom+xml; charset=UTF-8",
+      "bytes": 40203,
+      "title": "\u3064 \u25d5_\u25d5 \u0f3d\u3064 Low prices take my energy \u3064 \u25d5_\u25d5 \u0f3d\u3064[Prebuilt] ASUS ROG G700 Gaming Desktop Tower | Intel\u00ae Core\u2122 Ultra 7 265F | NVIDIA\u00ae GeForce RTX\u2122 5070 | 32G",
+      "feeds": [
+        "https://www.reddit.com/r/buildapcsales/.rss"
+      ],
+      "links": [],
+      "restriction": false
+    },
+    {
+      "name": "r/frugalmalefashion",
+      "url": "https://www.reddit.com/r/frugalmalefashion/.rss",
+      "checkedAt": "2026-10-11T04:52:25.269655+00:00",
+      "error": "HTTP Error 429: Too Many Requests"
+    },
+    {
+      "name": "r/deals",
+      "url": "https://www.reddit.com/r/deals/.rss",
+      "checkedAt": "2026-10-11T04:52:25.291737+00:00",
+      "error": "HTTP Error 429: Too Many Requests"
+    },
+    {
+      "name": "r/freebies",
+      "url": "https://www.reddit.com/r/freebies/.rss",
+      "checkedAt": "2026-10-11T04:52:25.600776+00:00",
+      "error": "HTTP Error 429: Too Many Requests"
+    },
+    {
+      "name": "Keepa",
+      "url": "https://keepa.com/api-docs/plans-tokens.html",
+      "checkedAt": "2026-10-11T04:52:25.902591+00:00",
+      "status": 200,
+      "finalUrl": "https://keepa.com/api-docs/plans-tokens.html",
+      "contentType": "text/html",
+      "bytes": 18127,
+      "title": "Plans & Tokens \u2014 Keepa API DocumentationToken bucket model: the plan generates R tokens per minute around the clock into a bucket with a capacity of R",
+      "feeds": [],
+      "links": [
+        "https://keepa.com/api-docs/deals.html"
+      ],
+      "restriction": false
+    },
+    {
+      "name": "Rakuten",
+      "url": "https://www.rakuten.com/help/article/what-is-cash-back-360002117047",
+      "checkedAt": "2026-10-11T04:52:25.924655+00:00",
+      "status": 200,
+      "finalUrl": "https://www.rakuten.com/help/article/what-is-cash-back-360002117047",
+      "contentType": "text/html; charset=utf-8",
+      "bytes": 1756345,
+      "title": "How Does Rakuten Work? | Rakuten Help",
+      "feeds": [],
+      "links": [
+        "https://www.rakuten.com/f/presidents-day-sale"
+      ],
+      "restriction": false
+    },
+    {
+      "name": "TopCashback",
+      "url": "https://www.topcashback.com/",
+      "checkedAt": "2026-10-11T04:52:25.997050+00:00",
+      "status": 200,
+      "finalUrl": "https://www.topcashback.com/",
+      "contentType": "text/html; charset=utf-8",
+      "bytes": 143692,
+      "title": "\r\n\tTopCashback.com: Highest Cash Back Guaranteed\r\n",
+      "feeds": [],
+      "links": [],
+      "restriction": false
+    },
+    {
+      "name": "Ibotta",
+      "url": "https://ibotta.com/",
+      "checkedAt": "2026-10-11T04:52:26.235092+00:00",
+      "status": 200,
+      "finalUrl": "https://ibotta.com/",
+      "contentType": "text/html; charset=utf-8",
+      "bytes": 300315,
+      "title": "Ibotta | Performance Marketing Leader",
+      "feeds": [],
+      "links": [
+        "https://www.businesswire.com/news/home/20260803020831/en/7-Eleven-and-Ibotta-Join-Together-to-Bring-Performance-Based-Promotions-to-Convenience-Retail"
+      ],
+      "restriction": false
+    },
+    {
+      "name": "CPSC",
+      "url": "https://www.cpsc.gov/Newsroom/CPSC-RSS-Feed",
+      "checkedAt": "2026-10-11T04:52:26.511253+00:00",
+      "status": 200,
+      "finalUrl": "https://www.cpsc.gov/Newsroom/CPSC-RSS-Feed",
+      "contentType": "text/html; charset=UTF-8",
+      "bytes": 56672,
+      "title": "CPSC RSS Feeds | CPSC.govLock",
+      "feeds": [],
+      "links": [
+        "https://www.cpsc.gov/Newsroom/CPSC-RSS-Feed/Recalls-RSS",
+        "https://www.cpsc.gov/Newsroom/CPSC-RSS-Feed/Recalls-RSS/children",
+        "https://www.cpsc.gov/Newsroom/CPSC-RSS-Feed/News-RSS",
+        "https://www.cpsc.gov/Newsroom/CPSC-RSS-Feed/Multimedia-RSS",
+        "https://www.cpsc.gov/Newsroom/CPSC-RSS-Feed/Public-Calendar-RSS",
+        "https://www.cpsc.gov/Newsroom/CPSC-RSS-Feed/Injury-Statistics",
+        "https://www.cpsc.gov/Newsroom/CPSC-RSS-Feed/Injury-Statistics/96",
+        "https://www.cpsc.gov/Newsroom/CPSC-RSS-Feed/Injury-Statistics/77",
+        "https://www.cpsc.gov/Newsroom/CPSC-RSS-Feed/Injury-Statistics/81",
+        "https://www.cpsc.gov/Newsroom/CPSC-RSS-Feed/Injury-Statistics/97",
+        "https://www.cpsc.gov/Newsroom/CPSC-RSS-Feed/Injury-Statistics/116",
+        "https://www.cpsc.gov/Newsroom/CPSC-RSS-Feed/Injury-Statistics/105",
+        "https://www.cpsc.gov/Newsroom/CPSC-RSS-Feed/Technical-Reports",
+        "https://www.cpsc.gov/Newsroom/CPSC-RSS-Feed/Technical-Reports/96",
+        "https://www.cpsc.gov/Newsroom/CPSC-RSS-Feed/Technical-Reports/78",
+        "https://www.cpsc.gov/Newsroom/CPSC-RSS-Feed/Technical-Reports/80",
+        "https://www.cpsc.gov/Newsroom/CPSC-RSS-Feed/Technical-Reports/97",
+        "https://www.cpsc.gov/Newsroom/CPSC-RSS-Feed/Technical-Reports/89",
+        "https://www.cpsc.gov/Newsroom/CPSC-RSS-Feed/Technical-Reports/93",
+        "https://www.cpsc.gov/Newsroom/CPSC-RSS-Feed/Technical-Reports/99"
+      ],
+      "restriction": false
+    }
+  ],
+  "feeds": [
+    {
+      "name": "Slickdeals",
+      "url": "https://slickdeals.net/newsearch.php?mode=frontpage&searcharea=deals&searchin=first&rss=1",
+      "status": 200,
+      "count": 25
+    },
+    {
+      "name": "DealNews",
+      "url": "https://www.dealnews.com/?rss=1",
+      "status": 200,
+      "count": 50
+    },
+    {
+      "name": "Hip2Save",
+      "url": "https://hip2save.com/feed/",
+      "status": 200,
+      "count": 100
+    },
+    {
+      "name": "9to5Toys",
+      "url": "https://9to5toys.com/feed/",
+      "status": 200,
+      "count": 50
+    },
+    {
+      "name": "Doctor of Credit",
+      "url": "https://www.doctorofcredit.com/category/deals/feed/",
+      "status": 200,
+      "count": 15
+    },
+    {
+      "name": "CPSC",
+      "url": "https://www.cpsc.gov/Newsroom/CPSC-RSS-Feed/Recalls-RSS",
+      "status": 200,
+      "count": 40
+    }
+  ],
+  "details": [
+    {
+      "name": "Slickdeals",
+      "url": "https://slickdeals.net/f/20138556-fosi-audio-dap-neo-mp3-ipod-player-68-free-shipping?utm_source=rss&utm_content=fp&utm_medium=RSS2",
+      "status": 200,
+      "title": "16GB Fosi Audio DAP Neo Modern Classic MP3 Player - 2026-10-10",
+      "date": "Sun, 11 Oct 2026 04:50:21 +0000",
+      "bodyChars": 14002,
+      "images": "https://slickdeals.net/attachment/7/0/7/4/1/3/450x450/21909855.thumb",
+      "merchantLinks": [
+        {
+          "text": "",
+          "url": "https://slickdeals.net/click?trd=Get+Deal+at+Fosi+Audio&sdtid=20138556&pno=1343775&prop=diavail-false%7Cdincp-0%7Cdinpd-0%7Cdipgavail-false&pv=19d936dcc53211f1a17d368184be3f79&au=fd4c2e65efb844249395937d4f6a0345&action_source=Deal+Details+-+Sticky+Bar+CTA"
+        },
+        {
+          "text": "Get Deal at Fosi Audio",
+          "url": "https://slickdeals.net/click?trd=Get+Deal+at+Fosi+Audio&sdtid=20138556&pno=1343775&prop=diavail-false%7Cdincp-0%7Cdinpd-0%7Cdipgavail-false&pv=19d936dcc53211f1a17d368184be3f79&au=fd4c2e65efb844249395937d4f6a0345&action_source=Deal+Details+-+Sticky+Bar+CTA"
+        },
+        {
+          "text": "frontpage",
+          "url": "https://slickdeals.net/click?trd=Deal+Image&sdtid=20138556&pno=1343775&prop=diavail-false%7Cdincp-0%7Cdinpd-0%7Cdipgavail-false&pv=19d936dcc53211f1a17d368184be3f79&au=fd4c2e65efb844249395937d4f6a0345&action_source=Deal+Details+-+Image+Gallery"
+        },
+        {
+          "text": "",
+          "url": "https://slickdeals.net/click?trd=Deal+Image&sdtid=20138556&pno=1343775&prop=diavail-false%7Cdincp-0%7Cdinpd-0%7Cdipgavail-false&pv=19d936dcc53211f1a17d368184be3f79&au=fd4c2e65efb844249395937d4f6a0345&action_source=Deal+Details+-+Image+Gallery"
+        },
+        {
+          "text": "",
+          "url": "https://slickdeals.net/click?trd=Deal+Image&sdtid=20138556&pno=1343775&prop=diavail-false%7Cdincp-0%7Cdinpd-0%7Cdipgavail-false&pv=19d936dcc53211f1a17d368184be3f79&au=fd4c2e65efb844249395937d4f6a0345&action_source=Deal+Details+-+Image+Gallery"
+        },
+        {
+          "text": "",
+          "url": "https://slickdeals.net/click?trd=Deal+Image&sdtid=20138556&pno=1343775&prop=diavail-false%7Cdincp-0%7Cdinpd-0%7Cdipgavail-false&pv=19d936dcc53211f1a17d368184be3f79&au=fd4c2e65efb844249395937d4f6a0345&action_source=Deal+Details+-+Image+Gallery"
+        },
+        {
+          "text": "",
+          "url": "https://slickdeals.net/click?trd=Deal+Image&sdtid=20138556&pno=1343775&prop=diavail-false%7Cdincp-0%7Cdinpd-0%7Cdipgavail-false&pv=19d936dcc53211f1a17d368184be3f79&au=fd4c2e65efb844249395937d4f6a0345&action_source=Deal+Details+-+Image+Gallery"
+        },
+        {
+          "text": "",
+          "url": "https://slickdeals.net/click?trd=Deal+Image&sdtid=20138556&pno=1343775&prop=diavail-false%7Cdincp-0%7Cdinpd-0%7Cdipgavail-false&pv=19d936dcc53211f1a17d368184be3f79&au=fd4c2e65efb844249395937d4f6a0345&action_source=Deal+Details+-+Image+Gallery"
+        },
+        {
+          "text": "",
+          "url": "https://slickdeals.net/click?trd=Deal+Image&sdtid=20138556&pno=1343775&prop=diavail-false%7Cdincp-0%7Cdinpd-0%7Cdipgavail-false&pv=19d936dcc53211f1a17d368184be3f79&au=fd4c2e65efb844249395937d4f6a0345&action_source=Deal+Details+-+Image+Gallery"
+        },
+        {
+          "text": "",
+          "url": "https://slickdeals.net/click?trd=Deal+Image&sdtid=20138556&pno=1343775&prop=diavail-false%7Cdincp-0%7Cdinpd-0%7Cdipgavail-false&pv=19d936dcc53211f1a17d368184be3f79&au=fd4c2e65efb844249395937d4f6a0345&action_source=Deal+Details+-+Image+Gallery"
+        },
+        {
+          "text": "",
+          "url": "https://slickdeals.net/click?trd=Deal+Image&sdtid=20138556&pno=1343775&prop=diavail-false%7Cdincp-0%7Cdinpd-0%7Cdipgavail-false&pv=19d936dcc53211f1a17d368184be3f79&au=fd4c2e65efb844249395937d4f6a0345&action_source=Deal+Details+-+Image+Gallery"
+        },
+        {
+          "text": "",
+          "url": "https://slickdeals.net/click?trd=Deal+Image&sdtid=20138556&pno=1343775&prop=diavail-false%7Cdincp-0%7Cdinpd-0%7Cdipgavail-false&pv=19d936dcc53211f1a17d368184be3f79&au=fd4c2e65efb844249395937d4f6a0345&action_source=Deal+Details+-+Image+Gallery"
+        },
+        {
+          "text": "Get Deal at Fosi Audio",
+          "url": "https://slickdeals.net/click?trd=Get+Deal+at+Fosi+Audio&sdtid=20138556&pno=1343775&prop=diavail-false%7Cdincp-0%7Cdinpd-0%7Cdipgavail-false&pv=19d936dcc53211f1a17d368184be3f79&au=fd4c2e65efb844249395937d4f6a0345&action_source=Deal+Details+-+Main+CTA"
+        },
+        {
+          "text": "Fosi Audio",
+          "url": "https://slickdeals.net/click?pno=1343775&prop=diavail-false%7Cdincp-0%7Cdinpd-0%7Cdipgavail-false&lno=1&sdtid=20138556&trd=Fosi%2BAudio&afsrc=1&action_source=Deal+Details+-+Description+Link"
+        },
+        {
+          "text": "Galaxy",
+          "url": "https://slickdeals.net/click?pno=1343775&prop=diavail-false%7Cdincp-0%7Cdinpd-0%7Cdipgavail-false&lno=2&sdtid=20138556&trd=Galaxy&afsrc=1&action_source=Deal+Details+-+Description+Link"
+        },
+        {
+          "text": "Obsidian",
+          "url": "https://slickdeals.net/click?pno=1343775&prop=diavail-false%7Cdincp-0%7Cdinpd-0%7Cdipgavail-false&lno=3&sdtid=20138556&trd=Obsidian&afsrc=1&action_source=Deal+Details+-+Description+Link"
+        },
+        {
+          "text": "Galaxy",
+          "url": "https://slickdeals.net/click?pno=1343775&prop=diavail-false%7Cdincp-0%7Cdinpd-0%7Cdipgavail-false&lno=4&sdtid=20138556&trd=Galaxy&afsrc=1&action_source=Deal+Details+-+Description+Link"
+        },
+        {
+          "text": "Obsidian",
+          "url": "https://slickdeals.net/click?pno=1343775&prop=diavail-false%7Cdincp-0%7Cdinpd-0%7Cdipgavail-false&lno=5&sdtid=20138556&trd=Obsidian&afsrc=1&action_source=Deal+Details+-+Description+Link"
+        },
+        {
+          "text": "see the original post",
+          "url": "https://slickdeals.net/click?pno=1343775&prop=diavail-false%7Cdincp-0%7Cdinpd-0%7Cdipgavail-false&lno=6&sdtid=20138556&trd=see%2Bthe%2Boriginal%2Bpost&afsrc=1&action_source=Deal+Details+-+Editor+Notes+Link"
+        },
+        {
+          "text": "Fosi Audio",
+          "url": "https://slickdeals.net/click?pno=1343775&prop=diavail-false%7Cdincp-0%7Cdinpd-0%7Cdipgavail-false&lno=1&sdtid=20138556&trd=Fosi%2BAudio&afsrc=1&action_source=Deal+Details+-+Description+Link"
+        }
+      ]
+    },
+    {
+      "name": "DealNews",
+      "url": "https://www.dealnews.com/products/Sabrent/Sabrent-Blowzer-X6-Air-Duster/542655.html?iref=rss",
+      "status": 200,
+      "title": "Sabrent Blowzer X6 Air Duster: $52.49 - TF-BZX6",
+      "date": "Sun, 11 Oct 2026 00:00:00 -0400",
+      "bodyChars": 23553,
+      "images": "https://d.dlnws.com/64599/1791535089-draftworks_img_9sn0ha9p5jnm1gnlgoj.jpeg?h=500&w=500",
+      "merchantLinks": [
+        {
+          "text": "",
+          "url": "https://www.dealnews.com/lw/click.html?20,2,22266667"
+        },
+        {
+          "text": "Sabrent Blowzer X6 Air Duster",
+          "url": "https://www.dealnews.com/lw/click.html?20,2,22266667"
+        },
+        {
+          "text": "Buy Now at Amazon",
+          "url": "https://www.dealnews.com/lw/click.html?20,2,22266667"
+        },
+        {
+          "text": "Shop Now",
+          "url": "https://www.dealnews.com/lw/click.html?20,2,22266667"
+        },
+        {
+          "text": "Buy Now at Amazon",
+          "url": "https://www.dealnews.com/lw/click.html?20,2,22188595"
+        },
+        {
+          "text": "Buy Now at Amazon",
+          "url": "https://www.dealnews.com/lw/click.html?20,2,22188593"
+        },
+        {
+          "text": "Shop Now at Amazon",
+          "url": "https://www.dealnews.com/lw/click.html?20,2,22269184"
+        },
+        {
+          "text": "Buy Now at Amazon",
+          "url": "https://www.dealnews.com/lw/click.html?20,2,22181319"
+        },
+        {
+          "text": "Buy Now at Amazon",
+          "url": "https://www.dealnews.com/lw/click.html?20,2,22226866"
+        },
+        {
+          "text": "Buy Now at Amazon",
+          "url": "https://www.dealnews.com/lw/click.html?20,2,22269649"
+        },
+        {
+          "text": "Shop Now at Amazon",
+          "url": "https://www.dealnews.com/lw/click.html?20,2,22234922"
+        },
+        {
+          "text": "Shop Now at Amazon",
+          "url": "https://www.dealnews.com/lw/click.html?20,2,22232063"
+        },
+        {
+          "text": "Buy Now",
+          "url": "https://www.dealnews.com/lw/click.html?20,2,22266667"
+        }
+      ]
+    },
+    {
+      "name": "Hip2Save",
+      "url": "https://hip2save.com/deals/under-armour-hoodie/",
+      "status": 200,
+      "title": "Under Armour Hoodies from $18.88 Shipped (Reg. $60) - Kids and Adult Styles! | Hip2SaveUnder Armour Hoodies from $18.88 Shipped (Reg. $60) - Kids and Adult Styles! | Hip2Save",
+      "date": "Sun, 11 Oct 2026 04:00:00 +0000",
+      "bodyChars": 3238,
+      "images": "https://hip2save.com/wp-content/uploads/2022/09/Under-Armour-Hoodies1.jpg?w=912",
+      "merchantLinks": [
+        {
+          "text": "",
+          "url": "https://clicks.trx-hub.com/xid/hip2save_c4db4_hip2save?q=https%3A%2F%2Fwww.awin1.com%2Fcread.php%3Fawinmid%3D15431%26awinaffid%3D142295%26campaign%3D%26clickref%3D%26ued%3Dhttps%253A%252F%252Fwww.underarmour.com%252Fen-us%252Fc%252Foutlet%252Fclothing-hoodies_and_sweatshirts%252F%253Fsrule%253Dprice-low-high%2526prefn1%253Dsubsubsilhouette%2526prefv1%253DPull-Over%252BHoodie%26platform%3Dpl&p=https%3A%2F%2Fhip2save.com%2Fdeals%2Funder-armour-hoodie%2F&event_type=click&devicetype=desktop"
+        },
+        {
+          "text": "UnderArmour.com",
+          "url": "https://clicks.trx-hub.com/xid/hip2save_c4db4_hip2save?q=https%3A%2F%2Fwww.awin1.com%2Fcread.php%3Fawinmid%3D15431%26awinaffid%3D142295%26campaign%3D%26clickref%3D%26ued%3Dhttps%253A%252F%252Fwww.underarmour.com%252Fen-us%252Fc%252Foutlet%252Fclothing-hoodies_and_sweatshirts%252F%253Fsrule%253Dprice-low-high%2526prefn1%253Dsubsubsilhouette%2526prefv1%253DPull-Over%252BHoodie%26platform%3Dpl&p=https%3A%2F%2Fhip2save.com%2Fdeals%2Funder-armour-hoodie%2F&event_type=click&devicetype=desktop"
+        },
+        {
+          "text": "Under Armour Access rewards",
+          "url": "https://clicks.trx-hub.com/xid/hip2save_c4db4_hip2save?q=https%3A%2F%2Fwww.awin1.com%2Fcread.php%3Fawinmid%3D15431%26awinaffid%3D142295%26campaign%3D%26clickref%3D%26ued%3Dhttps%253A%252F%252Fwww.underarmour.com%252Fen-us%252Farmour-access%252F%26platform%3Dpl&p=https%3A%2F%2Fhip2save.com%2Fdeals%2Funder-armour-hoodie%2F&event_type=click&devicetype=desktop"
+        },
+        {
+          "text": "",
+          "url": "https://clicks.trx-hub.com/xid/hip2save_c4db4_hip2save?q=https%3A%2F%2Fwww.awin1.com%2Fcread.php%3Fawinmid%3D15431%26awinaffid%3D142295%26campaign%3D%26clickref%3D%26ued%3Dhttps%253A%252F%252Fwww.underarmour.com%252Fen-us%252Fp%252Fproject_rock_rival_fleece_theme_boys_hoodie%252F1373628.html%253Fdwvar_1373628_size%253DYMD%2526dwvar_1373628_color%253D369%26platform%3Dpl&p=https%3A%2F%2Fhip2save.com%2Fdeals%2Funder-armour-hoodie%2F&event_type=click&devicetype=desktop"
+        },
+        {
+          "text": "Under Armour Project Rock Rival Fleece Theme Boys Hoodie",
+          "url": "https://clicks.trx-hub.com/xid/hip2save_c4db4_hip2save?q=https%3A%2F%2Fwww.awin1.com%2Fcread.php%3Fawinmid%3D15431%26awinaffid%3D142295%26campaign%3D%26clickref%3D%26ued%3Dhttps%253A%252F%252Fwww.underarmour.com%252Fen-us%252Fp%252Fproject_rock_rival_fleece_theme_boys_hoodie%252F1373628.html%253Fdwvar_1373628_size%253DYMD%2526dwvar_1373628_color%253D369%26platform%3Dpl&p=https%3A%2F%2Fhip2save.com%2Fdeals%2Funder-armour-hoodie%2F&event_type=click&devicetype=desktop"
+        },
+        {
+          "text": "Under Armour Project Rock Heavyweight Terry Brahma Bull Girls Hoo",
+          "url": "https://clicks.trx-hub.com/xid/hip2save_c4db4_hip2save?q=https%3A%2F%2Fwww.awin1.com%2Fcread.php%3Fawinmid%3D15431%26awinaffid%3D142295%26campaign%3D%26clickref%3D%26ued%3Dhttps%253A%252F%252Fwww.underarmour.com%252Fen-us%252Fp%252Fproject_rock_heavyweight_terry_brahma_bull_girls_hoodie%252F1379027.html%253Fdwvar_1379027_color%253D722%26platform%3Dpl&p=https%3A%2F%2Fhip2save.com%2Fdeals%2Funder-armour-hoodie%2F&event_type=click&devicetype=desktop"
+        },
+        {
+          "text": "",
+          "url": "https://clicks.trx-hub.com/xid/hip2save_c4db4_hip2save?q=https%3A%2F%2Fwww.awin1.com%2Fcread.php%3Fawinmid%3D15431%26awinaffid%3D142295%26campaign%3D%26clickref%3D%26ued%3Dhttps%253A%252F%252Fwww.underarmour.com%252Fen-us%252Fp%252Farmour_fleece_starlight_logo_boys_hoodie%252F6003811.html%253Fdwvar_6003811_size%253DYMD%2526dwvar_6003811_color%253D713%26platform%3Dpl&p=https%3A%2F%2Fhip2save.com%2Fdeals%2Funder-armour-hoodie%2F&event_type=click&devicetype=desktop"
+        },
+        {
+          "text": "Under Armour Fleece Starlight Logo Boys Hoodie",
+          "url": "https://clicks.trx-hub.com/xid/hip2save_c4db4_hip2save?q=https%3A%2F%2Fwww.awin1.com%2Fcread.php%3Fawinmid%3D15431%26awinaffid%3D142295%26campaign%3D%26clickref%3D%26ued%3Dhttps%253A%252F%252Fwww.underarmour.com%252Fen-us%252Fp%252Farmour_fleece_starlight_logo_boys_hoodie%252F6003811.html%253Fdwvar_6003811_size%253DYMD%2526dwvar_6003811_color%253D713%26platform%3Dpl&p=https%3A%2F%2Fhip2save.com%2Fdeals%2Funder-armour-hoodie%2F&event_type=click&devicetype=desktop"
+        },
+        {
+          "text": "Under Armour Rival Fleece Piped Girls Sleeveless Hoodie",
+          "url": "https://clicks.trx-hub.com/xid/hip2save_c4db4_hip2save?q=https%3A%2F%2Fwww.awin1.com%2Fcread.php%3Fawinmid%3D15431%26awinaffid%3D142295%26campaign%3D%26clickref%3D%26ued%3Dhttps%253A%252F%252Fwww.underarmour.com%252Fen-us%252Fp%252Fua_rival_fleece_piped_girls_sleeveless_hoodie%252F6007884.html%253Fdwvar_6007884_color%253D011%26platform%3Dpl&p=https%3A%2F%2Fhip2save.com%2Fdeals%2Funder-armour-hoodie%2F&event_type=click&devicetype=desktop"
+        },
+        {
+          "text": "Under Armour Fleece Retro Graphic Boys Hoodie",
+          "url": "https://clicks.trx-hub.com/xid/hip2save_c4db4_hip2save?q=https%3A%2F%2Fwww.awin1.com%2Fcread.php%3Fawinmid%3D15431%26awinaffid%3D142295%26campaign%3D%26clickref%3D%26ued%3Dhttps%253A%252F%252Fwww.underarmour.com%252Fen-us%252Fp%252Farmour_fleece_retro_graphic_boys_hoodie%252F6003812.html%253Fdwvar_6003812_color%253D400%26platform%3Dpl&p=https%3A%2F%2Fhip2save.com%2Fdeals%2Funder-armour-hoodie%2F&event_type=click&devicetype=desktop"
+        },
+        {
+          "text": "",
+          "url": "https://clicks.trx-hub.com/xid/hip2save_c4db4_hip2save?q=https%3A%2F%2Fwww.awin1.com%2Fcread.php%3Fawinmid%3D15431%26awinaffid%3D142295%26campaign%3D%26clickref%3D%26ued%3Dhttps%253A%252F%252Fwww.underarmour.com%252Fen-us%252Fp%252Fproject_rock_rival_fleece_womens_hoodie%252F1389335.html%253Fdwvar_1389335_color%253D001%26platform%3Dpl&p=https%3A%2F%2Fhip2save.com%2Fdeals%2Funder-armour-hoodie%2F&event_type=click&devicetype=desktop"
+        },
+        {
+          "text": "Under Armour Project Rock Rival Fleece Women\u2019s Hoodie",
+          "url": "https://clicks.trx-hub.com/xid/hip2save_c4db4_hip2save?q=https%3A%2F%2Fwww.awin1.com%2Fcread.php%3Fawinmid%3D15431%26awinaffid%3D142295%26campaign%3D%26clickref%3D%26ued%3Dhttps%253A%252F%252Fwww.underarmour.com%252Fen-us%252Fp%252Fproject_rock_rival_fleece_womens_hoodie%252F1389335.html%253Fdwvar_1389335_color%253D001%26platform%3Dpl&p=https%3A%2F%2Fhip2save.com%2Fdeals%2Funder-armour-hoodie%2F&event_type=click&devicetype=desktop"
+        },
+        {
+          "text": "Under Armour Armour Fleece Storm Men\u2019s Hoodie",
+          "url": "https://clicks.trx-hub.com/xid/hip2save_c4db4_hip2save?q=https%3A%2F%2Fwww.awin1.com%2Fcread.php%3Fawinmid%3D15431%26awinaffid%3D142295%26campaign%3D%26clickref%3D%26ued%3Dhttps%253A%252F%252Fwww.underarmour.com%252Fen-us%252Fp%252Farmour_fleece_storm_mens_hoodie%252F1370379.html%253Fdwvar_1370379_color%253D722%26platform%3Dpl&p=https%3A%2F%2Fhip2save.com%2Fdeals%2Funder-armour-hoodie%2F&event_type=click&devicetype=desktop"
+        },
+        {
+          "text": "Under Armour Waffle Men\u2019s Hoodie",
+          "url": "https://clicks.trx-hub.com/xid/hip2save_c4db4_hip2save?q=https%3A%2F%2Fwww.awin1.com%2Fcread.php%3Fawinmid%3D15431%26awinaffid%3D142295%26campaign%3D%26clickref%3D%26ued%3Dhttps%253A%252F%252Fwww.underarmour.com%252Fen-us%252Fp%252Fua_waffle_mens_hoodie%252F1302362.html%253Fdwvar_1302362_color%253D323%26platform%3Dpl&p=https%3A%2F%2Fhip2save.com%2Fdeals%2Funder-armour-hoodie%2F&event_type=click&devicetype=desktop"
+        },
+        {
+          "text": "Under Armour Tech Women\u2019s Hoodie",
+          "url": "https://clicks.trx-hub.com/xid/hip2save_c4db4_hip2save?q=https%3A%2F%2Fwww.awin1.com%2Fcread.php%3Fawinmid%3D15431%26awinaffid%3D142295%26campaign%3D%26clickref%3D%26ued%3Dhttps%253A%252F%252Fwww.underarmour.com%252Fen-us%252Fp%252Fua_tech_womens_hoodie%252F1384243.html%253Fdwvar_1384243_color%253D001%26platform%3Dpl&p=https%3A%2F%2Fhip2save.com%2Fdeals%2Funder-armour-hoodie%2F&event_type=click&devicetype=desktop"
+        },
+        {
+          "text": "",
+          "url": "https://hip2save.com/deals/nike-sale/?itm_source=parsely-api"
+        },
+        {
+          "text": "Up to 40% Off Popular Nike Shoes | Dunks, Air Max, Jordans & More",
+          "url": "https://hip2save.com/deals/nike-sale/?itm_source=parsely-api"
+        }
+      ]
+    },
+    {
+      "name": "9to5Toys",
+      "url": "https://9to5toys.com/2026/10/10/this-weeks-best-deals-10/",
+      "status": 200,
+      "title": "Best of 9to5Toys \u2013 This week\u2019s top deals: M6 Mac mini, Galaxy Fold 8, Best Buy Techtober sale, more",
+      "date": "Sat, 10 Oct 2026 13:23:22 +0000",
+      "bodyChars": 637,
+      "images": "https://9to5toys.com/wp-content/uploads/sites/5/2024/12/Best-of-9to5Toys.jpg?quality=82&strip=all&resize=1200,628",
+      "merchantLinks": [
+        {
+          "text": "Amazon Android Alexa Tablets",
+          "url": "https://9to5toys.com/2026/10/08/amazon-debuts-all-new-android-alexa-tablets-today/"
+        },
+        {
+          "text": "Amazon",
+          "url": "#h-amazon"
+        },
+        {
+          "text": "Best Buy updates massive Techtober Prime Day sale with new deals:",
+          "url": "https://bestbuycreators.7tiv.net/MAMazN"
+        },
+        {
+          "text": "Best price in months live on M5 MacBook Air: All models now $200 ",
+          "url": "https://9to5toys.com/2026/10/09/best-price-months-m5-macbook-air-amazon/"
+        },
+        {
+          "text": "Amazon\u2019s Prime Day AirPods Pro 3 deals still live at nearly 30% o",
+          "url": "https://9to5toys.com/2026/10/08/amazon-prime-day-airpods-deals-still-live/"
+        },
+        {
+          "text": "Amazon has brand new condition Galaxy S26 Ultra models at up to $",
+          "url": "https://9to5toys.com/2026/10/09/amazon-galaxy-s26-ultra-models-lowest-price/"
+        },
+        {
+          "text": "Galaxy Z Flip 8 hits Amazon Prime Day all-time low at $235 off, F",
+          "url": "https://9to5toys.com/2026/10/07/galaxy-z-flip-8-amazon-prime-day-deals/"
+        },
+        {
+          "text": "Amazon debuts all-new Android Alexa Tablets today with built-in K",
+          "url": "https://9to5toys.com/2026/10/08/amazon-debuts-all-new-android-alexa-tablets-today/"
+        },
+        {
+          "text": "\u2018Things Go Better with Coke\u2019: Grab official adidas X Coca-Cola ki",
+          "url": "https://9to5toys.com/2026/10/09/adidas-coca-cola-collaboration-shoes/"
+        },
+        {
+          "text": "Eye-catching Nike shoes kick off from $44 during \u2018See Price in Ba",
+          "url": "https://9to5toys.com/2026/10/08/nike-performance-athletic-footwear-deals/"
+        },
+        {
+          "text": "adidas deals hit up to 60% off in Amazon\u2019s fall Prime Day sale",
+          "url": "https://9to5toys.com/2026/10/06/adidas-backpacks/"
+        },
+        {
+          "text": "Refresh your closet with Amazon Essentials menswear from just $5 ",
+          "url": "https://9to5toys.com/2026/10/05/amazon-essentials-mens-blazers/"
+        },
+        {
+          "text": "Nike up to 40% off: Hundreds of top sellers on sale now",
+          "url": "https://9to5toys.com/2026/10/05/nike-up-to-40-off-hundreds-of-top-sellers-on-sale-now/"
+        },
+        {
+          "text": "Amazon\u2019s entire eero Wi-Fi 7 mesh system range is on sale for fal",
+          "url": "https://9to5toys.com/2026/10/06/amazon-entire-eero-wi-fi-7-mesh-system-range-is-on-sale-for-fall-prime-day/"
+        },
+        {
+          "text": "Estella\u2019s fall Prime Day pet deals: Up to 50% off ZIWI peak, Eart",
+          "url": "https://9to5toys.com/2026/10/07/amazon-basics-cat-pee-pads/"
+        },
+        {
+          "text": "Amazon Basics hand tools fall as low as $6 for Prime Day (Up to 4",
+          "url": "https://9to5toys.com/2026/10/06/amazon-basics-hand-tool-deals/"
+        },
+        {
+          "text": "Amazon debuts all-new Android Alexa Tablets today with built-in K",
+          "url": "https://9to5toys.com/2026/10/08/amazon-debuts-all-new-android-alexa-tablets-today/"
+        }
+      ]
+    },
+    {
+      "name": "Doctor of Credit",
+      "url": "https://www.doctorofcredit.com/onepay-1-cashback-per-gallon-of-gas-every-wednesday-50-gallons-two-redemptions-per-day/",
+      "status": 200,
+      "title": "[Extended 1/15/27] OnePay: $1 Cashback Per Gallon Of Gas Every Wednesday (50 Gallons, Two Redemptions Per Day)",
+      "date": "Wed, 14 Oct 2026 04:01:18 +0000",
+      "bodyChars": 4036,
+      "images": "https://www.doctorofcredit.com/wp-content/uploads/2014/04/best-gas-credit-cards.jpg",
+      "merchantLinks": [
+        {
+          "text": "OnePay Credit Card",
+          "url": "https://www.doctorofcredit.com/walmart-launches-onepay-cashrewards-card/"
+        },
+        {
+          "text": "",
+          "url": "https://www.doctorofcredit.com/citi-offers-get-10-back-on-walmart-com-up-to-10-cashback/"
+        },
+        {
+          "text": "Amazon",
+          "url": "https://www.doctorofcredit.com/category/free-money/amazon/"
+        },
+        {
+          "text": "Amazon: Get 50% Off When Using Membership Rewards Points (Up To $",
+          "url": "https://www.doctorofcredit.com/amazon-get-20-40-off-on-amazon-when-using-1-membership-rewards-point-max-30-40-discount/"
+        }
+      ]
+    },
+    {
+      "name": "CPSC",
+      "url": "https://www.cpsc.gov/Recalls/2027/Giant-Bicycle-Recalls-LED-Light-Keys-Included-with-SureLock-Bike-Lock-Sets-Due-to-Risk-of-Serious-Injury-or-Death-from-Battery-Ingestion-Violates-Mandatory-Standard-for-Consumer-Products-with-Button-Cell-Batteries",
+      "status": 200,
+      "title": "Giant Bicycle Recalls LED-Light Keys Included with SureLock Bike Lock Sets Due to Risk of Serious Injury or Death from Battery Ingestion; Violates Mandatory Standard for Consumer Products with Button Cell Batteries | CPSC.govLock",
+      "date": "October 08, 2026",
+      "bodyChars": 9575,
+      "images": "https://www.cpsc.gov/s3fs-public/giant2.jpg?VersionId=2.9hQavTnFlHQtTqaZt1b6eYjbvfmJpE",
+      "merchantLinks": []
+    }
+  ]
+}

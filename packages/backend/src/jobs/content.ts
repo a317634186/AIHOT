@@ -3,6 +3,8 @@
 // safety net only picks up articles nothing is working on and sends those still waiting for a body to
 // extraction first. A provider outage makes an article wait and retry with backoff; only a permanent
 // refusal or exhausted retries end in "failed", which the admin re-queues in bulk.
+import { SHOPPING } from "@aihot/industry/shopping";
+import { extractShopping } from "../shopping/offers.ts";
 import type { PgBoss } from "pg-boss";
 import { sql, type Db } from "../db.ts";
 import { extractArticleBody, pageFetchable } from "../content/extract.ts";
@@ -114,9 +116,10 @@ export async function processArticle(articleId: string, opts: { attemptTag?: str
       return { state: "fetching-body" };
     }
     if (result.stale) return { state: "stale" }; // the newer revision has its own job
+    if (SHOPPING.enabled && result.output.relevance === "pass") await extractShopping(articleId);
     await publishArticle(articleId);
     // History is archived but founds no event (isHistorical).
-    if (result.output.relevance === "pass" && !row.historical) await enqueue(QUEUES.group, { articleId }, { singletonKey: articleId, priority: PRIORITY.live });
+    if (!SHOPPING.enabled && result.output.relevance === "pass" && !row.historical) await enqueue(QUEUES.group, { articleId }, { singletonKey: articleId, priority: PRIORITY.live });
     return { state: result.output.relevance };
   } catch (error) {
     if (error instanceof AnalysisInterruptedError || shutdownSignal.signal.aborted) throw error;

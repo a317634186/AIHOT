@@ -44,6 +44,8 @@ export interface GuardedFetchOptions {
   maxBytes?: number;
   /** Follow redirects manually so every hop passes the SSRF guard. */
   maxRedirects?: number;
+  /** "manual" returns the first redirect response (empty body, Location in headers) instead of following it. */
+  redirect?: "follow" | "manual";
   /** "egress" by default; see EgressRoute. */
   route?: EgressRoute;
 }
@@ -73,7 +75,7 @@ export async function guardedFetch(input: string, opts: GuardedFetchOptions = {}
   for (let hop = 0; ; hop++) {
     const res = await undiciFetch(url, {
       method: opts.method ?? "GET",
-      headers: { "user-agent": DEFAULT_UA, "accept-language": "zh-CN,zh;q=0.9,en;q=0.8", ...(opts.headers ?? {}) },
+      headers: { "user-agent": DEFAULT_UA, "accept-language": "en-US,en;q=0.9", ...(opts.headers ?? {}) },
       body: opts.body,
       redirect: "manual",
       dispatcher: dispatcherFor(proxied(url, route)),
@@ -82,8 +84,13 @@ export async function guardedFetch(input: string, opts: GuardedFetchOptions = {}
     if (res.status >= 300 && res.status < 400 && res.headers.get("location")) {
       // Release the connection even when the next URL is refused or the redirect limit is reached.
       await res.body?.cancel();
+      if (opts.redirect === "manual") {
+        return { status: res.status, url: url.toString(), headers: res.headers as unknown as Headers, body: Buffer.alloc(0), text: () => "" };
+      }
       if (hop >= maxRedirects) throw new Error(`Too many redirects for ${input}`);
-      url = await check(new URL(res.headers.get("location")!, url).toString());
+      const next=new URL(res.headers.get("location")!,url);
+      if(next.origin!==url.origin&&(opts.body!==undefined||Object.keys(opts.headers??{}).some(key=>/^(?:authorization|proxy-authorization|cookie|x-api-key)$/i.test(key))))throw new Error('Authenticated requests cannot redirect to a different origin');
+      url = await check(next.toString());
       continue;
     }
     const chunks: Buffer[] = [];

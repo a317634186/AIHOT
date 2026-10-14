@@ -1,34 +1,21 @@
-# 隐私说明
+# Privacy notice
 
-这是开源框架自带的模板，只写了这套软件默认会处理哪些数据。上线前请按你的实际情况改写（运营主体、联系方式、你另外接入的统计或服务），必要时请专业人士审阅。
+English draft · Personal preview · Updated October 11, 2026.
 
-| 项 | 值 |
-|---|---|
-| 版本 | 0.1（模板） |
-| 生效日期 | 请填写 |
-| 运营主体 | 请填写 |
-| 隐私事务联系 | 请填写 |
+Reading Savlume requires no account. This site includes Google AdSense advertising code.
 
-页首说明：
+## Feedback, admin sessions and logs
 
-> 使用本站不需要注册或登录。我们只处理让网站正常运行、处理反馈所必需的信息，不出售个人信息。
+Feedback text and optional email are stored on this server for follow-up. The service uses a non-reversible network/browser identifier for abuse prevention. Administrators use session cookies. Operational logs can include paths, times and errors. Container logs rotate at three 10 MB files per service; retention time varies with volume.
 
-## 1. 浏览器本地数据
+## External sites and images
 
-收藏、已读记录、主题偏好和反馈草稿只保存在你当前的浏览器里，不会发送到服务器。清除浏览器数据后它们会消失；换设备不会同步。你可以在“收藏”页导出和导入这些数据。
+Merchant links lead to third-party websites. Product images load directly from original image hosts, so your browser contacts those hosts and exposes ordinary connection information such as your IP address. Their privacy practices apply. API credentials are kept on the server and are not sent to the browser.
 
-## 2. 反馈
+## Your requests
 
-你在反馈页提交的内容、选填的邮箱、提交时所在页面的地址，以及你选择附上的截图，会保存在服务器上，用于处理你的反馈。为防止滥用，服务器会保存一个由网络地址和浏览器类别计算出的、无法还原的标识，用于限流和封禁滥用来源。
+Use [feedback](/feedback) to request access, correction or deletion of your feedback. Include its approximate date and enough context to identify it. Do not submit passwords, payment details or API keys.
 
-## 3. 服务器与网络日志
+## Likes and sharing
 
-本软件默认不做访客统计。你的服务器、反向代理或 CDN 可能会按它们自己的配置记录访问日志（如 IP 地址、访问时间、页面地址、浏览器信息）。请在这里写明你实际使用的服务和保存期限。
-
-## 4. 第三方内容
-
-本站展示的是第三方原文的摘要与链接。点击原文链接后，你访问的是对方网站，适用对方的隐私政策。
-
-## 5. 联系我们
-
-请写明联系方式，以及查询、更正或删除反馈资料的方式。
+Opening a detail page stores a random browser identifier in local storage to remember likes. The server stores its hash with each like. Clearing local storage resets this identity; counts represent browser reactions, not verified individuals. The Share button opens the device share menu or copies a link and does not automatically post to another service.

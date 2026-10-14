@@ -1,3 +1,5 @@
+import { SHOPPING } from "@aihot/industry/shopping";
+const TARGET_LANG = SHOPPING.enabled ? "en" : "zh";
 // Full-text Chinese translations: made by the worker after an item
 // is selected, for sources whose full text may be shown on the site; a page read never translates.
 // Bodies are translated block by block (paragraphs, headings, list items, captions, table cells) so the
@@ -45,7 +47,7 @@ export interface TranslateResult {
   reason?: string;
 }
 
-const isChinese = (language: string | null, sample: string) => language === "zh" || (/[一-鿿]/.test(sample.slice(0, 400)) && language !== "en");
+const isChinese = (language: string | null, sample: string) => TARGET_LANG === "en" ? language === "en" && !/[一-鿿]/.test(sample.slice(0,400)) : language === "zh" || (/[一-鿿]/.test(sample.slice(0,400)) && language !== "en");
 
 /** Leaf text blocks of a sanitised body, in document order, skipping code. */
 function segmentsOf($: cheerio.CheerioAPI): Element[] {
@@ -214,7 +216,7 @@ async function store(articleId: string, revision: number, title: string, html: s
   // Never over a translation of a later revision (a slow run finishing after a newer one).
   await sql`
     INSERT INTO translations (article_id, lang, revision, title, body_html, body_text, complete, origin)
-    VALUES (${articleId}, 'zh', ${revision}, ${title}, ${html}, ${text}, ${complete}, 'model')
+    VALUES (${articleId}, ${TARGET_LANG}, ${revision}, ${title}, ${html}, ${text}, ${complete}, 'model')
     ON CONFLICT (article_id, lang) DO UPDATE SET revision = EXCLUDED.revision, title = EXCLUDED.title, body_html = EXCLUDED.body_html,
       body_text = EXCLUDED.body_text, complete = EXCLUDED.complete, origin = 'model', created_at = now()
     WHERE translations.origin <> 'source' AND translations.revision <= EXCLUDED.revision`;
@@ -235,7 +237,7 @@ export async function translateQuotes(opts: { days?: number; limit?: number; bud
   const started = Date.now();
   const rows = await sql<{ tweet_id: string; text: string; text_hash: string | null; own_zh: string | null }[]>`
     SELECT DISTINCT ON (q.tweet_id) q.tweet_id, a.x_post->'quoted'->>'text' AS text, qt.text_hash,
-      (SELECT tr.body_text FROM articles o JOIN translations tr ON tr.article_id = o.id AND tr.lang = 'zh' AND tr.revision >= o.revision
+      (SELECT tr.body_text FROM articles o JOIN translations tr ON tr.article_id = o.id AND tr.lang = ${TARGET_LANG} AND tr.revision >= o.revision
        WHERE o.identity_key = 'x:' || q.tweet_id AND tr.complete AND coalesce(tr.body_text, '') <> '') AS own_zh
     FROM publications p JOIN articles a ON a.id = p.article_id
     CROSS JOIN LATERAL (SELECT substring(a.x_post->'quoted'->>'url' from '/status/([0-9]+)') AS tweet_id) q
@@ -286,8 +288,8 @@ export async function translatePending(opts: { limit?: number; budgetMs?: number
   const started = Date.now();
   const rows = await sql<{ article_id: string }[]>`
     SELECT p.article_id FROM publications p JOIN articles a ON a.id = p.article_id
-    LEFT JOIN translations tr ON tr.article_id = p.article_id AND tr.lang = 'zh'
-    WHERE p.selected AND p.visibility = 'public' AND p.body_mode = 'full' AND coalesce(a.language, '') <> 'zh'
+    LEFT JOIN translations tr ON tr.article_id = p.article_id AND tr.lang = ${TARGET_LANG}
+    WHERE p.selected AND p.visibility = 'public' AND p.body_mode = 'full' AND coalesce(a.language, '') <> ${TARGET_LANG}
       AND (p.discovered_at > now() - interval '3 days'
            OR EXISTS (SELECT 1 FROM article_revisions r WHERE r.article_id = a.id AND r.revision = a.revision AND r.revision > 1
                       AND r.created_at > now() - interval '3 days'))

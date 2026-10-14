@@ -1,3 +1,4 @@
+import { SHOPPING } from "@aihot/industry/shopping";
 // analyzeArticle: the judging and writing steps, each with its own prompt from the industry pack
 // (industry/prompts/):
 //   1. prefilter: does the material belong to this industry at all (wide recall). Only BLOCK stops an
@@ -72,13 +73,12 @@ export const SCORE_SYSTEM = promptText("selection-score");
 export const ScoreSchema = z.object({ attentionScore: z.coerce.number().int().min(0).max(100) });
 
 const SCORE_TIME = new Intl.DateTimeFormat("sv-SE", {
-  timeZone: "Asia/Shanghai", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false,
+  timeZone: "America/New_York", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false,
 });
 
 /** The score input's time: Beijing time, ISO 8601 with +08:00 (the form the prompt was tuned on). */
 export function scoreInputTime(at: Date): string {
-  const ms = at.getTime() % 1000;
-  return `${SCORE_TIME.format(at).replace(" ", "T")}${ms ? `.${String(ms).padStart(3, "0")}` : ""}+08:00`;
+  return at.toISOString();
 }
 
 /**
@@ -96,10 +96,10 @@ export function buildScoreInput(a: AnalyzeInputArticle): string {
   if (!body) body = a.title;
   const at = a.publishedAt ?? a.discoveredAt ?? null;
   return [
-    "请按系统规则评估以下单篇材料所代表的事件。只输出 attentionScore。",
-    `【发布时间（北京时间）】\n${at ? scoreInputTime(at) : ""}`,
-    `【标题】\n${a.title.trim()}`,
-    `【完整正文】\n${body.length > MAX_BODY_CHARS ? body.slice(0, MAX_BODY_CHARS) : body}`,
+    "Evaluate this shopping material using the system rules. Return only attentionScore.",
+    `Published time (UTC)\n${at ? scoreInputTime(at) : ""}`,
+    `Title\n${a.title.trim()}`,
+    `Source text\n${body.length > MAX_BODY_CHARS ? body.slice(0, MAX_BODY_CHARS) : body}`,
   ].join("\n\n");
 }
 
@@ -292,7 +292,7 @@ async function runStructure(a: AnalyzeInputArticle, opts: StepOpts): Promise<Non
     user: buildMaterial(a),
     schema: StructureSchema,
     temperature: 0.2,
-    maxTokens: 800,
+    maxTokens: 1600,
     attemptTag: tagged(opts.attemptTag, "structure"),
   });
   const subjects = [...new Set(res.data.subjects.map((s) => s.trim().toLowerCase()).filter((s) => s in ENTITIES))];
@@ -460,6 +460,12 @@ export async function analyzeArticle(articleId: string, opts: StepOpts = {}): Pr
   if (!input) return null;
   // Its page first; extraction queues the analysis again (normally the queue already routed it there).
   if (waitsForPage(input)) return { analysisId: null, stale: false, needsBody: true, output: null, receiptIds: [], reused: true };
+  if (SHOPPING.enabled && /\b(?:cruise|airfare|vacation package|hotel.*(?:tour|vacation)|tour vacation)\b/i.test(input.title)) {
+    const [blocked] = await sql`INSERT INTO analyses(article_id,input_revision,origin,relevance,selected,output) VALUES(${articleId},${input.revision},'rule','block',false,'{"reason":"Outside the initial shopping categories"}') RETURNING id`;
+    await sql`UPDATE articles SET processing_state='blocked',processing_error='Outside the initial shopping categories' WHERE id=${articleId}`;
+    await sql`UPDATE publications SET eligible=false,selected=false,indexable=false WHERE article_id=${articleId}`;
+    return {analysisId:blocked!.id,stale:false,output:normalizeAnalysis({prefilter:{label:'BLOCK',reason:'Outside initial categories',model:'rule',receiptId:0,reused:true},scores:null,writing:null,structure:null}),receiptIds:[],reused:true};
+  }
   const run = await runAnalysis(input, opts);
   const out = normalizeAnalysis(run);
   const receiptIds = [

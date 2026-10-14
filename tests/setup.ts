@@ -1,3 +1,7 @@
+import { SHOPPING } from "@aihot/industry/shopping";
+process.env.AIHOT_INVARIANT_MODE = "true";
+Object.defineProperty(SHOPPING, "enabled", { value: false, configurable: true });
+Object.defineProperty(SHOPPING, "timeZone", { value: "Asia/Shanghai", configurable: true });
 // Shared setup for the invariant tests (node --test tests/). They write rows, so they refuse to run
 // unless DATABASE_URL names a throwaway database ending in _test or _ci (CI: a freshly migrated one).
 // Secrets are test values set here, never real credentials; paid providers are pointed at
@@ -35,8 +39,16 @@ export async function stub(answer: (hit: number, req: { url: string; body: strin
     const chunks: Buffer[] = [];
     req.on("data", (c: Buffer) => chunks.push(c));
     req.on("end", async () => {
+      const body = Buffer.concat(chunks).toString("utf8");
+      // A shutdown can close a POST before its body is sent. Reject it as HTTP, rather than
+      // letting a JSON-only fake provider raise an unhandled rejection after the test ends.
+      if (req.method === "POST" && !body) {
+        res.writeHead(400, {"content-type":"application/json"});
+        res.end(JSON.stringify({error:"empty request body"}));
+        return;
+      }
       hits += 1;
-      const out = await answer(hits, { url: req.url ?? "/", body: Buffer.concat(chunks).toString("utf8") });
+      const out = await answer(hits, { url: req.url ?? "/", body });
       const reply = out instanceof Reply ? out : { status: 200, json: out };
       res.writeHead(reply.status, { "content-type": "application/json" });
       res.end(JSON.stringify(reply.json));

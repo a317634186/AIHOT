@@ -1,4 +1,8 @@
+import { refreshMissingShoppingRecommendations } from "@aihot/backend/shopping/recommendations";
+import { discoverShopping } from "@aihot/backend/shopping/discovery";
 // Cron-style schedules (Asia/Shanghai). Each run is recorded in job_runs; missed slots run once.
+import { SHOPPING } from "@aihot/industry/shopping";
+import { recheckShopping } from "@aihot/backend/shopping/offers";
 import type { PgBoss } from "pg-boss";
 import { FEATURES } from "@aihot/industry/features";
 import { credential } from "@aihot/backend/config";
@@ -36,14 +40,16 @@ interface Scheduled {
 const collecting = process.env.COLLECT_ENABLED !== "false";
 
 export const SCHEDULES: Scheduled[] = [
+  ...(SHOPPING.enabled && process.env.MODEL_CALLS_ENABLED !== 'false' ? [{name:'shopping.recommendations',cron:'17 * * * *',run:()=>refreshMissingShoppingRecommendations(20)}] : []),
+  ...(SHOPPING.enabled && collecting && process.env.SHOPPING_SEARCH_ENABLED === "true" ? [{name:"shopping.discover",cron:"10 */3 * * *",run:()=>discoverShopping()},{name:"shopping.review-discover",cron:"35 */6 * * *",run:()=>discoverShopping(undefined,'reviews')}] : []),
   { name: "content.sweep", cron: "*/5 * * * *", run: sweepUnprocessed },
   // Full-text translations of newly selected items (model calls; off with MODEL_CALLS_ENABLED=false).
-  { name: "content.translate", cron: "*/5 * * * *", run: () => translatePending() },
+  ...(SHOPPING.enabled ? [{ name: "shopping.recheck", cron: "*/30 * * * *", run: recheckShopping }] : [{ name: "content.translate", cron: "*/5 * * * *", run: () => translatePending() }]),
   { name: "hot.rank", cron: "*/5 * * * *", run: () => computeHotRanking() },
   { name: "hot.snapshot", cron: "2 * * * *", run: () => snapshotHeat() },
   { name: "stories.status", cron: "7 * * * *", run: refreshStoryStatuses },
   { name: "stories.links", cron: "12 * * * *", run: linkRelatedStories },
-  { name: "reports.daily", cron: "0 8 * * *", missed: "once", run: () => composeDaily(beijingDate(Date.now())) },
+  { name: "reports.daily", cron: `0 ${Number(process.env.BRIEFING_HOUR || SHOPPING.briefingHour)} * * *`, missed: "once", run: () => composeDaily(beijingDate(Date.now())) },
   { name: "reports.weekly", cron: "0 10 * * 1", missed: "once", run: () => composeWeekly(isoWeekLabel(addDays(beijingDate(Date.now()), -7))) },
   {
     name: "reports.monthly",
@@ -100,7 +106,7 @@ export async function registerSchedules(boss: PgBoss) {
   for (const s of SCHEDULES) {
     const queue = `cron.${s.name}`;
     await ensureQueue(queue, { policy: "singleton", retryLimit: 1, expireInSeconds: 3600 });
-    await boss.schedule(queue, s.cron, {}, { tz: "Asia/Shanghai", missed: s.missed ?? "skip" });
+    await boss.schedule(queue, s.cron, {}, { tz: SHOPPING.timeZone, missed: s.missed ?? "skip" });
     // Schedules fire at minute boundaries; a 15 s pickup keeps them on time with a third of the polling.
     await boss.work(queue, { pollingIntervalSeconds: 15 }, async () => recordRun(s.name, s.run));
   }

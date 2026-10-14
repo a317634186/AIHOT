@@ -14,3 +14,15 @@ apps/web/.react-router/
 # Font package unpacked to regenerate the report nameplates (docs/customize.md)
 package/
 fontsource-noto-sans-sc-*.tgz
+
+# Private credential groups, TLS keys and backups are never source/build inputs.
+*.env
+*.env.*
+!.env.example
+credentials/
+.secrets/
+*.pem
+*.key
+backups/
+*.dump
+*.sql.gz

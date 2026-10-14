@@ -1,3 +1,4 @@
+import "@aihot/backend/lib/secure-console";
 // Worker process: queues and schedules for collection, processing, events, reports, monitors and ops.
 import { assertProductionSecrets } from "@aihot/backend/config";
 import { FEATURES } from "@aihot/industry/features";

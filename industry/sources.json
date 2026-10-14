@@ -1,388 +1,557 @@
 {
-  "$comment": "示范信源：首次启动时导入（scripts/seed.ts），已存在的不会被覆盖。之后在后台“信源”里增删改。字段说明见 docs/customize.md。",
   "sources": [
     {
-      "id": "rss-openai-news",
-      "name": "OpenAI News",
+      "id": "shopping-dealnews",
+      "name": "DealNews",
       "kind": "rss",
       "config": {
-        "feedUrl": "https://openai.com/news/rss.xml",
+        "feedUrl": "https://www.dealnews.com/?rss=1",
         "_aihot": {
-          "initialBackfillLimit": 8
-        }
+          "initialBackfillLimit": 5
+        },
+        "summaryIsBody": false
       },
-      "tier": "T1",
-      "first_party": true,
-      "owner_entity_id": "openai",
+      "tier": "T2",
+      "first_party": false,
       "participation_mode": "editorial",
       "interval_minutes": 120,
-      "tags": [
-        "官方"
-      ],
       "site_fulltext": false,
-      "syndicate_fulltext": false
+      "syndicate_fulltext": false,
+      "tags": [
+        "US",
+        "Shopping",
+        "Discovery"
+      ]
     },
     {
-      "id": "rss-google-deepmind",
-      "name": "Google DeepMind",
+      "id": "shopping-hip2save",
+      "name": "Hip2Save",
       "kind": "rss",
       "config": {
-        "feedUrl": "https://deepmind.google/blog/rss.xml",
+        "feedUrl": "https://hip2save.com/feed/",
         "_aihot": {
-          "initialBackfillLimit": 8
-        }
+          "initialBackfillLimit": 5
+        },
+        "summaryIsBody": false
       },
-      "tier": "T1",
-      "first_party": true,
-      "owner_entity_id": "google",
+      "tier": "T2",
+      "first_party": false,
       "participation_mode": "editorial",
       "interval_minutes": 120,
-      "tags": [
-        "官方"
-      ],
       "site_fulltext": false,
-      "syndicate_fulltext": false
+      "syndicate_fulltext": false,
+      "tags": [
+        "US",
+        "Shopping",
+        "Discovery"
+      ]
     },
     {
-      "id": "rss-google-research",
-      "name": "Google Research",
+      "id": "shopping-9to5toys",
+      "name": "9to5Toys",
       "kind": "rss",
       "config": {
-        "feedUrl": "https://research.google/blog/rss/",
+        "feedUrl": "https://9to5toys.com/feed/",
         "_aihot": {
-          "initialBackfillLimit": 8
-        }
+          "initialBackfillLimit": 5
+        },
+        "summaryIsBody": false
       },
-      "tier": "T1",
-      "first_party": true,
-      "owner_entity_id": "google",
+      "tier": "T2",
+      "first_party": false,
       "participation_mode": "editorial",
       "interval_minutes": 120,
-      "tags": [
-        "官方",
-        "研究"
-      ],
       "site_fulltext": false,
-      "syndicate_fulltext": false
+      "syndicate_fulltext": false,
+      "tags": [
+        "US",
+        "Shopping",
+        "Discovery"
+      ]
     },
     {
-      "id": "rss-hugging-face",
-      "name": "Hugging Face Blog",
+      "id": "shopping-cpsc",
+      "name": "CPSC",
       "kind": "rss",
       "config": {
-        "feedUrl": "https://huggingface.co/blog/feed.xml",
+        "feedUrl": "https://www.cpsc.gov/Newsroom/CPSC-RSS-Feed/Recalls-RSS",
         "_aihot": {
-          "initialBackfillLimit": 8
-        }
+          "initialBackfillLimit": 5
+        },
+        "summaryIsBody": false
       },
       "tier": "T1",
       "first_party": true,
-      "owner_entity_id": "hugging-face",
       "participation_mode": "editorial",
       "interval_minutes": 120,
-      "tags": [
-        "官方",
-        "开源"
-      ],
       "site_fulltext": false,
-      "syndicate_fulltext": false
+      "syndicate_fulltext": false,
+      "tags": [
+        "US",
+        "Shopping",
+        "Official recall"
+      ]
     },
     {
-      "id": "rss-microsoft-research",
-      "name": "Microsoft Research",
+      "id": "shopping-slickdeals",
+      "name": "Slickdeals Frontpage",
       "kind": "rss",
       "config": {
-        "feedUrl": "https://www.microsoft.com/en-us/research/feed/",
+        "feedUrl": "https://slickdeals.net/newsearch.php?mode=frontpage&searcharea=deals&searchin=first&rss=1",
         "_aihot": {
-          "initialBackfillLimit": 8
-        }
+          "initialBackfillLimit": 5
+        },
+        "summaryIsBody": false
       },
-      "tier": "T1",
-      "first_party": true,
-      "owner_entity_id": "microsoft",
+      "tier": "T2",
+      "first_party": false,
       "participation_mode": "editorial",
       "interval_minutes": 120,
-      "tags": [
-        "官方",
-        "研究"
-      ],
       "site_fulltext": false,
-      "syndicate_fulltext": false
+      "syndicate_fulltext": false,
+      "tags": [
+        "US",
+        "Shopping",
+        "Frontpage picks",
+        "Discovery"
+      ]
     },
     {
-      "id": "rss-nvidia-blog",
-      "name": "NVIDIA Blog",
+      "id": "shopping-reviews-gadgeteer",
+      "name": "The Gadgeteer",
       "kind": "rss",
       "config": {
-        "feedUrl": "https://blogs.nvidia.com/feed/",
+        "feedUrl": "https://the-gadgeteer.com/feed/",
         "_aihot": {
-          "initialBackfillLimit": 8
-        }
+          "initialBackfillLimit": 3
+        },
+        "summaryIsBody": false
       },
-      "tier": "T1",
-      "first_party": true,
-      "owner_entity_id": "nvidia",
+      "tier": "T2",
+      "first_party": false,
+      "participation_mode": "editorial",
+      "interval_minutes": 240,
+      "site_fulltext": false,
+      "syndicate_fulltext": false,
+      "tags": [
+        "US",
+        "Reviews & Picks",
+        "Source-attributed"
+      ]
+    },
+    {
+      "id": "shopping-reviews-dcrainmaker",
+      "name": "DC Rainmaker",
+      "kind": "rss",
+      "config": {
+        "feedUrl": "https://www.dcrainmaker.com/feed/",
+        "_aihot": {
+          "initialBackfillLimit": 3
+        },
+        "summaryIsBody": false
+      },
+      "tier": "T2",
+      "first_party": false,
+      "participation_mode": "editorial",
+      "interval_minutes": 240,
+      "site_fulltext": false,
+      "syndicate_fulltext": false,
+      "tags": [
+        "US",
+        "Reviews & Picks",
+        "Source-attributed"
+      ]
+    },
+    {
+      "id": "shopping-reviews-soundguys",
+      "name": "SoundGuys",
+      "kind": "rss",
+      "config": {
+        "feedUrl": "https://www.soundguys.com/feed/",
+        "_aihot": {
+          "initialBackfillLimit": 3
+        },
+        "summaryIsBody": false
+      },
+      "tier": "T2",
+      "first_party": false,
+      "participation_mode": "editorial",
+      "interval_minutes": 240,
+      "site_fulltext": false,
+      "syndicate_fulltext": false,
+      "tags": [
+        "US",
+        "Reviews & Picks",
+        "Source-attributed"
+      ]
+    },
+    {
+      "id": "shopping-reviews-tomsguide",
+      "name": "Tom’s Guide",
+      "kind": "rss",
+      "config": {
+        "feedUrl": "https://www.tomsguide.com/feeds.xml",
+        "_aihot": {
+          "initialBackfillLimit": 3
+        },
+        "summaryIsBody": false
+      },
+      "tier": "T2",
+      "first_party": false,
+      "participation_mode": "editorial",
+      "interval_minutes": 240,
+      "site_fulltext": false,
+      "syndicate_fulltext": false,
+      "tags": [
+        "US",
+        "Reviews & Picks",
+        "Source-attributed"
+      ]
+    },
+    {
+      "id": "shopping-reviews-techradar-review",
+      "name": "TechRadar Reviews",
+      "kind": "rss",
+      "config": {
+        "feedUrl": "https://www.techradar.com/feeds/articletype/review",
+        "_aihot": {
+          "initialBackfillLimit": 3
+        },
+        "summaryIsBody": false
+      },
+      "tier": "T2",
+      "first_party": false,
+      "participation_mode": "editorial",
+      "interval_minutes": 240,
+      "site_fulltext": false,
+      "syndicate_fulltext": false,
+      "tags": [
+        "US",
+        "Reviews & Picks",
+        "Source-attributed"
+      ]
+    },
+    {
+      "id": "shopping-reviews-techradar-best",
+      "name": "TechRadar Buying Guides",
+      "kind": "rss",
+      "config": {
+        "feedUrl": "https://www.techradar.com/feeds/articletype/best",
+        "_aihot": {
+          "initialBackfillLimit": 3
+        },
+        "summaryIsBody": false
+      },
+      "tier": "T2",
+      "first_party": false,
+      "participation_mode": "editorial",
+      "interval_minutes": 240,
+      "site_fulltext": false,
+      "syndicate_fulltext": false,
+      "tags": [
+        "US",
+        "Reviews & Picks",
+        "Source-attributed"
+      ]
+    },
+    {
+      "id": "shopping-bensbargains",
+      "name": "Ben’s Bargains",
+      "kind": "rss",
+      "config": {
+        "feedUrl": "https://bensbargains.com/rss/",
+        "_aihot": {
+          "initialBackfillLimit": 3
+        },
+        "summaryIsBody": false
+      },
+      "tier": "T2",
+      "first_party": false,
       "participation_mode": "editorial",
       "interval_minutes": 120,
-      "tags": [
-        "官方"
-      ],
       "site_fulltext": false,
-      "syndicate_fulltext": false
+      "syndicate_fulltext": false,
+      "tags": [
+        "US",
+        "Shopping",
+        "Discovery"
+      ]
     },
     {
-      "id": "rss-aws-ml",
-      "name": "AWS Machine Learning Blog",
+      "id": "shopping-cnet-deals",
+      "name": "CNET Deals",
       "kind": "rss",
       "config": {
-        "feedUrl": "https://aws.amazon.com/blogs/machine-learning/feed/",
+        "feedUrl": "https://www.cnet.com/rss/deals/",
         "_aihot": {
-          "initialBackfillLimit": 8
-        }
+          "initialBackfillLimit": 3
+        },
+        "summaryIsBody": false
       },
-      "tier": "T1",
-      "first_party": true,
-      "owner_entity_id": null,
-      "participation_mode": "editorial",
-      "interval_minutes": 120,
-      "tags": [
-        "官方",
-        "教程"
-      ],
-      "site_fulltext": false,
-      "syndicate_fulltext": false
-    },
-    {
-      "id": "rss-github-ai",
-      "name": "GitHub Blog · AI & ML",
-      "kind": "rss",
-      "config": {
-        "feedUrl": "https://github.blog/ai-and-ml/feed/",
-        "_aihot": {
-          "initialBackfillLimit": 8
-        }
-      },
-      "tier": "T1",
-      "first_party": true,
-      "owner_entity_id": null,
-      "participation_mode": "editorial",
-      "interval_minutes": 120,
-      "tags": [
-        "官方"
-      ],
-      "site_fulltext": false,
-      "syndicate_fulltext": false
-    },
-    {
-      "id": "rss-mistral",
-      "name": "Mistral AI",
-      "kind": "rss",
-      "config": {
-        "feedUrl": "https://mistral.ai/rss.xml",
-        "_aihot": {
-          "initialBackfillLimit": 8
-        }
-      },
-      "tier": "T1",
-      "first_party": true,
-      "owner_entity_id": null,
-      "participation_mode": "editorial",
-      "interval_minutes": 120,
-      "tags": [
-        "官方"
-      ],
-      "site_fulltext": false,
-      "syndicate_fulltext": false
-    },
-    {
-      "id": "rss-bair",
-      "name": "Berkeley AI Research",
-      "kind": "rss",
-      "config": {
-        "feedUrl": "https://bair.berkeley.edu/blog/feed.xml",
-        "_aihot": {
-          "initialBackfillLimit": 8
-        }
-      },
-      "tier": "T1",
-      "first_party": true,
-      "owner_entity_id": null,
+      "tier": "T2",
+      "first_party": false,
       "participation_mode": "editorial",
       "interval_minutes": 180,
-      "tags": [
-        "研究"
-      ],
       "site_fulltext": false,
-      "syndicate_fulltext": false
+      "syndicate_fulltext": false,
+      "tags": [
+        "US",
+        "Shopping",
+        "Discovery"
+      ]
     },
     {
-      "id": "rss-the-verge-ai",
-      "name": "The Verge · AI",
+      "id": "shopping-pcmag-deals",
+      "name": "PCMag Deals",
       "kind": "rss",
       "config": {
-        "feedUrl": "https://www.theverge.com/rss/ai-artificial-intelligence/index.xml",
+        "feedUrl": "https://www.pcmag.com/feeds/rss/deals",
         "_aihot": {
-          "initialBackfillLimit": 8
-        }
+          "initialBackfillLimit": 3
+        },
+        "summaryIsBody": false
       },
       "tier": "T2",
       "first_party": false,
-      "owner_entity_id": null,
-      "participation_mode": "editorial",
-      "interval_minutes": 60,
-      "tags": [
-        "媒体"
-      ],
-      "site_fulltext": false,
-      "syndicate_fulltext": false
-    },
-    {
-      "id": "rss-techcrunch-ai",
-      "name": "TechCrunch · AI",
-      "kind": "rss",
-      "config": {
-        "feedUrl": "https://techcrunch.com/category/artificial-intelligence/feed/",
-        "_aihot": {
-          "initialBackfillLimit": 8
-        }
-      },
-      "tier": "T2",
-      "first_party": false,
-      "owner_entity_id": null,
-      "participation_mode": "editorial",
-      "interval_minutes": 60,
-      "tags": [
-        "媒体"
-      ],
-      "site_fulltext": false,
-      "syndicate_fulltext": false
-    },
-    {
-      "id": "rss-ars-technica-ai",
-      "name": "Ars Technica · AI",
-      "kind": "rss",
-      "config": {
-        "feedUrl": "https://arstechnica.com/ai/feed/",
-        "_aihot": {
-          "initialBackfillLimit": 8
-        }
-      },
-      "tier": "T2",
-      "first_party": false,
-      "owner_entity_id": null,
-      "participation_mode": "editorial",
-      "interval_minutes": 60,
-      "tags": [
-        "媒体"
-      ],
-      "site_fulltext": false,
-      "syndicate_fulltext": false
-    },
-    {
-      "id": "rss-mit-tech-review-ai",
-      "name": "MIT Technology Review · AI",
-      "kind": "rss",
-      "config": {
-        "feedUrl": "https://www.technologyreview.com/topic/artificial-intelligence/feed",
-        "_aihot": {
-          "initialBackfillLimit": 8
-        }
-      },
-      "tier": "T2",
-      "first_party": false,
-      "owner_entity_id": null,
-      "participation_mode": "editorial",
-      "interval_minutes": 120,
-      "tags": [
-        "媒体"
-      ],
-      "site_fulltext": false,
-      "syndicate_fulltext": false
-    },
-    {
-      "id": "rss-the-decoder",
-      "name": "The Decoder",
-      "kind": "rss",
-      "config": {
-        "feedUrl": "https://the-decoder.com/feed/",
-        "_aihot": {
-          "initialBackfillLimit": 8
-        }
-      },
-      "tier": "T2",
-      "first_party": false,
-      "owner_entity_id": null,
-      "participation_mode": "editorial",
-      "interval_minutes": 60,
-      "tags": [
-        "媒体"
-      ],
-      "site_fulltext": false,
-      "syndicate_fulltext": false
-    },
-    {
-      "id": "rss-simon-willison",
-      "name": "Simon Willison",
-      "kind": "rss",
-      "config": {
-        "feedUrl": "https://simonwillison.net/atom/everything/",
-        "_aihot": {
-          "initialBackfillLimit": 8
-        }
-      },
-      "tier": "T2",
-      "first_party": false,
-      "owner_entity_id": null,
-      "participation_mode": "editorial",
-      "interval_minutes": 120,
-      "tags": [
-        "个人"
-      ],
-      "site_fulltext": false,
-      "syndicate_fulltext": false
-    },
-    {
-      "id": "rss-import-ai",
-      "name": "Import AI",
-      "kind": "rss",
-      "config": {
-        "feedUrl": "https://importai.substack.com/feed",
-        "_aihot": {
-          "initialBackfillLimit": 8
-        }
-      },
-      "tier": "T2",
-      "first_party": false,
-      "owner_entity_id": null,
       "participation_mode": "editorial",
       "interval_minutes": 180,
-      "tags": [
-        "个人",
-        "周刊"
-      ],
       "site_fulltext": false,
-      "syndicate_fulltext": false
+      "syndicate_fulltext": false,
+      "tags": [
+        "US",
+        "Shopping",
+        "Discovery"
+      ]
     },
     {
-      "id": "rss-latent-space",
-      "name": "Latent Space",
+      "id": "shopping-techradar-deals",
+      "name": "TechRadar Deals",
       "kind": "rss",
       "config": {
-        "feedUrl": "https://www.latent.space/feed",
+        "feedUrl": "https://www.techradar.com/feeds/tag/deals",
         "_aihot": {
-          "initialBackfillLimit": 8
-        }
+          "initialBackfillLimit": 3
+        },
+        "summaryIsBody": false
       },
       "tier": "T2",
       "first_party": false,
-      "owner_entity_id": null,
       "participation_mode": "editorial",
       "interval_minutes": 180,
-      "tags": [
-        "个人"
-      ],
       "site_fulltext": false,
-      "syndicate_fulltext": false
+      "syndicate_fulltext": false,
+      "tags": [
+        "US",
+        "Shopping",
+        "Discovery"
+      ]
+    },
+    {
+      "id": "shopping-verge-deals",
+      "name": "The Verge Good Deals",
+      "kind": "rss",
+      "config": {
+        "feedUrl": "https://www.theverge.com/rss/good-deals/index.xml",
+        "_aihot": {
+          "initialBackfillLimit": 3
+        },
+        "summaryIsBody": false
+      },
+      "tier": "T2",
+      "first_party": false,
+      "participation_mode": "editorial",
+      "interval_minutes": 240,
+      "site_fulltext": false,
+      "syndicate_fulltext": false,
+      "tags": [
+        "US",
+        "Shopping",
+        "Discovery"
+      ]
+    },
+    {
+      "id": "shopping-macrumors-deals",
+      "name": "MacRumors Deals",
+      "kind": "rss",
+      "config": {
+        "feedUrl": "https://feeds.macrumors.com/MacRumors-Deals",
+        "_aihot": {
+          "initialBackfillLimit": 3
+        },
+        "summaryIsBody": false
+      },
+      "tier": "T2",
+      "first_party": false,
+      "participation_mode": "editorial",
+      "interval_minutes": 180,
+      "site_fulltext": false,
+      "syndicate_fulltext": false,
+      "tags": [
+        "US",
+        "Shopping",
+        "Discovery"
+      ]
+    },
+    {
+      "id": "shopping-androidpolice-deals",
+      "name": "Android Police Deals",
+      "kind": "rss",
+      "config": {
+        "feedUrl": "https://www.androidpolice.com/feed/deals/",
+        "_aihot": {
+          "initialBackfillLimit": 3
+        },
+        "summaryIsBody": false
+      },
+      "tier": "T2",
+      "first_party": false,
+      "participation_mode": "editorial",
+      "interval_minutes": 240,
+      "site_fulltext": false,
+      "syndicate_fulltext": false,
+      "tags": [
+        "US",
+        "Shopping",
+        "Discovery"
+      ]
+    },
+    {
+      "id": "shopping-moneysavingmom",
+      "name": "Money Saving Mom",
+      "kind": "rss",
+      "config": {
+        "feedUrl": "https://moneysavingmom.com/feed/",
+        "_aihot": {
+          "initialBackfillLimit": 3
+        },
+        "summaryIsBody": false
+      },
+      "tier": "T2",
+      "first_party": false,
+      "participation_mode": "editorial",
+      "interval_minutes": 120,
+      "site_fulltext": false,
+      "syndicate_fulltext": false,
+      "tags": [
+        "US",
+        "Shopping",
+        "Discovery"
+      ]
+    },
+    {
+      "id": "shopping-southernsavers",
+      "name": "Southern Savers",
+      "kind": "rss",
+      "config": {
+        "feedUrl": "https://www.southernsavers.com/feed/",
+        "_aihot": {
+          "initialBackfillLimit": 3
+        },
+        "summaryIsBody": false
+      },
+      "tier": "T2",
+      "first_party": false,
+      "participation_mode": "editorial",
+      "interval_minutes": 120,
+      "site_fulltext": false,
+      "syndicate_fulltext": false,
+      "tags": [
+        "US",
+        "Shopping",
+        "Discovery"
+      ]
+    },
+    {
+      "id": "shopping-heyitsfree",
+      "name": "Hey, It’s Free!",
+      "kind": "rss",
+      "config": {
+        "feedUrl": "https://www.heyitsfree.net/feed/",
+        "_aihot": {
+          "initialBackfillLimit": 3
+        },
+        "summaryIsBody": false
+      },
+      "tier": "T2",
+      "first_party": false,
+      "participation_mode": "editorial",
+      "interval_minutes": 240,
+      "site_fulltext": false,
+      "syndicate_fulltext": false,
+      "tags": [
+        "US",
+        "Shopping",
+        "Discovery"
+      ]
+    },
+    {
+      "id": "shopping-costcoinsider",
+      "name": "Costco Insider",
+      "kind": "rss",
+      "config": {
+        "feedUrl": "https://www.costcoinsider.com/feed/",
+        "_aihot": {
+          "initialBackfillLimit": 3
+        },
+        "summaryIsBody": false
+      },
+      "tier": "T2",
+      "first_party": false,
+      "participation_mode": "editorial",
+      "interval_minutes": 360,
+      "site_fulltext": false,
+      "syndicate_fulltext": false,
+      "tags": [
+        "US",
+        "Shopping",
+        "Discovery"
+      ]
+    },
+    {
+      "id": "shopping-reviews-pcmag",
+      "name": "PCMag Reviews",
+      "kind": "rss",
+      "config": {
+        "feedUrl": "https://www.pcmag.com/feeds/rss/reviews",
+        "_aihot": {
+          "initialBackfillLimit": 3
+        },
+        "summaryIsBody": false
+      },
+      "tier": "T2",
+      "first_party": false,
+      "participation_mode": "editorial",
+      "interval_minutes": 240,
+      "site_fulltext": false,
+      "syndicate_fulltext": false,
+      "tags": [
+        "US",
+        "Reviews & Picks",
+        "Source-attributed"
+      ]
+    },
+    {
+      "id": "shopping-reviews-wired-gear",
+      "name": "WIRED Gear",
+      "kind": "rss",
+      "config": {
+        "feedUrl": "https://www.wired.com/feed/category/gear/latest/rss",
+        "_aihot": {
+          "initialBackfillLimit": 3
+        },
+        "summaryIsBody": false
+      },
+      "tier": "T2",
+      "first_party": false,
+      "participation_mode": "editorial",
+      "interval_minutes": 240,
+      "site_fulltext": false,
+      "syndicate_fulltext": false,
+      "tags": [
+        "US",
+        "Reviews & Picks",
+        "Source-attributed"
+      ]
     }
   ]
 }

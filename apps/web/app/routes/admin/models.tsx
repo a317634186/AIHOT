@@ -1,3 +1,5 @@
+import type { GatewayOverview } from "@aihot/contracts/model-gateway";
+import { ModelGatewaySettings } from "../../features/admin/model-gateway";
 import { SITE } from "@aihot/industry/site";
 import { useState } from "react";
 import { Link } from "react-router";
@@ -25,9 +27,10 @@ interface Usage {
 }
 
 interface Models {
+  gateway:GatewayOverview;
   days: number;
-  capabilities: Array<{ key: string; label: string; env: string; defaultModel: string; vision: boolean; current: { model: string; source: "admin" | "env" | "default" }; usage: Usage[] }>;
-  choices: Array<{ key: string; service: string; vision: boolean }>;
+  capabilities: Array<{ key: string; label: string; env: string; defaultModel: string; vision: boolean; current: { model: string; modelId?:string;connectionSource?:'environment'|'admin'|null; source: "admin" | "env" | "default" }; usage: Usage[] }>;
+  choices: Array<{ key: string; modelId?:string; service: string; vision: boolean }>;
   history: Array<{ at: string; actor: string; subject: string; reason: string | null; before: { model: string; source: string } | null; after: { model: string; source: string } | null }>;
   benches: Array<{ id: string; label: string; sample_size: number; prompt_version: string | null; models: string[]; created_at: string }>;
 }
@@ -39,6 +42,7 @@ export async function loader({ request }: Route.LoaderArgs) {
 
 export const meta: Route.MetaFunction = () => [{ title: `模型与评测 · ${SITE.name} 后台` }];
 
+const PRESET_LABEL:Record<string,string>={'default':'默认模型','gemini-3.8-flash-high':'主模型','gpt-6-luna':'辅助模型'};
 const SOURCE_LABEL = { admin: "后台切换", env: "环境变量", default: "代码默认" } as const;
 const secs = (ms: number | null) => (ms == null ? "—" : ms >= 10_000 ? `${Math.round(ms / 1000)} s` : `${(ms / 1000).toFixed(1)} s`);
 
@@ -54,6 +58,7 @@ export default function ModelsAdmin({ loaderData: m }: Route.ComponentProps) {
       subtitle="每项能力当前用哪个模型、来自哪里（后台切换 > 环境变量 > 代码默认），以及近期的成功率、耗时与费用。切换只影响之后的新任务，已有结果不重算；换精选模型前先看 SelectBench 同批对比。"
       actions={<FilterChips param="days" options={[{ value: "1", label: "24 小时" }, { value: "", label: "7 天" }, { value: "30", label: "30 天" }]} />}
     >
+      <div className="mb-5"><ModelGatewaySettings key={m.gateway.revision} gateway={m.gateway}/></div>
       <div className="grid gap-5">
         {m.capabilities.map((c) => {
           const total = c.usage.reduce((a, u) => a + u.calls, 0);
@@ -63,8 +68,8 @@ export default function ModelsAdmin({ loaderData: m }: Route.ComponentProps) {
               title={
                 <span className="inline-flex flex-wrap items-center gap-2">
                   {c.label}
-                  <span className="font-mono text-[12px] font-normal text-ink-3">{c.current.model}</span>
-                  <Badge tone={c.current.source === "admin" ? "accent" : "muted"}>{SOURCE_LABEL[c.current.source]}</Badge>
+                  <span className="font-mono text-[12px] font-normal text-ink-3">{c.current.modelId||c.current.model}</span>
+                  <Badge tone={c.current.connectionSource==='admin'||c.current.source==='admin'?'accent':'muted'}>{c.current.connectionSource==='admin'?'后台接口配置':SOURCE_LABEL[c.current.source]}</Badge>
                 </span>
               }
               right={
@@ -179,7 +184,7 @@ export default function ModelsAdmin({ loaderData: m }: Route.ComponentProps) {
               .filter((x) => x.vision === !!target?.vision)
               .map((x) => (
                 <option key={x.key} value={x.key}>
-                  {x.key}（{x.service}）
+                  {x.modelId||x.key}（{PRESET_LABEL[x.key]||x.service}）
                 </option>
               ))}
             <option value="__default">恢复默认（{target?.env} 或 {target?.defaultModel}）</option>

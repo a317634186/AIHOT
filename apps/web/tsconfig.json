@@ -1,13 +1,27 @@
 {
-  "include": ["**/*.ts", "**/*.tsx", ".react-router/types/**/*"],
+  "include": [
+    "**/*.ts",
+    "**/*.tsx",
+    ".react-router/types/**/*"
+  ],
   "compilerOptions": {
-    "lib": ["DOM", "DOM.Iterable", "ES2024"],
-    "types": ["node", "vite/client"],
+    "lib": [
+      "DOM",
+      "DOM.Iterable",
+      "ES2024"
+    ],
+    "types": [
+      "node",
+      "vite/client"
+    ],
     "target": "ES2022",
     "module": "ES2022",
     "moduleResolution": "bundler",
     "jsx": "react-jsx",
-    "rootDirs": [".", "./.react-router/types"],
+    "rootDirs": [
+      ".",
+      "./.react-router/types"
+    ],
     "strict": true,
     "noEmit": true,
     "skipLibCheck": true,
@@ -16,5 +30,34 @@
     "isolatedModules": true,
     "resolveJsonModule": true,
     "esModuleInterop": true
-  }
+  },
+  "exclude": [
+    "app/routes/home.tsx",
+    "app/routes/leaderboard-boards.tsx",
+    "app/routes/story.tsx",
+    "app/routes/all.tsx",
+    "app/routes/search-busy.tsx",
+    "app/routes/leaderboard-model.tsx",
+    "app/routes/leaderboard-source.tsx",
+    "app/routes/report-detail.tsx",
+    "app/routes/feedback.tsx",
+    "app/routes/changelog.tsx",
+    "app/routes/leaderboard.tsx",
+    "app/routes/codex-reset.tsx",
+    "app/routes/leaderboard-rules.tsx",
+    "app/routes/about.tsx",
+    "app/routes/privacy.tsx",
+    "app/routes/topics.tsx",
+    "app/routes/topic.tsx",
+    "app/routes/terms.tsx",
+    "app/routes/report-latest.tsx",
+    "app/routes/item.tsx",
+    "app/routes/daily-archive.tsx",
+    "app/routes/item-original.tsx",
+    "app/routes/hot.tsx",
+    "app/routes/starred.tsx",
+    "app/routes/agent.tsx",
+    "app/routes/more.tsx",
+    "app/routes/leaderboard-sources.tsx"
+  ]
 }

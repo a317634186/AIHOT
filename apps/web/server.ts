@@ -1,6 +1,7 @@
 // Production web server: built client assets, the shared redirect table and SSR. Api-owned paths are
 // proxied to the api process, so one port serves the whole site; a reverse proxy in front may also send
 // them to the api directly.
+import { redactText } from "@aihot/contracts/secrets";
 import { createReadStream } from "node:fs";
 import { stat } from "node:fs/promises";
 import { createServer, request as httpRequest } from "node:http";
@@ -50,7 +51,7 @@ async function serveStatic(pathname: string, res: import("node:http").ServerResp
     throw new BadRequest("malformed percent-encoding");
   }
   const file = path.join(CLIENT_DIR, decoded);
-  if (!file.startsWith(CLIENT_DIR)) return false;
+  if (!file.startsWith(CLIENT_DIR + path.sep)) return false;
   const info = await stat(file).catch(() => null);
   if (!info?.isFile()) return false;
   const immutable = pathname.startsWith("/assets/");
@@ -68,7 +69,7 @@ async function serveStatic(pathname: string, res: import("node:http").ServerResp
 const server = createServer((req, res) => {
   handle(req, res).catch((error: unknown) => {
     const bad = error instanceof BadRequest || error instanceof URIError;
-    if (!bad) console.error(JSON.stringify({ level: "error", msg: "web request failed", path: (req.url ?? "").split("?")[0]!.slice(0, 200), error: String(error).slice(0, 500) }));
+    if (!bad) console.error(JSON.stringify({ level: "error", msg: "web request failed", path: (req.url ?? "").split("?")[0]!.slice(0, 200), error: redactText(String(error)).slice(0, 500) }));
     if (res.headersSent) return res.destroy();
     res.writeHead(bad ? 400 : 500, { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-store" });
     res.end(bad ? "Bad request" : "Internal error");
@@ -109,8 +110,11 @@ function pageCache(req: import("node:http").IncomingMessage, res: import("node:h
       // Reuse intent-prefetched data in the browser within the same shared-cache deadline (capped).
       // Never serve it beyond that deadline, including while revalidating or on an error.
       const directives = cc.split(",").map((value) => value.trim()).filter((value) => !/^(?:max-age|s-maxage|stale-while-revalidate|stale-if-error|must-revalidate)(?:=|$)/i.test(value));
+      // A route that says max-age=0 keeps its shared lifetime but asks browsers to revalidate on every
+      // navigation, so a reader's back-and-forth always shows the current list.
+      const browserSeconds = /(?:^|,)\s*max-age=0(?:,|$)/i.test(cc) ? 0 : Math.min(seconds, BROWSER_MAX_SECONDS);
       res.setHeader("Cache-Control", seconds > 0
-        ? `${directives.join(", ")}, max-age=${Math.min(seconds, BROWSER_MAX_SECONDS)}, s-maxage=${seconds}, must-revalidate`
+        ? `${directives.join(", ")}, max-age=${browserSeconds}, s-maxage=${seconds}, must-revalidate`
         : "no-cache");
     }
     return typeof messageOrHeaders === "string" ? writeHead(status, messageOrHeaders) : writeHead(status);
@@ -154,7 +158,7 @@ async function handle(req: import("node:http").IncomingMessage, res: import("nod
 }
 
 process.on("unhandledRejection", (reason) => {
-  console.error(JSON.stringify({ level: "error", msg: "unhandled rejection", error: String(reason).slice(0, 500) }));
+  console.error(JSON.stringify({ level: "error", msg: "unhandled rejection", error: redactText(String(reason)).slice(0, 500) }));
 });
 
 server.keepAliveTimeout = 65_000;

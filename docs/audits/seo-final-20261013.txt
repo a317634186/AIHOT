@@ -1,0 +1,34 @@
+captured_at=2026-10-13T13:27:15Z
+site=https://savlume.com
+note: counts grow continuously; this is the last verified state of this audit
+
+[machine surface totals]
+api_v1_items_mode_all_total=1589
+api_shopping_catalog_total=1588
+hot_topics_total=1189
+selected_snapshot_total=1189
+
+[feeds]
+feed.xml items=50
+feed/full.xml items=50
+feed/daily.xml items=50
+feed/all.xml items=50
+feed/reviews.xml items=50
+
+[sitemaps]
+index_children=2
+index_lastmods=2
+pages_urls=35
+pages_lastmods=35
+items1_urls=1589
+
+[validators / cache]
+openapi_paths=3
+api_v1_items_etag=W/"shopping-v1-items-7f1fe380abd17c83"
+sitemap_cache=public, max-age=0, s-maxage=300, must-revalidate
+og_site_cf=HIT
+
+[structured data]
+utility_pages_breadcrumb=4
+listing_pages_breadcrumb=0  (0 = removed as intended)
+item_page_breadcrumb=1

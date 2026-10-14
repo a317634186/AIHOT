@@ -1,5 +1,6 @@
 // Article body extraction: readable text from the article page, or "unconfirmed" — never a wrong body.
 // Jina Reader is the budgeted fallback for pages that only render in a browser.
+import { load } from "cheerio";
 import { Readability } from "@mozilla/readability";
 import { parseHTML } from "linkedom";
 import { sql } from "../db.ts";
@@ -23,6 +24,11 @@ export interface ExtractedBody {
 const MIN_BODY_CHARS = 200;
 
 export function readable(html: string, url: string): ExtractedBody | null {
+  if (new URL(url).hostname.endsWith("dealnews.com")) {
+    const $=load(html); const main=$('.content-card.details').first();
+    if(main.length){main.find('script,style,nav,.related-offers').remove();const clean=sanitizeBody(main.html()??'',url);const text=stripTags(clean);if(text.length>=MIN_BODY_CHARS){const images=main.find('img[src]').toArray().slice(0,6).map(e=>({kind:'image' as const,url:new URL($(e).attr('src')!,url).href,width:null,height:null}));return {html:clean,text,images,via:'readability'};}}
+  }
+
   const { document } = parseHTML(html);
   try {
     const base = document.createElement("base");

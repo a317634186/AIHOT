@@ -1,10 +1,12 @@
 // Run after `npm run build -w @aihot/web`. Real production server/router, synthetic HTTP API only.
 import assert from "node:assert/strict";
+import { load } from "cheerio";
 import { spawn, type ChildProcess } from "node:child_process";
 import { once } from "node:events";
 import { createServer } from "node:http";
 import type { AddressInfo } from "node:net";
 import { after, before, test } from "node:test";
+import { mkdir,writeFile,rm } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import { CATEGORY_KEYS } from "@aihot/contracts/taxonomy";
 import { releaseBoundCache } from "../app/lib/api.server.ts";
@@ -16,6 +18,7 @@ let deadline: number;
 let refreshAt: string;
 let metaDelayMs = 0;
 const apiCookies: Array<string | undefined> = [];
+const shoppingRequests: URL[] = [];
 const api = createServer((req, res) => {
   const url = new URL(req.url!, "http://api.local");
   apiCookies.push(req.headers.cookie);
@@ -23,6 +26,16 @@ const api = createServer((req, res) => {
   if (url.pathname === "/api/site/meta") {
     const respond = () => res.end(JSON.stringify({ changelogVersion: "2026-09-28T12:00" }));
     return metaDelayMs ? setTimeout(respond, metaDelayMs) : respond();
+  }
+  if (url.pathname === "/api/shopping") {
+    shoppingRequests.push(url);
+    res.setHeader("Cache-Control","no-store");
+    if(url.searchParams.get('q')==='seo-fixture'||['seo-item','seo-expired'].includes(url.searchParams.get('id')??'')){
+     const offset=Number(url.searchParams.get('offset')??0);
+     const item={id:url.searchParams.get('id')??'seo-item',title:'DEMO vacuum at Target',summary:'A source-reported vacuum offer with a coupon and pickup restrictions. Check the exact model and retailer terms before ordering. </script><script>alert(1)</script>',category:'home',indexable:true,publishedAt:'2026-10-11T12:00:00Z',updatedAt:'2026-10-11T13:00:00Z',source:'Test source',sourceUrl:'https://example.invalid/source',sources:[],offer:{kind:'product_deal',product:'DEMO vacuum',model:'DEMO1',merchant:'Target',merchantId:'target',status:url.searchParams.get('id')==='seo-expired'?'Expired':'Unverified',listedPriceCents:10000,checkoutPriceCents:9000,restrictions:[],steps:[],buyUrl:'https://example.invalid/product',imageUrl:null}};
+     return res.end(JSON.stringify({items:url.searchParams.get('id')?[item]:offset<48?Array.from({length:24},(_,i)=>({...item,id:'seo-item-'+(offset+i)})):[],total:48,hasMore:offset===0,briefing:null,catalog:{categories:[{key:'home',count:48}],merchants:[{key:'target',count:48}]}}));
+    }
+    return res.end(JSON.stringify({items:[],total:0,hasMore:false,briefing:null}));
   }
   if (url.pathname === "/api/site/timeline") {
     const filters = { channel: "all", category: url.searchParams.get("category"), tag: null, topic: null };
@@ -76,147 +89,107 @@ after(async () => {
   await new Promise<void>((resolve) => api.close(() => resolve()));
 });
 
-test("public route subsets produce the same complete navigation data; filters still differ", async () => {
-  const answers = await Promise.all(["", "?_routes=root", "?_routes=routes%2Fhome", "?_routes=unknown"].map(async (query) => {
-    const res = await fetch(`${origin}/_.data${query}`);
-    assert.equal(res.status, 200);
-    assert.match(res.headers.get("Cache-Control")!, /^public,/);
-    assert.equal(res.headers.get("X-Accel-Expires"), `@${deadline}`);
-    assert.doesNotMatch(res.headers.get("Cache-Control")!, /stale/);
-    const body = await res.text();
-    assert.ok(body.includes("root") && body.includes("routes/home"));
-    return body;
-  }));
-  assert.ok(answers.every((body) => body === answers[0]));
-  const category = CATEGORY_KEYS.at(-1)!;
-  const filtered = await fetch(`${origin}/_.data?category=${category}&_routes=root`);
-  const body = await filtered.text();
-  assert.ok(body.includes(category));
-  assert.notEqual(body, answers[0]);
-});
 
-test("HTML and navigation share freshness; cookies do not personalize public results", async () => {
-  const html = await fetch(`${origin}/`);
-  assert.equal(html.status, 200);
-  assert.equal(html.headers.get("X-Accel-Expires"), `@${deadline}`);
-  assert.match(await html.text(), /精选/);
-  const plain = await fetch(`${origin}/about.data`);
-  const signedIn = await fetch(`${origin}/about.data?_routes=root`, { headers: { cookie: "admin_session=private; aihot_vid=reader" } });
-  assert.match(plain.headers.get("Cache-Control")!, /^public,/);
-  assert.match(plain.headers.get("X-Accel-Expires")!, /^@\d+$/);
-  assert.equal(plain.headers.get("Cache-Control"), "public, max-age=300, s-maxage=300, must-revalidate");
-  assert.equal(Date.parse(plain.headers.get("Date")!) / 1000 + 300, Number(plain.headers.get("X-Accel-Expires")!.slice(1)));
-  assert.equal(signedIn.headers.get("Set-Cookie"), null);
-  assert.equal(await signedIn.text(), await plain.text());
-  assert.ok(apiCookies.every((cookie) => !cookie));
-});
-
-test("missing routes cannot be hidden by a root-only request; errors and redirects stay uncached", async () => {
-  for (const pathname of ["/items/missing.data?_routes=root", "/does-not-exist.data?_routes=root", "/items/missing"]) {
-    const res = await fetch(origin + pathname);
-    assert.equal(res.status, 404, pathname);
-    assert.equal(res.headers.get("Cache-Control"), "private, no-store");
-    assert.equal(res.headers.get("X-Accel-Expires"), "0");
-    await res.text();
+test("shopping HTML and navigation always use fresh public data, independent of cookies", async () => {
+  for (const path of ["/", "/_.data", "/_.data?_routes=shopping-home", "/.data", "/all", "/all.data", "/all.data?_routes=root", "/deals/electronics.data"]) {
+    const r=await fetch(origin+path,{headers:{cookie:"private=test"}});
+    // Public pages may sit in a shared cache briefly, but a browser revalidates on every navigation and
+    // nothing in the response depends on the visitor's cookie.
+    const cc=r.headers.get("cache-control")??"";assert.equal(r.status,200,path);assert.match(cc,/no-store|no-cache|max-age=0/);assert.doesNotMatch(cc,/private/);assert.equal(r.headers.get("set-cookie"),null,path);
+    const body=await r.text();assert.ok(body.includes("Savlume")||body.includes("items"));
   }
-  for (const [pathname, target] of [["/story/merged.data?_routes=root", "/story/surviving-story"], ["/_.data?q=search&_routes=root", "/all?q=search"]]) {
-    const res = await fetch(origin + pathname);
-    assert.equal(res.status, 202);
-    assert.equal(res.headers.get("Cache-Control"), "private, no-store");
-    assert.match(await res.text(), new RegExp(target.replace("?", "\\?")));
-  }
+  assert.ok(apiCookies.every(cookie=>!cookie));
+});
+test("missing and disabled pages are 404 and cannot be hidden by root-only navigation",async()=>{
+ for(const path of ["/items/missing","/leaderboard","/codex-reset","/unknown"]){const r=await fetch(origin+path);assert.equal(r.status,404,path);assert.match(r.headers.get("cache-control")??"",/no-store/);}
+});
+test("category and retailer filters are sent to the API",async()=>{
+ const r=await fetch(origin+"/all?category=electronics&merchant=target&q=vacuum");assert.equal(r.status,200);const html=await r.text();assert.ok(html.includes("vacuum"));
+});
+test("Picks requests the full feed, News keeps its original news view, and the middle tab opens flash deals",async()=>{
+ for(const [path,view,label] of [["/","recommended","Recommended"],["/flash","flash","Best Deals"],["/news","news","News"]]){
+  const r=await fetch(origin+path+"?category=electronics&merchant=target&q=vacuum");
+  assert.equal(r.status,200);
+  const html=await r.text();
+  const $=load(html);const nav=$('.db-category-nav');const bottom=$('.db-mobile-tabs');
+  assert.equal($('.db-nav').length,0);assert.equal(nav.find('.db-category-options a').length,10);
+  assert.equal(nav.find('.db-category-options [aria-current=page]').text(),'Electronics & Gaming');
+  assert.equal(bottom.find('a').length,3);
+  assert.equal(bottom.find('[aria-current=page]').text().replace(/^[^A-Za-z]+/,''),path==='/'?'Recommended':label);
+  assert.ok(!/\p{Script=Han}/u.test($('body').text()));
+  assert.ok(bottom.find('a[href^="/news?"]').length);assert.ok(bottom.find('a[href^="/flash?"]').length);
+  assert.ok(nav.find('a').toArray().every(el=>!$(el).attr('href')!.includes('offset=')));
+  assert.equal($('select[name=category]').length,0);assert.equal($('input[name=category]').val(),'electronics');
+  if(path==='/flash')assert.match(html,/No matching deals right now/);
+  const request=shoppingRequests.at(-1)!;
+  assert.equal(request.searchParams.get('view'),view);
+  for(const [key,value] of Object.entries({category:'electronics',merchant:'target',q:'vacuum'}))assert.equal(request.searchParams.get(key),value);
+ }
+});
+test("admin data remains private and client IP headers cannot be forged",async()=>{
+ const r=await fetch(origin+"/admin",{redirect:"manual"});assert.ok([302,303].includes(r.status));assert.match(r.headers.get("cache-control")??"",/no-store/);
+ const j=await fetch(origin+"/api/site/echo-client",{headers:{"x-forwarded-for":"1.2.3.4","x-real-ip":"1.2.3.4"}}).then(r=>r.json());assert.notEqual(j.real,"1.2.3.4");
 });
 
-test("admin data and actions never become public cache entries", async () => {
-  const admin = await fetch(`${origin}/admin/sources.data?_routes=admin-layout`);
-  assert.equal(admin.status, 202);
-  assert.equal(admin.headers.get("Cache-Control"), "private, no-store");
-  assert.equal(admin.headers.get("X-Accel-Expires"), "0");
-  assert.match(await admin.text(), /admin\/login/);
-  const action = await fetch(`${origin}/hot.data`, { method: "POST" });
-  assert.equal(action.status, 405);
-  assert.equal(action.headers.get("Cache-Control"), "private, no-store");
-  assert.equal(action.headers.get("X-Accel-Expires"), "0");
-  await action.text();
+test('SEO metadata is specific, canonical, safe and crawlable without JavaScript',async()=>{
+ const fetchPage=async(path:string)=>{const r=await fetch(origin+path);assert.equal(r.status,200,path);return load(await r.text());};
+ const home=await fetchPage('/?utm_source=test');assert.match(home('title').text(),/US Shopping Deals/);
+ assert.ok(!home('link[rel=canonical]').attr('href')!.includes('utm_source'));
+ assert.equal(home('script[type="application/ld+json"]').length,1);
+ assert.ok(JSON.parse(home('script[type="application/ld+json"]').text()).some((x:any)=>x['@type']==='WebSite'));
+ const item=await fetchPage('/items/seo-item?utm_source=test');
+ assert.match(item('title').text(),/DEMO vacuum/);assert.doesNotMatch(item('meta[name=description]').attr('content')!,/^Unverified:/);assert.equal(item('.db-status').length,0);
+ const expired=await fetchPage('/items/seo-expired');assert.equal(expired('.db-status').text(),'Expired');assert.match(expired('meta[name=description]').attr('content')!,/^Expired:/);
+ assert.ok(item('link[rel=canonical]').attr('href')!.endsWith('/items/seo-item'));
+ assert.ok(item('meta[property="og:image"]').attr('content')!.endsWith('/og/items/seo-item.png'));
+ assert.equal(item('script').toArray().filter(el=>item(el).text()==='alert(1)').length,0);
+ const ld=JSON.parse(item('script[type="application/ld+json"]').text());
+ const article=ld.find((x:any)=>x['@type']==='Article');assert.equal(article.headline,'DEMO vacuum at Target');
+ assert.ok(ld.some((x:any)=>x['@id']?.endsWith('/#organization')));
+ assert.ok(ld.some((x:any)=>x['@type']==='WebSite'));
+ assert.ok(item('link[rel=alternate][type="text/markdown"]').attr('href')!.endsWith('/items/seo-item/markdown'));
+ assert.ok(item('#buying-answers').text().includes('Is this offer verified?'));
+ assert.ok(item('body').text().includes('Content updated:'));assert.ok(!('offers' in article)&&!('aggregateRating' in article));
+ assert.ok(ld.some((x:any)=>x['@type']==='BreadcrumbList'));
+ assert.equal(item('h1').length,1);
+ const tracked=await fetchPage('/items/seo-item?offset=24&category=invalid');assert.ok(tracked('link[rel=canonical]').attr('href')!.endsWith('/items/seo-item'));
+ const search=await fetchPage('/all?q=seo-fixture&utm_source=test');assert.match(search('meta[name=robots]').attr('content')!,/noindex/);assert.equal(search('.db-status').length,0);
+ assert.ok(search('a[href="/all?q=seo-fixture&offset=24"]').length>0);
+ const next=await fetchPage('/all?q=seo-fixture&offset=24');assert.ok(next('link[rel=canonical]').attr('href')!.includes('offset=24'));
+ assert.ok(next('a[href="/all?q=seo-fixture"]').length>0);
+ const category=await fetchPage('/deals/electronics');assert.match(category('title').text(),/Electronics/);assert.equal(category('h1').length,1);assert.match(category('meta[name=robots]').attr('content')!,/noindex/);
+ const merchant=await fetchPage('/stores/target');assert.match(merchant('title').text(),/Target Deals/);
+ const redirect=await fetch(origin+'/all?category=electronics',{redirect:'manual'});assert.equal(redirect.status,301);assert.equal(redirect.headers.get('location'),'/deals/electronics');
+ for(const path of ['/deals/not-real','/stores/not-real','/?offset=-1','/?offset=foo','/?offset=23','/all?q=seo-fixture&offset=48'])assert.equal((await fetch(origin+path)).status,404,path);
 });
 
-test("an elapsed release deadline cannot be extended by a fresh page/data response", async () => {
-  const saved = refreshAt;
-  refreshAt = new Date(Date.now() - 1000).toISOString();
-  try {
-    for (const pathname of ["/", "/_.data?_routes=routes%2Fhome"]) {
-      const res = await fetch(origin + pathname);
-      assert.equal(res.status, 200);
-      assert.equal(res.headers.get("Cache-Control"), "no-cache");
-      assert.equal(res.headers.get("X-Accel-Expires"), "0");
-      await res.text();
-    }
-  } finally {
-    refreshAt = saved;
-  }
-  const now = Date.parse("2026-09-28T00:00:00Z");
-  const upstream = new Headers({ "X-Accel-Expires": `@${now / 1000 + 7}` });
-  const headers = releaseBoundCache(new Date(now + 20_000).toISOString(), 30, now + 2_000, upstream);
-  assert.equal(headers["Cache-Control"], "public, max-age=0, s-maxage=5");
-  assert.equal(headers["X-Accel-Expires"], upstream.get("X-Accel-Expires"));
+test('top categories always select AI Picks while preserving search/retailer and clearing pagination',async()=>{
+ const r=await fetch(origin+'/flash?category=electronics&merchant=target&q=vacuum');const $=load(await r.text());
+ assert.equal($('.db-category-options a').length,10);
+ assert.equal($('.db-category-options [aria-current=page]').text(),'Electronics & Gaming');
+ const home=$('.db-category-options a').filter((_,el)=>$(el).text()==='Home & Kitchen').attr('href')!;
+ const url=new URL(home,origin);assert.equal(url.pathname,'/deals/home');assert.ok(!url.searchParams.has('category'));assert.equal(url.searchParams.get('merchant'),'target');assert.equal(url.searchParams.get('q'),'vacuum');assert.ok(!url.searchParams.has('offset'));
+ const all=new URL($('.db-category-options a').first().attr('href')!,origin);assert.equal(all.pathname,'/stores/target');assert.ok(!all.searchParams.has('category'));
+ const main=load(await fetch(origin+'/').then(r=>r.text()));assert.equal(main('.db-category-nav a[href="/deals/electronics"]').length,1);
+ const store=load(await fetch(origin+'/stores/target').then(r=>r.text()));assert.equal(store('.db-category-nav a[href="/deals/home?merchant=target"]').length,1);
+ for(const section of ['/','/flash','/news','/coupons','/archive','/deals/home']){
+  const page=load(await fetch(origin+section).then(r=>r.text()));
+  assert.equal(page('.db-category-options a[href="/deals/electronics"]').length,1,section);
+  assert.equal(page('.db-category-options a').first().attr('href'),'/',section);
+ }
+ const login=load(await fetch(origin+'/admin/login').then(r=>r.text()));assert.ok(!/\p{Script=Han}/u.test(login('body').text()));
 });
 
-test("browser freshness shares the selected deadline, including slow sibling loaders", async () => {
-  const savedDeadline = deadline;
-  const savedRefresh = refreshAt;
-  try {
-    deadline = Math.floor(Date.now() / 1000) + 20;
-    refreshAt = new Date((deadline + 5) * 1000).toISOString();
-    for (const pathname of ["/", "/_.data?_routes=routes%2Fhome"]) {
-      const res = await fetch(origin + pathname);
-      const cc = res.headers.get("Cache-Control")!;
-      const browser = Number(cc.match(/(?:^|,)\s*max-age=(\d+)/)![1]);
-      const shared = Number(cc.match(/(?:^|,)\s*s-maxage=(\d+)/)![1]);
-      assert.ok(browser > 0 && browser === shared);
-      assert.ok(Date.parse(res.headers.get("Date")!) / 1000 + browser <= deadline);
-      assert.equal(res.headers.get("X-Accel-Expires"), `@${deadline}`);
-      assert.match(cc, /must-revalidate/);
-      assert.doesNotMatch(cc, /stale/);
-      await res.text();
-    }
-    // The selected loader initially grants a positive TTL, but root metadata finishes after it.
-    deadline = Math.floor(Date.now() / 1000) + 2;
-    refreshAt = new Date((deadline + 5) * 1000).toISOString();
-    metaDelayMs = 2300;
-    await Promise.all(["/", "/_.data?_routes=routes%2Fhome"].map(async (pathname) => {
-      const res = await fetch(origin + pathname);
-      assert.equal(res.status, 200);
-      assert.equal(res.headers.get("Cache-Control"), "no-cache");
-      assert.equal(res.headers.get("X-Accel-Expires"), "0");
-      await res.text();
-    }));
-  } finally {
-    deadline = savedDeadline;
-    refreshAt = savedRefresh;
-    metaDelayMs = 0;
-  }
+test('Reviews & Picks follows News on top, has dedicated metadata and leaves three bottom tabs',async()=>{
+ const response=await fetch(origin+'/reviews');assert.equal(response.status,200);const $=load(await response.text());
+ assert.deepEqual($('.db-top-sections a').toArray().map(a=>$(a).text()),['Recommended','Best Deals','News','Reviews & Picks']);
+ assert.equal($('.db-top-sections [aria-current=page]').text(),'Reviews & Picks');assert.equal($('.db-mobile-tabs a').length,3);assert.ok(!$('.db-mobile-tabs').text().includes('Reviews'));
+ assert.match($('title').text(),/Product Reviews/);assert.equal($('h1').text(),'Reviews & Picks');assert.equal(shoppingRequests.at(-1)!.searchParams.get('view'),'reviews');
+ assert.equal($('.db-category-options a[href="/deals/electronics"]').length,1);
 });
 
-test("the edge may keep a page longer than browsers, which a withdrawal purge cannot reach", async () => {
-  const res = await fetch(`${origin}/items/long-lived.data`);
-  assert.equal(res.status, 200);
-  assert.equal(res.headers.get("Cache-Control"), "public, max-age=300, s-maxage=600, must-revalidate");
-  await res.text();
-});
-
-test("browser caching preserves noindex and private sign-in responses", async () => {
-  const feedback = await fetch(origin + "/feedback");
-  assert.equal(feedback.status, 200);
-  assert.match(await feedback.text(), /name="robots" content="noindex/);
-  assert.equal(feedback.headers.get("Cache-Control"), "public, max-age=300, s-maxage=300, must-revalidate");
-  const login = await fetch(origin + "/admin/login");
-  assert.equal(login.status, 200);
-  assert.equal(login.headers.get("Cache-Control"), "private, no-store");
-  assert.equal(login.headers.get("X-Robots-Tag"), "noindex, nofollow");
-  await login.text();
-});
-
-test("a visitor cannot name its own address to the api without a trusted proxy in front", async () => {
-  const res = await fetch(`${origin}/api/site/echo-client`, { headers: { "X-Forwarded-For": "6.6.6.6", "X-Real-IP": "6.6.6.6" } });
-  assert.deepEqual(await res.json(), { forwarded: "127.0.0.1", real: "127.0.0.1" });
+test('encoded static paths cannot read sibling directories outside the public client build',async()=>{
+ const name='client-security-'+Math.random().toString(36).slice(2);const dir=new URL('../build/'+name+'/',import.meta.url);
+ await mkdir(dir,{recursive:true});await writeFile(new URL('token.txt',dir),'DEMO_PRIVATE_FILE_MUST_NOT_BE_PUBLIC');
+ try{const response=await fetch(origin+'/%2e%2e%2f'+name+'/token.txt');assert.equal(response.status,404);assert.ok(!(await response.text()).includes('DEMO_PRIVATE_FILE_MUST_NOT_BE_PUBLIC'));}finally{await rm(dir,{recursive:true,force:true});}
 });

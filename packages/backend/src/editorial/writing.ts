@@ -1,6 +1,8 @@
 // The writing side of the analysis: the prefilter's and the content understanding's inputs, the
 // title/summary prompts for everything else, the output parsing and the deterministic guards. The
 // wording lives in the industry pack (industry/prompts/); a failed guard falls back without a repair call.
+import { SHOPPING } from "@aihot/industry/shopping";
+import { safeCopy } from "@aihot/contracts/shopping";
 import { IDENTITY_CONTEXT_ALIASES, IDENTITY_LEXICON, PUBLISHER_DOMAINS } from "@aihot/industry/taxonomy";
 import { onlyXArticleLink } from "../sources/x.ts";
 import type { AnalyzeInputArticle } from "./input.ts";
@@ -64,6 +66,7 @@ const stripNoise = (s: string) => s.replace(/https?:\/\/\S+/g, " ").replace(/@[A
 /** A short tweet in Chinese needs no translation; mixed or English ones do. */
 export function needsShortTweetTranslation(text: string): boolean {
   const clean = stripNoise(text);
+  if (SHOPPING.enabled) return /[一-鿿぀-ヿ가-힯]/.test(clean);
   if (!looksZh(clean)) return true;
   if (chineseDensity(clean) < 0.65) return true;
   const englishRuns = clean.match(/[A-Za-z][A-Za-z0-9+.#/-]*(?:\s+[A-Za-z][A-Za-z0-9+.#/-]*)+/g) ?? [];
@@ -126,7 +129,7 @@ export function missingEvidence(a: AnalyzeInputArticle): boolean {
 }
 
 export const understandUser = (a: AnalyzeInputArticle) =>
-  ["请按系统规则理解以下单篇材料，一次返回全部六个字段。", renderContext(a, { annotateQuoted: true })].join("\n\n");
+  ["Apply the system rules. Return all six fields with English values. Source material follows.", renderContext(a, { annotateQuoted: true })].join("\n\n");
 
 // ── Identity context and guard ────────────────────────────────────────────────────────────────
 
@@ -220,7 +223,7 @@ export function enforceIdentity(input: TranslateInput, copy: { titleZh: string; 
   const unsupportedTitleEntityIds = matchEntityIds([copy.titleZh]).filter((id) => !allowed.has(id));
   const unsupportedSummaryEntityIds = matchEntityIds([copy.summaryZh]).filter((id) => !allowed.has(id));
   return {
-    titleZh: unsupportedTitleEntityIds.length ? (looksZh(input.title) ? input.title : "") : copy.titleZh,
+    titleZh: unsupportedTitleEntityIds.length ? (SHOPPING.enabled || looksZh(input.title) ? input.title : "") : copy.titleZh,
     summaryZh: unsupportedSummaryEntityIds.length ? "" : copy.summaryZh,
     identityGuard: {
       outcome: unsupportedTitleEntityIds.length || unsupportedSummaryEntityIds.length ? "fallback" : "pass",
@@ -266,6 +269,7 @@ export const isShortTweetInput = (input: TranslateInput) => input.sourceKind ===
 
 /** The length rule (compacted without another call) and the identity guard, for any writing model. */
 export function finalizeCopy(input: TranslateInput, copy: { titleZh: string; summaryZh: string }) {
+  if (SHOPPING.enabled) return enforceIdentity(input, { titleZh: safeCopy(copy.titleZh), summaryZh: safeCopy(copy.summaryZh) });
   let summaryZh = copy.summaryZh;
   if (!isShortTweetInput(input) && summaryZh && !answerFirstSummaryLengthOk(summaryZh, input)) summaryZh = compactAnswerFirstSummary(summaryZh);
   return enforceIdentity(input, { titleZh: copy.titleZh, summaryZh });
@@ -277,7 +281,7 @@ const sourceName = (name?: string) => name?.trim() || "（未注明）";
 
 function anchorDate(d: Date | undefined): string {
   if (!d || Number.isNaN(d.getTime())) return "未注明";
-  return new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Shanghai", year: "numeric", month: "2-digit", day: "2-digit" }).format(d);
+  return new Intl.DateTimeFormat("en-CA", { timeZone: SHOPPING.timeZone, year: "numeric", month: "2-digit", day: "2-digit" }).format(d);
 }
 
 export function buildArticlePrompt(input: TranslateInput): string {

@@ -1,3 +1,4 @@
+import { SHOPPING } from "@aihot/industry/shopping";
 // What the judging steps read about an article: loaded once per analysis and rendered per step.
 import { beijingDate, beijingTime } from "@aihot/contracts/time";
 import { sql } from "../db.ts";
@@ -55,7 +56,7 @@ export async function loadAnalyzeInput(articleId: string): Promise<AnalyzeInputA
            s.name AS source_name, s.kind AS source_kind, s.tier, s.first_party, s.tags AS source_tags, s.owner_entity_id, s.config,
            tr.body_text AS translation_zh
     FROM articles a JOIN sources s ON s.id = a.source_id
-    LEFT JOIN translations tr ON tr.article_id = a.id AND tr.lang = 'zh' AND tr.revision >= a.revision
+    LEFT JOIN translations tr ON tr.article_id = a.id AND tr.lang = ${SHOPPING.enabled ? 'en' : 'zh'} AND tr.revision >= a.revision
     WHERE a.id = ${articleId}`;
   if (!row) return null;
   return {

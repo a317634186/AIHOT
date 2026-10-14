@@ -1,1 +1,1 @@
-判断方法：先用一句话说清楚新报道报道了什么发生（谁、做了什么、对什么、何时），再逐个候选比较。拿不准 SAME_OCCURRENCE 和 SAME_STORY 时，问自己：如果两篇都是真的，世界上是发生了一件事，还是先后发生了两件有直接关系的事？
+Compare exact offer identities and source evidence. Missing identity => UNRELATED. Do not merge based on brand or product-name similarity.

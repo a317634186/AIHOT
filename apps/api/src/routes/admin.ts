@@ -1,5 +1,7 @@
 // /api/admin/*: queries are GET, creation POST, edits PATCH, business commands POST.
 // Every route goes through adminHandler (session + CSRF); manual changes are audited in the modules.
+import { gatewayOverview,saveGateway,resetGateway } from "@aihot/backend/providers/model-gateway";
+import { testGateway } from "@aihot/backend/admin/model-gateway";
 import { readFile } from "node:fs/promises";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { actorOf } from "@aihot/backend/admin/auth";
@@ -118,6 +120,10 @@ export function registerAdmin(app: FastifyInstance) {
 
 
   // Models and evaluation (F20)
+  app.get('/api/admin/models/gateway',adminHandler(async()=>gatewayOverview()));
+  app.put('/api/admin/models/gateway',{bodyLimit:16*1024},adminHandler(async(req,_reply,admin)=>saveGateway(req.body,actorOf(admin))));
+  app.post('/api/admin/models/gateway/test',{bodyLimit:16*1024},adminHandler(async(req,_reply,admin)=>{const b=body<{configuration:unknown;slot:unknown}>(req);return testGateway(b.configuration,b.slot,actorOf(admin));}));
+  app.delete('/api/admin/models/gateway',adminHandler(async(req,_reply,admin)=>{const b=body<{revision:number;reason:string}>(req);return resetGateway(b.revision,b.reason,actorOf(admin));}));
   app.get("/api/admin/models", adminHandler(async (req) => modelsOverview(Math.min(90, Number(q(req).days) || 7))));
   app.post("/api/admin/models/:capability", adminHandler(async (req, _reply, admin) => {
     const b = body<{ model: string | null; reason: string }>(req);

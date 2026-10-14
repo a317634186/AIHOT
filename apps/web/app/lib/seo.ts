@@ -50,7 +50,7 @@ export function pageMeta(input: PageMetaInput): MetaDescriptor[] {
   const title = input.title ? (input.rawTitle ? input.title : titled(input.title)) : HOME_TITLE;
   const description = input.description ?? SITE_DESCRIPTION;
   const url = `${base}${input.path}`;
-  const image = input.image ? (input.image.startsWith("http") ? input.image : `${base}${input.image}`) : `${base}/og/site.png`;
+  const image = input.image ? (input.image.startsWith("http") ? input.image : `${base}${input.image}`) : `${base}/og/site.png?brand=${encodeURIComponent(SITE.name+'-'+SITE.tagline)}`;
   const tags: MetaDescriptor[] = [
     { title },
     { name: "description", content: description },
@@ -70,6 +70,7 @@ export function pageMeta(input: PageMetaInput): MetaDescriptor[] {
     { name: "twitter:image", content: image },
   ];
   if (input.noindex) tags.push({ name: "robots", content: input.nofollow ? "noindex, nofollow" : "noindex, follow" });
+  if (input.image) tags.push({property:"og:image:alt",content:input.title??SITE.name});
   if (input.jsonLd) tags.push({ "script:ld+json": input.jsonLd });
   return tags;
 }

@@ -1,0 +1,219 @@
+{
+  "pages": [
+    {
+      "id": "gadgeteer",
+      "url": "https://the-gadgeteer.com/",
+      "status": 200,
+      "title": "The Gadgeteer - Gadget news and reviews since 1997!",
+      "feeds": [
+        "https://the-gadgeteer.com/feed/",
+        "https://the-gadgeteer.com/comments/feed/"
+      ]
+    },
+    {
+      "id": "techradar",
+      "url": "https://www.techradar.com/how-to/techradar-rss",
+      "status": 200,
+      "title": "TechRadar RSS | TechRadarTech Radar ProTech Radar GamingTech Radar ProTech Radar GamingTech Radar",
+      "feeds": [
+        "https://www.techradar.com/feeds.xml",
+        "https://www.techradar.com/feeds/tag/tech",
+        "https://www.techradar.com/feeds/articletype/how-to",
+        "https://www.techradar.com/how-to/techradar-rss",
+        "https://global.techradar.com/da-dk/how-to/techradar-danmark-rss",
+        "https://global.techradar.com/fi-fi/how-to/techradar-suomen-rss-syote",
+        "https://global.techradar.com/no-no/how-to/techradar-norge-rss",
+        "https://global.techradar.com/sv-se/how-to/techradar-sverige-rss",
+        "https://global.techradar.com/it-it/how-to/techradar-rss-it",
+        "https://global.techradar.com/nl-nl/how-to/techradar-rss-benelux",
+        "https://global.techradar.com/fr-fr/how-to/flux-rss-techradar",
+        "https://global.techradar.com/de-de/how-to/techradar-deutschland-rss",
+        "https://global.techradar.com/es-es/how-to/techradar-rss-es",
+        "https://www.facebook.com/sharer/sharer.php?u=https%3A%2F%2Fwww.techradar.com%2Fhow-to%2Ftechradar-rss",
+        "https://twitter.com/intent/tweet?text=TechRadar+RSS&url=https%3A%2F%2Fwww.techradar.com%2Fhow-to%2Ftechradar-rss",
+        "whatsapp://send?text=TechRadar+RSS+https%3A%2F%2Fwww.techradar.com%2Fhow-to%2Ftechradar-rss?fwa"
+      ]
+    },
+    {
+      "id": "dcrainmaker",
+      "url": "https://www.dcrainmaker.com/",
+      "status": 200,
+      "title": "DC Rainmaker",
+      "feeds": [
+        "https://www.dcrainmaker.com/feed",
+        "https://www.dcrainmaker.com/comments/feed",
+        "https://www.dcrainmaker.com/feed/"
+      ]
+    },
+    {
+      "id": "androidauthority",
+      "url": "https://www.androidauthority.com/",
+      "status": 403,
+      "title": "Attention Required! | Cloudflare",
+      "feeds": []
+    },
+    {
+      "id": "bensbargains",
+      "url": "https://bensbargains.com/",
+      "status": 200,
+      "title": "Ben's Bargains - Best Deals, Bargains, Freebies",
+      "feeds": []
+    },
+    {
+      "id": "soundguys",
+      "url": "https://www.soundguys.com/",
+      "status": 200,
+      "title": "SoundGuys - Headphones, earbuds and speakers reviews.",
+      "feeds": [
+        "https://www.soundguys.com/feed/"
+      ]
+    },
+    {
+      "id": "seriouseats",
+      "url": "https://www.seriouseats.com/",
+      "status": 402,
+      "title": "",
+      "feeds": []
+    },
+    {
+      "id": "rtings",
+      "url": "https://www.rtings.com/rss-feeds",
+      "status": 200,
+      "title": "RSS Feeds - RTINGS.com",
+      "feeds": [
+        "https://www.rtings.com/latest-rss.xml"
+      ]
+    },
+    {
+      "id": "tomsguide",
+      "url": "https://www.tomsguide.com/",
+      "status": 200,
+      "title": "Tom's Guide | Tech Product Reviews, Top Picks and How To",
+      "feeds": [
+        "https://www.tomsguide.com/feeds.xml"
+      ]
+    }
+  ],
+  "feeds": [
+    {
+      "id": "gadgeteer",
+      "url": "https://the-gadgeteer.com/feed/",
+      "status": 200,
+      "items": 25,
+      "sample": {
+        "title": "10 Gerber Tools Built to Never Flinch",
+        "url": "https://the-gadgeteer.com/2026/10/11/gerber-knives-tools-built-to-never-flinch/",
+        "date": "Sun, 11 Oct 2026 12:30:00 +0000"
+      },
+      "detail": {
+        "url": "https://the-gadgeteer.com/2026/10/11/gerber-knives-tools-built-to-never-flinch/",
+        "status": 200,
+        "title": "10 Gerber Tools Built to Never Flinch | Gerber Knives",
+        "textLength": 10638,
+        "paywall": false
+      }
+    },
+    {
+      "id": "soundguys",
+      "url": "https://www.soundguys.com/feed/",
+      "status": 200,
+      "items": 10,
+      "sample": {
+        "title": "Best noise canceling earbuds 2026: The top ANC we&#8217;ve tested",
+        "url": "https://www.soundguys.com/best-noise-cancelling-wireless-earbuds-27207/",
+        "date": "Fri, 09 Oct 2026 17:00:51 +0000"
+      },
+      "detail": {
+        "url": "https://www.soundguys.com/best-noise-cancelling-wireless-earbuds-27207/",
+        "status": 200,
+        "title": "Best noise canceling earbuds 2026: The top ANC we've tested - SoundGuys",
+        "textLength": 33070,
+        "paywall": false
+      }
+    },
+    {
+      "id": "dcrainmaker",
+      "url": "https://www.dcrainmaker.com/feed/",
+      "status": 200,
+      "items": 8,
+      "sample": {
+        "title": "COROS Pace 4 Pro In-Depth Review: Worth the Upsell?",
+        "url": "https://www.dcrainmaker.com/2026/10/coros-pace-4-pro-in-depth-review.html",
+        "date": "Thu, 08 Oct 2026 22:26:46 +0000"
+      },
+      "detail": {
+        "url": "https://www.dcrainmaker.com/2026/10/coros-pace-4-pro-in-depth-review.html",
+        "status": 200,
+        "title": "COROS Pace 4 Pro In-Depth Review: Worth the Upsell? | DC Rainmaker",
+        "textLength": 28442,
+        "paywall": false
+      }
+    },
+    {
+      "id": "rtings",
+      "url": "https://www.rtings.com/latest-rss.xml",
+      "status": 200,
+      "items": 30,
+      "sample": {
+        "title": "JBL Cove M1 Speaker Review",
+        "url": "https://www.rtings.com/speaker/reviews/jbl/cove-m1",
+        "date": "Fri, 09 Oct 2026 11:34:28 -0400"
+      },
+      "detail": {
+        "url": "https://www.rtings.com/speaker/reviews/jbl/cove-m1",
+        "status": 200,
+        "title": "JBL Cove M1 Review - RTINGS.com",
+        "textLength": 0,
+        "paywall": false
+      }
+    },
+    {
+      "id": "tomsguide",
+      "url": "https://www.tomsguide.com/feeds.xml",
+      "status": 200,
+      "items": 50,
+      "sample": {
+        "title": " Android 17 vs iOS 27 — which platform does lock screen widgets the best? ",
+        "url": "https://www.tomsguide.com/phones/android-phones/android-17-vs-ios-27-which-platform-does-lock-screen-widgets-the-best",
+        "date": "Sun, 11 Oct 2026 11:45:00 +0000"
+      },
+      "detail": {
+        "url": "https://www.tomsguide.com/phones/android-phones/android-17-vs-ios-27-which-platform-does-lock-screen-widgets-the-best",
+        "status": 200,
+        "title": "Android 17 vs iOS 27 — which platform does lock screen widgets the best? | Tom's GuideTom's Guide",
+        "textLength": 7889,
+        "paywall": false
+      }
+    },
+    {
+      "id": "techradar-review",
+      "url": "https://www.techradar.com/feeds/articletype/review",
+      "status": 200,
+      "items": 50,
+      "sample": {
+        "title": " The Ninja Crispi Microwave is an incredibly versatile air fryer and microwave combo that will transform the way you cook ",
+        "url": "https://www.techradar.com/home/air-fryers/ninja-crispi-microwave-review",
+        "date": "Sun, 11 Oct 2026 10:00:00 +0000"
+      },
+      "detail": {
+        "status": 200,
+        "textLength": 16121
+      }
+    },
+    {
+      "id": "techradar-best",
+      "url": "https://www.techradar.com/feeds/articletype/best",
+      "status": 200,
+      "items": 50,
+      "sample": {
+        "title": " I played all 279 Apple Arcade games — here are the eight best, from genius quick puzzlers to addictive life sims ",
+        "url": "https://www.techradar.com/gaming/the-best-apple-arcade-games",
+        "date": "Sat, 01 Aug 2026 18:30:00 +0000"
+      },
+      "detail": {
+        "status": 200,
+        "textLength": 13966
+      }
+    }
+  ]
+}

@@ -1,6 +1,9 @@
 // OpenAI-compatible chat calls, always through receipts. One model is enough: `default` is whatever the
 // deployment names in LLM_BASE_URL / LLM_API_KEY / LLM_MODEL, and every capability uses it unless an
 // environment variable or the admin's model page picks one of the named presets below.
+import { safeErrorText, redactSecrets } from "../lib/secrets.ts";
+import { runtimeGateway,gatewayModelId,gatewaySlotForPreset,type RuntimeGateway } from "./model-gateway.ts";
+import { guardedFetch } from "../lib/http-fetch.ts";
 import type { z } from "zod";
 import { config, credential } from "../config.ts";
 import { sha256 } from "../lib/ids.ts";
@@ -36,6 +39,17 @@ export const MODELS: Record<string, ModelSpec> = {
     get extra() { return extraFromEnv(process.env.LLM_EXTRA_JSON); },
     get jsonMode() { return process.env.LLM_JSON_MODE !== "false"; },
     get vision() { return process.env.LLM_VISION === "true"; },
+  },
+  // Both deployment models share the configured OpenAI-compatible gateway and its budget.
+  "gemini-3.8-flash-high": {
+    key: "gemini-3.8-flash-high", service: "llm", model: "gemini-3.8-flash-high",
+    baseUrlEnv: "LLM_BASE_URL", apiKeyEnv: "LLM_API_KEY",
+    get jsonMode() { return process.env.LLM_JSON_MODE !== "false"; },
+  },
+  "gpt-6-luna": {
+    key: "gpt-6-luna", service: "llm", model: "gpt-6-luna",
+    baseUrlEnv: "LLM_BASE_URL", apiKeyEnv: "LLM_API_KEY",
+    get jsonMode() { return process.env.LLM_JSON_MODE !== "false"; },
   },
   // Named presets (the models AIHOT itself runs on); each needs its own key.
   // GLM 5.3 Flash always reasons; the lowest effort keeps short structured tasks fast.
@@ -86,6 +100,8 @@ export type ContentPart = { type: "text"; text: string } | { type: "image_url"; 
 
 export interface ChatJsonOptions<S extends z.ZodType> {
   model: string;
+  /** Validated administrator draft; only the guarded backend test route supplies this. */
+  gatewayDraft?: RuntimeGateway;
   purpose: string;
   subject: string;
   promptVersion: string;
@@ -112,7 +128,7 @@ export interface ChatJsonResult<T> {
 export class ModelOutputError extends Error {
   readonly receiptId: number | null;
   constructor(message: string, receiptId: number | null = null) {
-    super(message);
+    super(safeErrorText(message));
     this.receiptId = receiptId;
   }
 }
@@ -152,29 +168,36 @@ export function escapeControlCharsInStrings(json: string): string {
   return out;
 }
 
+const RETRY_DELAYS_MS = [1500, 4000];
+const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
 function isConnectFailure(error: unknown): boolean {
   const code = (error as { cause?: { code?: string } })?.cause?.code ?? (error as { code?: string })?.code;
   return ["ECONNREFUSED", "ENOTFOUND", "EAI_AGAIN", "UND_ERR_CONNECT_TIMEOUT", "ECONNRESET_BEFORE_SEND", "CERT_HAS_EXPIRED"].includes(code ?? "");
 }
 
 export async function chatJson<S extends z.ZodType>(opts: ChatJsonOptions<S>): Promise<ChatJsonResult<z.infer<S>>> {
-  const spec = MODELS[opts.model];
+  const registered = MODELS[opts.model];
+  const slot=gatewaySlotForPreset(opts.model);
+  const gateway=slot?(opts.gatewayDraft??await runtimeGateway()):null;
+  const spec=registered&&gateway?{...registered,model:gatewayModelId(gateway,slot!),jsonMode:gateway.source==='admin'?gateway.jsonMode:registered.jsonMode}:registered;
   if (!spec) throw new Error(`Unknown model ${opts.model}`);
   if (!config.modelCallsEnabled) throw new Error("Model calls are disabled (MODEL_CALLS_ENABLED=false)");
-  const baseUrl = credential("models", spec.baseUrlEnv);
-  const apiKey = credential("models", spec.apiKeyEnv);
+  const baseUrl = gateway?gateway.baseUrl:credential("models", spec.baseUrlEnv);
+  const apiKey = gateway?gateway.apiKey:credential("models", spec.apiKeyEnv);
   if (!baseUrl || !apiKey || !spec.model) throw new Error(`Model ${opts.model} is not configured (${spec.baseUrlEnv}, ${spec.apiKeyEnv}${spec.key === "default" ? ", LLM_MODEL" : ""})`);
 
   const temperature = opts.temperature ?? 0.2;
   const maxTokens = Math.max(opts.maxTokens ?? 1500, 512) + (spec.key.endsWith("-think") ? 4000 : 0);
-  const userText = typeof opts.user === "string" ? opts.user : JSON.stringify(opts.user);
+  const userContent=redactSecrets(opts.user) as typeof opts.user;
+  const systemText=safeErrorText(opts.system);
+  const userText = typeof userContent === "string" ? userContent : JSON.stringify(userContent);
   const body: Record<string, unknown> = {
     model: spec.model,
     messages: [
       // A prompt given as one user message (the title/summary prompts) has no system message.
-      ...(opts.system ? [{ role: "system", content: opts.system }] : []),
+      ...(systemText ? [{ role: "system", content: systemText }] : []),
       // Multimodal parts go through as parts; plain objects are sent as JSON text.
-      { role: "user", content: typeof opts.user === "string" || Array.isArray(opts.user) ? opts.user : userText },
+      { role: "user", content: typeof userContent === "string" || Array.isArray(userContent) ? userContent : userText },
     ],
     temperature,
     max_tokens: maxTokens,
@@ -188,23 +211,39 @@ export async function chatJson<S extends z.ZodType>(opts: ChatJsonOptions<S>): P
       model: spec.model,
       purpose: opts.purpose,
       subject: opts.subject,
-      identity: { model: spec.model, promptVersion: opts.promptVersion, system: sha256(opts.system), user: sha256(userText), temperature, maxTokens, extra: spec.extra ?? null },
-      requestSummary: { promptVersion: opts.promptVersion, systemHash: sha256(opts.system), userHash: sha256(userText), userChars: userText.length, temperature, maxTokens },
+      identity: { model: spec.model, promptVersion: opts.promptVersion, system: sha256(systemText), user: sha256(userText), temperature, maxTokens, extra: spec.extra ?? null, ...(gateway?.source==='admin'?{gateway:gateway.identity}:{}) },
+      requestSummary: { promptVersion: opts.promptVersion, systemHash: sha256(systemText), userHash: sha256(userText), userChars: userText.length, temperature, maxTokens },
       attemptTag: opts.attemptTag,
     },
     async () => {
       const started = Date.now();
-      let res: Response;
+      let res: Pick<Response,'ok'|'status'|'headers'|'text'>;
+      // A gateway that answers 429 or 5xx, or refuses the connection, has not processed the request:
+      // it is asked again after a short pause, twice at most, inside the same receipt attempt. A
+      // timeout is never retried here, because the provider may have completed that call.
+      for (let attempt = 0; ; attempt++) {
       try {
-        res = await fetch(`${baseUrl.replace(/\/$/, "")}/chat/completions`, {
+        const url=`${baseUrl.replace(/\/$/, "")}/chat/completions`;
+        const request={
           method: "POST",
           headers: { "content-type": "application/json", authorization: `Bearer ${apiKey}` },
           body: JSON.stringify(body),
           signal: AbortSignal.timeout(opts.timeoutMs ?? 120_000),
-        });
+          redirect: "error" as const,
+        };
+        if(gateway?.source==='admin'){
+          const response=await guardedFetch(url,{method:'POST',headers:request.headers,body:request.body,maxRedirects:0,maxBytes:8_000_000,timeoutMs:opts.timeoutMs??120_000});
+          res={status:response.status,ok:response.status>=200&&response.status<300,headers:response.headers,text:async()=>response.text()};
+        }else res=await fetch(url,request);
       } catch (error) {
-        if (isConnectFailure(error)) throw new ProviderRejectedError(`connect failed: ${String(error)}`, null, true);
+        if (isConnectFailure(error)) {
+          if (attempt < RETRY_DELAYS_MS.length) { await sleep(RETRY_DELAYS_MS[attempt]!); continue; }
+          throw new ProviderRejectedError(`connect failed: ${String(error)}`, null, true);
+        }
         throw error;
+      }
+      if ((res.status === 429 || res.status >= 500) && attempt < RETRY_DELAYS_MS.length) { await res.text().catch(() => ""); await sleep(RETRY_DELAYS_MS[attempt]!); continue; }
+      break;
       }
       const text = await res.text();
       if (!res.ok) {

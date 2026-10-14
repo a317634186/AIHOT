@@ -1,12 +1,15 @@
 // Daily, weekly and monthly reports. Windows are Beijing calendar based and written into the report;
 // missed schedule points are caught up; regeneration creates a revision. The editors' prompts are in
 // the industry pack (industry/prompts/report-*.md), the sections follow its categories.
+import { SHOPPING } from "@aihot/industry/shopping";
+import { shoppingItems } from "../publication/shopping.ts";
+import { isOffer } from "@aihot/contracts/shopping";
 import { z } from "zod";
 import { SITE } from "@aihot/industry/site";
 import { CATEGORIES } from "@aihot/industry/taxonomy";
 import { promptText, promptVersion } from "../editorial/prompts.ts";
 import { modelFor } from "../editorial/models.ts";
-import { addDays, beijingDate, beijingMidnight, isoWeekLabel, isoWeekRange } from "@aihot/contracts/time";
+import { addDays, beijingDate, beijingMidnight, localHour, beijingTime, isoWeekLabel, isoWeekRange } from "@aihot/contracts/time";
 import { sql } from "../db.ts";
 import { chatJson } from "../providers/llm.ts";
 import { completeReceipt } from "../providers/receipts.ts";
@@ -40,13 +43,18 @@ export interface Candidate extends ReportEntry {
 }
 
 function roleOf(kind: string, firstParty: boolean): string {
-  if (firstParty) return kind === "x_search" ? "X·官方" : "官方";
+  if (firstParty) return kind === "x_search" ? "Official" : "Official";
   if (kind === "x_search") return "X·KOL";
   if (kind === "mp_account") return "公众号";
-  return "媒体";
+  return "Source";
 }
 
 export async function candidates(start: Date, end: Date): Promise<Candidate[]> {
+  if (SHOPPING.enabled) {
+    const items=[...(await shoppingItems({view:'picks',limit:100})).items,...(await shoppingItems({view:'news',limit:100})).items];
+    return items.filter(x=>new Date(x.publishedAt)>=start&&new Date(x.publishedAt)<end&&x.selected).map(x=>({itemId:x.id,factId:null,storyPublicId:null,title:x.title,summary:x.summary,sourceName:x.source,sourceUrl:x.sourceUrl,sourceId:x.source,firstParty:false,role:'Source',score:x.score,publishedAt:x.publishedAt,category:x.category,factKey:x.offer.identity??x.id}));
+  }
+
   const rows = await sql.begin("isolation level read committed", async (tx) => {
     // Wait for in-flight releases and keep later ones outside this snapshot. The following SELECT
     // gets a fresh READ COMMITTED snapshot; model calls and report writes happen after the lock ends.
@@ -135,8 +143,8 @@ async function saveReport(kind: "daily" | "weekly" | "monthly", key: string, sta
 
 /** Daily report for Beijing date D covers [D-1 08:00, D 08:00) Beijing time. */
 export async function composeDaily(date: string, reason = "scheduled"): Promise<{ key: string; entries: number }> {
-  const end = new Date(beijingMidnight(date).getTime() + 8 * 3600 * 1000);
-  const start = new Date(end.getTime() - 86400000);
+  const end = localHour(date, Number(process.env.BRIEFING_HOUR || 8));
+  const start = localHour(addDays(date, -1), Number(process.env.BRIEFING_HOUR || 8));
   const covered = await recentlyCovered("daily", date);
   const all = await candidates(start, end);
   const fresh = all.filter((c) => !covered.has(c.factKey) && !covered.has(`a:${c.itemId}`));
@@ -154,6 +162,7 @@ export async function composeDaily(date: string, reason = "scheduled"): Promise<
     items: perSection.get(label)!.map(({ category: _c, factKey: _f, ...entry }) => entry),
   }));
   const ordered = sections.flatMap((s) => s.items).sort((a, b) => (b.score ?? 0) - (a.score ?? 0));
+  if (SHOPPING.enabled && !ordered.length) return { key: date, entries: 0 };
   const model = await modelFor("report");
   const lead = ordered.length ? await writeLead("daily", date, ordered, model) : null;
   const content = {
@@ -261,9 +270,9 @@ export async function composeMonthly(label: string, reason = "scheduled") {
 export async function catchUpReports(now = new Date(), days = 7): Promise<{ generated: string[] }> {
   const generated: string[] = [];
   const today = beijingDate(now);
-  const bjHour = Number(new Date(now.getTime() + 8 * 3600000).toISOString().slice(11, 13));
+  const bjHour = Number(beijingTime(now).slice(0, 2));
   const [first] = await sql<{ key: string | null }[]>`SELECT min(key) AS key FROM reports WHERE kind = 'daily'`;
-  const latestDue = bjHour >= 8 ? today : addDays(today, -1);
+  const latestDue = bjHour >= Number(process.env.BRIEFING_HOUR || 8) ? today : addDays(today, -1);
   for (let i = days - 1; i >= 0; i--) {
     if (shutdownSignal.signal.aborted) return { generated }; // the next hourly run continues
     const d = addDays(latestDue, -i);
@@ -288,7 +297,7 @@ export async function catchUpReports(now = new Date(), days = 7): Promise<{ gene
   // Last complete month (1st 10:30 onwards).
   const [y, mo, dd] = today.split("-").map(Number) as [number, number, number];
   const prevMonth = mo === 1 ? `${y - 1}-12` : `${y}-${String(mo - 1).padStart(2, "0")}`;
-  const monthDue = dd > 1 || bjHour > 10 || (bjHour === 10 && Number(new Date(now.getTime() + 8 * 3600000).toISOString().slice(14, 16)) >= 30);
+  const monthDue = dd > 1 || bjHour > 10 || (bjHour === 10 && Number(beijingTime(now).slice(3, 5)) >= 30);
   if (monthDue) {
     const [m] = await sql`SELECT 1 FROM reports WHERE kind = 'monthly' AND key = ${prevMonth}`;
     if (!m) {

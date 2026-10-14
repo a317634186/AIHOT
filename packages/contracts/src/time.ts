@@ -1,30 +1,23 @@
-// Beijing (Asia/Shanghai, fixed UTC+8, no DST) calendar helpers shared by web and backend.
-
-const OFFSET_MS = 8 * 3600 * 1000;
-
-/** YYYY-MM-DD of the instant in Beijing time. */
-export function beijingDate(instant: Date | string | number): string {
-  const d = new Date(new Date(instant).getTime() + OFFSET_MS);
-  return d.toISOString().slice(0, 10);
+import { SHOPPING } from "@aihot/industry/shopping";
+export const TIME_ZONE = SHOPPING.timeZone;
+function parts(instant: Date|string|number) {
+ const year=new Date(instant).getUTCFullYear();if(!Number.isFinite(year)||year<1||year>9999)throw new RangeError("Date outside supported calendar");
+ return Object.fromEntries(new Intl.DateTimeFormat('en-US',{timeZone:TIME_ZONE,year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit',hourCycle:'h23'}).formatToParts(new Date(instant)).map(p=>[p.type,p.value]));
 }
-
-/** HH:mm of the instant in Beijing time. */
-export function beijingTime(instant: Date | string | number): string {
-  const d = new Date(new Date(instant).getTime() + OFFSET_MS);
-  return d.toISOString().slice(11, 16);
+export function beijingDate(instant:Date|string|number):string { const p=parts(instant);return `${p.year}-${p.month}-${p.day}`; }
+export function beijingTime(instant:Date|string|number):string { const p=parts(instant);return `${p.hour}:${p.minute}`; }
+export function localHour(date:string,hour=0):Date {
+ const target=Date.parse(`${date}T${String(hour).padStart(2,'0')}:00:00Z`);let result=target;
+ for(let i=0;i<4;i++){const p=parts(result);const shown=Date.parse(`${p.year}-${p.month}-${p.day}T${p.hour}:${p.minute}:${p.second}Z`);result+=target-shown;}
+ return new Date(result);
 }
-
-/** UTC instant of 00:00 Beijing on the given calendar day. */
-export function beijingMidnight(date: string): Date {
-  return new Date(Date.parse(`${date}T00:00:00+08:00`));
-}
-
+export function beijingMidnight(date:string):Date { return localHour(date); }
 export function addDays(date: string, days: number): string {
   const t = Date.parse(`${date}T00:00:00Z`) + days * 86400000;
   return new Date(t).toISOString().slice(0, 10);
 }
 
-const WEEKDAYS = ["星期日", "星期一", "星期二", "星期三", "星期四", "星期五", "星期六"];
+const WEEKDAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
 export function beijingWeekday(date: string): string {
   return WEEKDAYS[new Date(`${date}T00:00:00Z`).getUTCDay()]!;
@@ -67,7 +60,4 @@ export function isValidDate(date: string): boolean {
 }
 
 /** Formats an instant as RFC 3339 with the +08:00 offset (used by the reset monitor API). */
-export function toBeijingIso(instant: Date | string | number): string {
-  const d = new Date(new Date(instant).getTime() + OFFSET_MS);
-  return `${d.toISOString().slice(0, 19)}+08:00`;
-}
+export function toBeijingIso(instant:Date|string|number):string { return new Date(instant).toISOString(); }

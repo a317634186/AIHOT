@@ -1,3 +1,4 @@
+import "@aihot/backend/lib/secure-console";
 import { assertProductionSecrets, config } from "@aihot/backend/config";
 import { closeDb } from "@aihot/backend/db";
 import { startHeartbeat } from "@aihot/backend/operations/heartbeat";

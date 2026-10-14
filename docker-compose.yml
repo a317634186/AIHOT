@@ -64,9 +64,15 @@ services:
 
   web:
     <<: *app
+    # The HTTP frontend receives public routing configuration only.
+    env_file: []
+    volumes: []
     command: ["node", "apps/web/server.ts"]
     environment:
-      <<: *app-env
+      NODE_ENV: production
+      API_BASE_URL: http://api:3001
+      SITE_URL: ${SITE_URL:-http://localhost:3000}
+      TRUST_PROXY: ${TRUST_PROXY:-false}
       WEB_HOST: 0.0.0.0
       WEB_PORT: "3000"
     ports:

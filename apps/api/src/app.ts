@@ -1,3 +1,6 @@
+import { redactSecrets } from "@aihot/backend/lib/secrets";
+import { SHOPPING } from "@aihot/industry/shopping";
+import { registerShopping } from "./routes/shopping.ts";
 import { FEATURES } from "@aihot/industry/features";
 import Fastify, { type FastifyInstance } from "fastify";
 import { randomUUID } from "node:crypto";
@@ -18,7 +21,12 @@ import { sendProblem } from "./http/respond.ts";
 
 export async function buildApp(): Promise<FastifyInstance> {
   const app = Fastify({
-    logger: { level: process.env.LOG_LEVEL || "info", redact: ["req.headers.authorization", "req.headers.cookie"] },
+    logger: {
+      level: process.env.LOG_LEVEL || "info",
+      redact: ["req.headers.authorization", "req.headers.cookie", "req.headers['x-api-key']", "req.headers['x-csrf-token']", "res.headers['set-cookie']"],
+      serializers: { err: error => redactSecrets(error) as {type:string;message:string;stack:string;[key:string]:unknown} },
+      formatters: { log: value => redactSecrets(value) as Record<string,unknown> },
+    },
     // Access logs never record query strings (tokens, actors).
     disableRequestLogging: true,
     trustProxy: true,
@@ -63,19 +71,18 @@ export async function buildApp(): Promise<FastifyInstance> {
     return reply.header("Cache-Control", "no-store").send({ ok: true, db: "ok", ms: Date.now() - started, release: process.env.AIHOT_RELEASE ?? "dev" });
   });
 
-  registerSite(app);
+  if (SHOPPING.enabled) registerShopping(app);
+  else registerSite(app);
   if (FEATURES.leaderboard) registerLeaderboard(app);
-  registerOg(app);
+  if (!SHOPPING.enabled) registerOg(app);
   registerAdminAuth(app);
   registerAdmin(app);
 
   registerIngest(app);
-  registerV1(app);
+  if (!SHOPPING.enabled) registerV1(app);
   registerMedia(app);
 
-  registerFeeds(app);
-  registerStatic(app);
-  registerMcp(app);
+  if (!SHOPPING.enabled) { registerFeeds(app); registerStatic(app); registerMcp(app); }
   registerV1Fallbacks(app);
 
   app.setNotFoundHandler((req, reply) => {

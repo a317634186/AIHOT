@@ -1,4 +1,5 @@
 // Shared HTTP helpers: Problem JSON, public API headers, ETag / 304, strict query parsing.
+import { safeErrorText } from "@aihot/backend/lib/secrets";
 import { createHash, randomUUID } from "node:crypto";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { NO_STORE, PUBLIC_API_CORS } from "@aihot/contracts/http-policy";
@@ -41,7 +42,7 @@ export function sendProblem(req: FastifyRequest, reply: FastifyReply, p: Problem
     type: p.type ?? `/problems/${p.code.replace(/_/g, "-")}`,
     title: p.title ?? PROBLEM_TITLES[p.status] ?? "Error",
     status: p.status,
-    detail: p.detail,
+    detail: safeErrorText(p.detail),
     code: p.code,
     requestId,
   };

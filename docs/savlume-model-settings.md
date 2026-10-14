@@ -1,0 +1,26 @@
+# Backend AI configuration — 2026-10-13
+
+Open https://savlume.com/admin/models after signing in, or select **系统 → AI 配置与模型** in the backend. The previous page only selected predefined model presets; it did not edit connection credentials. The new **AI 接口配置** card manages an OpenAI-compatible provider without changing server environment files.
+
+The form contains the API base URL, API Key, default model ID, primary model ID and secondary model ID. The existing main and secondary aliases remain compatible with current task assignments. The capability table displays the actual configured IDs and lets the administrator assign the default, primary or secondary model to each task. Advanced settings select the deal-search, review-search and fallback slots and control JSON Object output.
+
+A blank API Key retains the existing credential. On the first save it encrypts the existing environment credential if no replacement was supplied. The key input is empty on every load, clears after successful save, and is never returned by the API or SSR loaders, stored in browser storage, or placed in a URL. **测试连接（调用一次）** runs one bounded chat-completion request through normal receipts/budgets without saving the draft. It does not assert that a provider supports Responses/web_search. **恢复服务器配置** returns to the original environment configuration and preserves a monotonically increasing revision to reject stale editors.
+
+## Backend behavior and security
+
+- Configuration is stored under `ai.gateway` in the existing `settings` table, with no schema migration.
+- API keys use AES-256-GCM with a random 12-byte IV and authenticated context. The independent 32-byte encryption key is stored in the private server data volume at `/data/credentials/model-settings.key` in Docker; directory/file permissions are 700/600. It is created atomically and never mounted into the frontend.
+- The optional `MODEL_SETTINGS_KEY_FILE` setting overrides that private filesystem path. The file is excluded from Git/Docker builds. Keep an access-controlled backup of this key separately from the database: a database-only backup cannot decrypt saved credentials. The existing uploaded-files backup does not automatically include this key.
+- Only administrator sessions can read or modify configuration. Writes/tests require CSRF, small request-body limits, a change reason and the expected revision. Saves/reset operations use a transaction and an advisory lock, with audit records containing metadata and a key-changed boolean only.
+- Saved keys are registered with the existing redactor before use. Prompts, logs, diagnostics, receipts and unexpected API errors retain secret filtering; connection tests never echo provider error text.
+- New base URLs require HTTPS, no URL credentials/query/hash, and public address validation. The production fetch path checks DNS again at connection time and rejects redirects, private destinations and oversized responses. The HTTP loopback exception exists only in local tests with the private-fetch switch enabled.
+- API and worker read the configuration at call time. Changes apply to future model requests without restarts. Existing in-flight requests finish with their original connection. Saved connection revisions participate in paid-request identity, so new providers do not reuse responses from the previous connection.
+- Shopping and review discovery use the same saved gateway and the selected model slots. Supported web search still requires a completed tool call and actual citations; changing settings does not enable unsupported search or bypass budgets.
+
+## Validation
+
+Focused backend tests cover encryption and missing-key handling, safe metadata/audits, cross-process decryption, arbitrary IDs and hot-loading, keeping a blank key, stale-editor rejection, SSRF validation, administrator/CSRF guards, testing drafts without saving, search-slot routing, ciphertext tampering, reset and revision conflicts. Browser tests use synthetic credentials and a local API to verify the 390-pixel form, test/save actions, clearing the password input, safe SSR and empty browser storage. Production typecheck/web/Docker builds passed. All **19/19 frontend tests** passed, including the new mobile browser scenario. The full isolated backend suite passed **226/230** tests; the same existing analyze/translate shutdown fixtures and X/WeChat recovery failures remain. All seven gateway tests passed, including the configured discovery-slot test. Test databases were migrated first and dropped after use.
+
+Deployed API, worker and web. An authenticated live check of `/admin/models` confirmed the new form, password input with an empty value, prefilled current gateway/models and no API Key or ciphertext in API/SSR responses. Public gateway/admin endpoints require authentication. The existing environment configuration was preserved; no real provider/model/key was changed during validation. Public and shopping smoke checks and a configured-secret scan were completed against the deployed site.
+
+The cryptographic implementation follows [Node's authenticated encryption API](https://nodejs.org/api/crypto.html) and stores the encryption key separately from database data in accordance with [OWASP cryptographic storage guidance](https://cheatsheetseries.owasp.org/cheatsheets/Cryptographic_Storage_Cheat_Sheet.html).

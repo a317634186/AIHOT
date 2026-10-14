@@ -2,6 +2,7 @@
 // the prompt versions in use, quality / latency / cost of the last days per model, the switch history
 // and the SelectBench runs that compare models on the same batch. A switch is audited and applies to
 // new work only.
+import { gatewayOverview,gatewayModelId,gatewaySlotForPreset } from "../providers/model-gateway.ts";
 import { sql } from "../db.ts";
 import { CAPABILITIES, invalidateModelCache, modelSources, type Capability, type CapabilityKey } from "../editorial/models.ts";
 import { MODELS } from "../providers/llm.ts";
@@ -25,7 +26,7 @@ interface UsageRow {
 
 export async function modelsOverview(days = 7) {
   const since = new Date(Date.now() - days * 86400_000);
-  const [sources, usage, prices, history, benches] = await Promise.all([
+  const [sources, usage, prices, history, benches,gateway] = await Promise.all([
     modelSources(),
     sql<UsageRow[]>`
       SELECT r.purpose, a.model, r.request->>'promptVersion' AS prompt_version, count(*)::int AS calls,
@@ -47,10 +48,11 @@ export async function modelsOverview(days = 7) {
       SELECT id, label, sample_size, prompt_version, models,
              (SELECT coalesce(jsonb_object_agg(key, value - 'sweep'), '{}'::jsonb) FROM jsonb_each(r.summary)) AS summary,
              created_at FROM selectbench_runs r ORDER BY created_at DESC LIMIT 8`,
+    gatewayOverview(),
   ]);
   const serviceOf = (model: string) => Object.values(MODELS).find((m) => m.model === model || m.key === model)?.service ?? null;
   const priced = (u: UsageRow) => {
-    const service = u.model ? serviceOf(u.model) : null;
+    const service = u.model ? ([gateway.defaultModelId,gateway.primaryModelId,gateway.secondaryModelId].includes(u.model)?'llm':serviceOf(u.model)) : null;
     const p = prices.find((x) => x.service === service && x.model === u.model) ?? prices.find((x) => x.service === service && x.model === "");
     if (!p || (!p.input_per_mtok && !p.output_per_mtok)) return null;
     return { amount: (Number(u.tokens_in ?? 0) / 1e6) * Number(p.input_per_mtok ?? 0) + (Number(u.tokens_out ?? 0) / 1e6) * Number(p.output_per_mtok ?? 0), currency: p.currency };
@@ -61,7 +63,7 @@ export async function modelsOverview(days = 7) {
     env: c.env,
     defaultModel: c.default,
     vision: !!c.vision,
-    current: sources[key]!,
+    current: {...sources[key]!,connectionSource:gatewaySlotForPreset(sources[key]!.model)?gateway.source:null,modelId:gatewaySlotForPreset(sources[key]!.model)?gatewayModelId(gateway,gatewaySlotForPreset(sources[key]!.model)!):MODELS[sources[key]!.model]?.model},
     usage: usage
       .filter((u) => c.purposes.includes(u.purpose))
       .map((u) => ({
@@ -81,8 +83,8 @@ export async function modelsOverview(days = 7) {
         estimate: priced(u),
       })),
   }));
-  const choices = Object.values(MODELS).map((m) => ({ key: m.key, service: m.service, vision: !!m.vision }));
-  return { days, capabilities, choices, history, benches };
+  const choices = Object.values(MODELS).map((m) => ({ key: m.key, modelId:gatewaySlotForPreset(m.key)?gatewayModelId(gateway,gatewaySlotForPreset(m.key)!):m.model, service: m.service, vision: !!m.vision }));
+  return { days, capabilities, choices, history, benches,gateway };
 }
 
 /** Switches a capability to another registered model (or back to the environment/default when null). */

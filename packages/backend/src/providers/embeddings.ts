@@ -44,6 +44,7 @@ async function embedBatch(texts: string[], subject: string): Promise<number[][]>
         headers: { "content-type": "application/json", authorization: `Bearer ${key}` },
         body: JSON.stringify({ model: EMBEDDING_MODEL, input: texts, ...(EMBEDDING_DIMS > 0 ? { dimensions: EMBEDDING_DIMS } : {}), encoding_format: "float" }),
         signal: AbortSignal.timeout(60_000),
+        redirect: "error",
       });
       const text = await res.text();
       if (!res.ok) throw new ProviderRejectedError(`embeddings HTTP ${res.status}: ${text.slice(0, 200)}`, res.status, res.status === 429 || res.status >= 500);
