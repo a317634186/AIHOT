@@ -89,10 +89,11 @@ export async function shoppingItems(opts:{view?:string;category?:string;merchant
     const score=Math.min(percent,60)+(recordedLow?25:0)+(popular?15:0)+Math.min(20,e.clicks*2+e.likes*3)+(x.timing?.state==='ending'?15:0);
     return {item:{...x,flash:{percent,recordedLow,popular,clicks:e.clicks,likes:e.likes}},score};
    }).sort((a,b)=>b.score-a.score||endsMs(a.item)-endsMs(b.item));
-   // At most five from one retailer, so one store's sale does not fill the strip.
+   // At most five from one retailer, so one store's sale does not fill the strip. The composite
+   // decides who gets in; the strip itself is shown in order of the activity's end, soonest first.
    const perRetailer=new Map<string,number>();const picked:ShoppingItem[]=[];
    for(const {item} of ranked){const key=retailerName(item.offer.merchant??item.offer.seller);const n=perRetailer.get(key)??0;if(n>=5)continue;perRetailer.set(key,n+1);picked.push(item);if(picked.length===20)break;}
-   items=picked;
+   items=picked.sort((a,b)=>endsMs(a)-endsMs(b)||(b.flash?.percent??0)-(a.flash?.percent??0));
   }
   else if(view==='archive')items=items.filter(x=>['Expired','Out of Stock'].includes(x.offer.status)||x.timing?.state==='ended');
   else items=items.filter(x=>isOffer(x.offer)&&!['Expired','Out of Stock'].includes(x.offer.status)&&(x.offer.kind!=='product_deal'||x.offer.checkoutPriceCents!==null||x.offer.listedPriceCents!==null));
