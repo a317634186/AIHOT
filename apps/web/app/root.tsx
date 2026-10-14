@@ -11,6 +11,7 @@ import { Sidebar } from "./components/shell/Sidebar";
 import { MobileTabBar } from "./components/shell/MobileTabBar";
 import { BackToTop, NavigationProgress } from "./components/shell/Chrome";
 import { RingMark } from "./components/Logo";
+import { TrafficBeacon } from "./components/TrafficBeacon";
 import { buttonClass } from "./components/ui/Controls";
 import { THEME_BOOT_SCRIPT } from "./lib/local-state";
 import { apiGet } from "./lib/api.server";
@@ -98,7 +99,7 @@ export default function App() {
   const { pathname } = useLocation();
   // The admin has its own chrome.
   if (pathname === "/admin" || pathname.startsWith("/admin/")) return <Outlet />;
-  return <Outlet />;
+  return <><TrafficBeacon /><Outlet /></>;
 }
 
 export function ErrorBoundary() {

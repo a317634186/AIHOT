@@ -2,6 +2,7 @@ import { readFile } from "node:fs/promises";
 import { REPO_ROOT } from "@aihot/backend/config";
 import { registerShoppingLikes } from "./shopping-likes.ts";
 import { registerFeedback } from "./feedback.ts";
+import { registerTraffic } from './traffic.ts';
 import type { FastifyInstance } from 'fastify';
 import { shoppingText } from '@aihot/backend/publication/shopping-text';
 import { SITE } from '@aihot/industry/site';
@@ -44,6 +45,7 @@ async function shoppingOpenApiJson():Promise<string>{
 export function registerShopping(app:FastifyInstance){
  app.addHook('onSend',async(req,reply,payload)=>{if(req.url.startsWith('/api/'))reply.header('X-Robots-Tag','noindex, nofollow');return payload;});
  registerFeedback(app);
+ registerTraffic(app);
  registerShoppingLikes(app);
  for (const icon of ["favicon.ico","icon.png","icon-192.png","apple-icon.png","logo.svg"]) app.get("/"+icon,async(_req,reply)=>reply.type(icon.endsWith("png")?"image/png":icon.endsWith("svg")?"image/svg+xml":"image/x-icon").send(await readFile(REPO_ROOT+"/industry/brand/"+icon)));
  app.get('/api/shopping',async(req,reply)=>{reply.header('Cache-Control','no-store');const q=req.query as Record<string,string>;const result=await shoppingItems({view:q.view,category:q.category||undefined,merchant:q.merchant||undefined,q:q.q||undefined,id:q.id,limit:Number(q.limit)||24,offset:Number(q.offset)||0});const strip=!q.id&&!q.q&&!(Number(q.offset)||0)&&['recommended','flash','new',undefined,''].includes(q.view);return {...result,ending:strip?(await shoppingItems({view:'ending',category:q.category||undefined,merchant:q.merchant||undefined,limit:12})).items:[],catalog:q.catalog==='1'?await shoppingSeoCatalog():undefined,preview:q.view==='top'?(await shoppingItems({view:'latest',limit:6})).items:[],comparisons:q.id&&result.items[0]?await shoppingComparisons(result.items[0]):[],related:q.id&&result.items[0]?await relatedShopping(result.items[0]):[],priceHistory:q.id&&result.items[0]?await shoppingPriceHistory(result.items[0]):[],likes:q.id&&result.items[0]?(await shoppingLikes(q.id)).count:0,categories:CATEGORIES,merchants:MERCHANTS.map(m=>({id:m.id,name:m.name})),briefing:q.briefing==='1'?await shoppingBriefing(q.date):null};});

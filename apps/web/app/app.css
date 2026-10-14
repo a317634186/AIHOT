@@ -107,6 +107,8 @@
   --line-strong: #d1d9d5;
   --line-soft: #e9ede9;
   --accent: #176b75;
+  /* Chart series, fixed order; validated for CVD separation and contrast on this surface. */
+  --chart-1: #2a78d6; --chart-2: #eb6834; --chart-3: #1baf7a; --chart-4: #eda100; --chart-5: #e87ba4; --chart-6: #008300;
   --accent-ink: #145f68;
   --accent-soft: rgba(23, 107, 117, 0.08);
   --accent-softer: rgba(23, 107, 117, 0.05);
@@ -144,6 +146,7 @@
 [data-theme="dark"] {
   color-scheme: dark;
   --bg: #13191c;
+  --chart-1: #3987e5; --chart-2: #d95926; --chart-3: #199e70; --chart-4: #c98500; --chart-5: #d55181; --chart-6: #008300;
   --bg-sunk: #182024;
   --bg-muted: #202a2f;
   --surface: #1a2226;

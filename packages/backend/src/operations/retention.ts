@@ -3,6 +3,7 @@ import { readdir, stat, unlink } from "node:fs/promises";
 import path from "node:path";
 import { config } from "../config.ts";
 import { sql } from "../db.ts";
+import { pruneTraffic } from "../site/traffic.ts";
 
 /** Derived caches (proxied images, share cards and posters) are rebuilt on demand; drop ones older than a month. */
 async function pruneCache(dir: string, maxAgeMs: number, now: number): Promise<number> {
@@ -35,5 +36,6 @@ export async function dailyRetention(now = new Date()) {
   for (const f of files) await unlink(path.join(config.dataDir, f.key)).catch(() => {});
   const monthMs = 30 * 86400_000;
   const prunedCache = (await pruneCache(path.join(config.dataDir, "imgcache"), monthMs, now.getTime())) + (await pruneCache(path.join(config.dataDir, "ogcache"), monthMs, now.getTime()));
-  return { deletedLeases: leases.count, deletedJobRuns: runs.count, deletedFiles: files.length, prunedCache };
+  const traffic = await pruneTraffic(now);
+  return { deletedLeases: leases.count, deletedJobRuns: runs.count, deletedFiles: files.length, prunedCache, traffic };
 }

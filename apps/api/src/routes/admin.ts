@@ -16,6 +16,7 @@ import { releaseReceipt, requeueFailedArticles, resolveDelivery, runsOverview } 
 import { listBudgets, listTargets, replaceContactQr, setTargetEnabled, updateBudget } from "@aihot/backend/admin/settings";
 import { createSource, fetchNow, listSources, previewSource, sourceDetail, updateSource } from "@aihot/backend/admin/sources";
 import { sql } from "@aihot/backend/db";
+import { siteStats } from "@aihot/backend/admin/stats";
 import { loadContact } from "@aihot/backend/site/contact";
 import { sendProblem } from "../http/respond.ts";
 import { adminHandler } from "./admin-auth.ts";
@@ -142,6 +143,7 @@ export function registerAdmin(app: FastifyInstance) {
   }));
 
   // Attention counts for the navigation.
+  app.get("/api/admin/stats", adminHandler(async (req) => siteStats(Number(q(req).days) || 30)));
   app.get("/api/admin/nav-counts", adminHandler(async () => {
     const [c] = await sql<Record<string, number>[]>`
       SELECT (SELECT count(*)::int FROM feedback WHERE status = 'new') AS feedback,
