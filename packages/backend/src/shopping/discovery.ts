@@ -14,6 +14,7 @@ const QUERIES=[
  'Find current US retailer flash sales, lightning deals and deal-of-the-day PRODUCT pages from Amazon, Woot, Best Buy, Walmart and Target. Require a named product, current price, purchase conditions and the actual deadline when stated. Avoid broad category pages.',
  'Find recently posted specific product deals recommended by DealNews, Hip2Save, 9to5Toys, Slickdeals and Ben’s Bargains. Include the current source-reported price and a product-level article URL, not a general deals homepage. Prioritize limited-time offers and frontpage picks.',
  'Find current source-labeled bestselling, trending or popular US shopping products with concrete sale prices or public coupons. Cite the retailer or deal article explicitly supporting the popularity claim. Do not infer popularity or promise historical lows.',
+ 'Find today\'s Amazon lightning deals, deal-of-the-day and limited-time product markdowns for US shoppers as reported by DealNews, Slickdeals, 9to5Toys, Ben\'s Bargains or Hip2Save, or on an Amazon product page. Require a named product, the current price, the regular price and the stated end time. Cite the specific deal article or product page, never the Amazon deals index.',
  'Find current US household, grocery, fashion, kids, pets and outdoors discounted PRODUCT offers with a concrete price and purchase link. Cite individual product or deal-article pages. Exclude homepages, shipping/membership policy announcements, finance, card/account signup, expired promotions and support/Q&A pages.',
 ];
 const REVIEW_QUERIES=[
@@ -61,10 +62,13 @@ export async function discoverShopping(slot=Math.floor(Date.now()/10800000),mode
    const res=await guardedFetch(url,{timeoutMs:15000,maxBytes:4_000_000});if(res.status!==200)throw new Error(`Source HTTP ${res.status}`);
    const official=merchantFor(res.url);const reviewer=mode==='reviews'?reviewSourceFor(res.url):null;const origin=official??guideFor(res.url)??reviewer;
    if(!origin)throw new Error('Redirect left the configured source list');
-   if(/^\/(?:alldeals\/?)?$/.test(new URL(res.url).pathname))throw new Error('Generic homepage/index, not a specific report');
+   // Index, category and hub pages are not reports: a shallow path or a hub-style title is skipped.
+   const pathname=new URL(res.url).pathname.replace(/\/+$/,'');
+   if(/^\/(?:alldeals)?$/.test(pathname)||pathname.split('/').filter(Boolean).length<2&&!/\d/.test(pathname))throw new Error('Generic homepage/index, not a specific report');
    const html=res.text();if(/isAccessibleForFree["']?\s*:\s*false/.test(html))throw new Error('Paywalled source skipped');
    const $=load(html);const got=readable(html,res.url);const title=$('meta[property="og:title"]').attr('content')||$('title').text();
    if(!title||!got||/access denied|robot or human|captcha|just a moment/i.test(title))throw new Error('No usable source article');
+   if(/\b(?:all (?:the )?deals|deals? (?:hub|center|page|index)|coupons? (?:hub|page|index)|today'?s deals|daily deals|aggregat|curat|homepage|sitemap)\b/i.test(title)&&!/\$\d/.test(title))throw new Error('Hub or index page, not a specific offer');
    const rawTime=$('meta[property="article:published_time"]').attr('content')||$('time[datetime]').first().attr('datetime');
    const publishedAt=rawTime&&Number.isFinite(Date.parse(rawTime))?new Date(rawTime):null;
    if(publishedAt&&publishedAt.getTime()>Date.now()+3600000)throw new Error('Source date is in the future');

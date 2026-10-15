@@ -7,7 +7,8 @@
       "config": {
         "feedUrl": "https://www.dealnews.com/?rss=1",
         "_aihot": {
-          "initialBackfillLimit": 5
+          "initialBackfillLimit": 5,
+          "dailyQuota": 120
         },
         "summaryIsBody": false
       },
@@ -30,7 +31,8 @@
       "config": {
         "feedUrl": "https://hip2save.com/feed/",
         "_aihot": {
-          "initialBackfillLimit": 5
+          "initialBackfillLimit": 5,
+          "dailyQuota": 60
         },
         "summaryIsBody": false
       },
@@ -53,7 +55,8 @@
       "config": {
         "feedUrl": "https://9to5toys.com/feed/",
         "_aihot": {
-          "initialBackfillLimit": 5
+          "initialBackfillLimit": 5,
+          "dailyQuota": 40
         },
         "summaryIsBody": false
       },
@@ -99,7 +102,8 @@
       "config": {
         "feedUrl": "https://slickdeals.net/newsearch.php?mode=frontpage&searcharea=deals&searchin=first&rss=1",
         "_aihot": {
-          "initialBackfillLimit": 5
+          "initialBackfillLimit": 5,
+          "dailyQuota": 90
         },
         "summaryIsBody": false
       },
@@ -261,7 +265,8 @@
       "config": {
         "feedUrl": "https://bensbargains.com/rss/",
         "_aihot": {
-          "initialBackfillLimit": 3
+          "initialBackfillLimit": 3,
+          "dailyQuota": 60
         },
         "summaryIsBody": false
       },
@@ -284,7 +289,8 @@
       "config": {
         "feedUrl": "https://www.cnet.com/rss/deals/",
         "_aihot": {
-          "initialBackfillLimit": 3
+          "initialBackfillLimit": 3,
+          "dailyQuota": 30
         },
         "summaryIsBody": false
       },
@@ -307,7 +313,8 @@
       "config": {
         "feedUrl": "https://www.pcmag.com/feeds/rss/deals",
         "_aihot": {
-          "initialBackfillLimit": 3
+          "initialBackfillLimit": 3,
+          "dailyQuota": 30
         },
         "summaryIsBody": false
       },
@@ -330,7 +337,8 @@
       "config": {
         "feedUrl": "https://www.techradar.com/feeds/tag/deals",
         "_aihot": {
-          "initialBackfillLimit": 3
+          "initialBackfillLimit": 3,
+          "dailyQuota": 30
         },
         "summaryIsBody": false
       },
@@ -353,7 +361,8 @@
       "config": {
         "feedUrl": "https://www.theverge.com/rss/good-deals/index.xml",
         "_aihot": {
-          "initialBackfillLimit": 3
+          "initialBackfillLimit": 3,
+          "dailyQuota": 20
         },
         "summaryIsBody": false
       },
@@ -376,7 +385,8 @@
       "config": {
         "feedUrl": "https://feeds.macrumors.com/MacRumors-Deals",
         "_aihot": {
-          "initialBackfillLimit": 3
+          "initialBackfillLimit": 3,
+          "dailyQuota": 25
         },
         "summaryIsBody": false
       },
@@ -399,7 +409,8 @@
       "config": {
         "feedUrl": "https://www.androidpolice.com/feed/deals/",
         "_aihot": {
-          "initialBackfillLimit": 3
+          "initialBackfillLimit": 3,
+          "dailyQuota": 20
         },
         "summaryIsBody": false
       },
@@ -422,7 +433,8 @@
       "config": {
         "feedUrl": "https://moneysavingmom.com/feed/",
         "_aihot": {
-          "initialBackfillLimit": 3
+          "initialBackfillLimit": 3,
+          "dailyQuota": 30
         },
         "summaryIsBody": false
       },
@@ -445,7 +457,8 @@
       "config": {
         "feedUrl": "https://www.southernsavers.com/feed/",
         "_aihot": {
-          "initialBackfillLimit": 3
+          "initialBackfillLimit": 3,
+          "dailyQuota": 20
         },
         "summaryIsBody": false
       },
@@ -468,7 +481,8 @@
       "config": {
         "feedUrl": "https://www.heyitsfree.net/feed/",
         "_aihot": {
-          "initialBackfillLimit": 3
+          "initialBackfillLimit": 3,
+          "dailyQuota": 15
         },
         "summaryIsBody": false
       },
@@ -491,7 +505,8 @@
       "config": {
         "feedUrl": "https://www.costcoinsider.com/feed/",
         "_aihot": {
-          "initialBackfillLimit": 3
+          "initialBackfillLimit": 3,
+          "dailyQuota": 10
         },
         "summaryIsBody": false
       },

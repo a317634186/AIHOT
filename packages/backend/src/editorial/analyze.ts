@@ -46,6 +46,8 @@ export const ANALYZE_PROMPT_VERSION = Object.values(PROMPT_VERSIONS).join("+");
 
 /** Independent score calls per article; their sum decides, their mean (floored) is shown. */
 export const SCORE_CALLS = 2;
+/** The shopping site scores once: the second independent call doubled the cost of every article for a provisional threshold. */
+export const scoreCalls = () => (SHOPPING.enabled ? 1 : SCORE_CALLS);
 
 /**
  * The thresholds on the mean score, per source tier (industry/selection.ts): selected when
@@ -152,6 +154,8 @@ const STRUCTURE_SYSTEM = promptText("structure", {
 });
 
 export interface AnalysisRun {
+  /** Stopped after scoring by the caller's admission gate (shopping): no writing, structure or extraction. */
+  gated?: boolean;
   prefilter: { label: "PASS" | "BLOCK" | "UNKNOWN"; reason: string; model: string; receiptId: number; reused: boolean };
   /**
    * The independent score calls and the tier threshold they are held against; absent when the material
@@ -182,7 +186,9 @@ export function waitsForPage(a: AnalyzeInputArticle): boolean {
   return a.bodyStatus === "pending" && !a.bodyText && !a.xPost && pageFetchable(a.url, a.source.kind);
 }
 
-type StepOpts = { attemptTag?: string; scoreModel?: string };
+type StepOpts = {
+  /** Shopping admission: given the mean score and whether it is selected, whether the paid writing/structure/extraction steps run today. */
+  gate?: (score: number | null, selected: boolean) => Promise<boolean>; attemptTag?: string; scoreModel?: string };
 type ReceiptObserver = (receiptId: number) => void;
 export class AnalysisInterruptedError extends Error {}
 
@@ -246,7 +252,7 @@ async function runScores(
   const receiptIds: number[] = [];
   let reused = true;
   // One after the other: the second call reuses the provider's cached prompt.
-  for (let i = 0; i < SCORE_CALLS; i++) {
+  for (let i = 0; i < scoreCalls(); i++) {
     checkAnalysisRunning();
     try {
       const res = await chatJson({
@@ -385,14 +391,24 @@ export async function runAnalysis(a: AnalyzeInputArticle, opts: StepOpts & { sta
     const scores = await runSelectionScores(a, opts);
     return { prefilter, scores, writing: null, structure: null };
   }
-  // The structure step needs nothing from the scores: it runs beside them.
-  const structure = runStructure(a, opts).then((value) => ({ value }), (error: unknown) => ({ error }));
+  // The structure step needs nothing from the scores: it runs beside them, unless a gate may stop
+  // the article after scoring, in which case it waits for the decision.
+  const structure = opts.gate ? Promise.resolve({ deferred: true as const }) : runStructure(a, opts).then((value) => ({ value }), (error: unknown) => ({ error }));
   try {
     const scores = await runSelectionScores(a, opts);
-    const sum = scores && !scores.refused && scores.values.length === SCORE_CALLS ? scores.values.reduce((total, v) => total + v, 0) : null;
-    const near = sum !== null && (sum >= scores!.threshold * SCORE_CALLS || sum > UNDERSTAND_FLOOR * SCORE_CALLS);
+    const n = scoreCalls();
+    const sum = scores && !scores.refused && scores.values.length === n ? scores.values.reduce((total, v) => total + v, 0) : null;
+    // Admission (shopping): the caller decides from the score whether the paid writing, structure and
+    // extraction steps run at all today. A gated article stops here with its cheap steps settled.
+    if (opts.gate && !(await opts.gate(sum === null ? null : Math.floor(sum / n), sum !== null && sum >= scores!.threshold * n))) {
+      await structure;
+      return { prefilter, scores, writing: null, structure: null, gated: true };
+    }
+    // The shopping site writes the fuller copy only for selected items; the rest get the short summary.
+    const near = sum !== null && (sum >= scores!.threshold * n || (!SHOPPING.enabled && sum > UNDERSTAND_FLOOR * n));
     const writing = (near ? await runUnderstand(a, opts) : null) ?? (await runSummarize(a, opts));
-    const s = await structure;
+    const s0 = await structure;
+    const s = "deferred" in s0 ? await runStructure(a, opts).then((value) => ({ value }), (error: unknown) => ({ error })) : s0;
     if ("error" in s) throw s.error;
     return { prefilter, scores, writing, structure: s.value };
   } finally {
@@ -409,14 +425,15 @@ export function normalizeAnalysis(run: AnalysisRun) {
   const summaryZh = (run.writing?.summaryZh ?? "").trim();
   // Past the prefilter (PASS or UNKNOWN) an item is relevant, but without a usable Chinese title and
   // summary it cannot be published: it waits.
-  const relevance = label === "BLOCK" ? "block" : run.writing && (!titleZh || !summaryZh) ? "unknown" : "pass";
+  const relevance = label === "BLOCK" || run.gated ? "block" : run.writing && (!titleZh || !summaryZh) ? "unknown" : "pass";
   // Selected when the two scores add up to twice the tier threshold; the mean, floored,
   // is the score shown (it never decides a half point on its own).
   const values = run.scores && !run.scores.refused ? run.scores.values : null;
-  const sum = values?.length === SCORE_CALLS ? values.reduce((total, v) => total + v, 0) : null;
-  const score = sum === null ? null : Math.floor(sum / SCORE_CALLS);
+  const n = scoreCalls();
+  const sum = values?.length === n ? values.reduce((total, v) => total + v, 0) : null;
+  const score = sum === null ? null : Math.floor(sum / n);
   const threshold = run.scores?.threshold ?? null;
-  const selected = relevance === "pass" && sum !== null && threshold !== null && sum >= threshold * SCORE_CALLS;
+  const selected = relevance === "pass" && sum !== null && threshold !== null && sum >= threshold * n;
   const subjects = run.structure?.subjects ?? [];
   const tags = [...(run.writing?.tags ?? run.structure?.tags ?? [])];
   for (const s of subjects) {
@@ -478,6 +495,7 @@ export async function analyzeArticle(articleId: string, opts: StepOpts = {}): Pr
     ...(w ? { writer: w.kind, writerModel: w.model, itemType: w.itemType ?? null, authorRole: w.authorRole ?? null } : {}),
     ...(w?.identityGuard?.outcome === "fallback" ? { identityGuard: w.identityGuard } : {}),
     fact: out.fact,
+    ...(run.gated ? { gated: true, reason: "Below the day's admission line" } : {}),
   };
   const committed = await sql.begin(async (tx) => {
     const [current] = await tx<{ revision: number }[]>`SELECT revision FROM articles WHERE id = ${articleId} FOR UPDATE`;
@@ -491,7 +509,7 @@ export async function analyzeArticle(articleId: string, opts: StepOpts = {}): Pr
       RETURNING id`;
     for (const id of receiptIds) await completeReceipt(tx, id);
     if (!stale) {
-      await tx`UPDATE articles SET processing_state = ${out.relevance === "block" ? "blocked" : "analyzed"}, processing_error = NULL WHERE id = ${articleId}`;
+      await tx`UPDATE articles SET processing_state = ${out.relevance === "block" ? "blocked" : "analyzed"}, processing_error = ${run.gated ? "Not admitted: below the day's admission line" : null} WHERE id = ${articleId}`;
     }
     return { analysisId: row!.id, stale };
   });

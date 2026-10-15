@@ -95,6 +95,35 @@ export async function settleNonEditorial(articleId: string): Promise<{ group: bo
   return { group: row.participation_mode === "hot_signal" && !isHistorical(row) };
 }
 
+/** Start of the current day in the site's time zone, for the daily counters. */
+const dayStart = () => new Date(new Date().toLocaleDateString("sv-SE", { timeZone: SHOPPING.timeZone }) + "T00:00:00" + offsetOf(SHOPPING.timeZone));
+function offsetOf(timeZone: string): string {
+  const parts = new Intl.DateTimeFormat("en-US", { timeZone, timeZoneName: "longOffset" }).formatToParts(new Date());
+  const name = parts.find((p) => p.type === "timeZoneName")?.value ?? "GMT+00:00";
+  return name === "GMT" ? "+00:00" : name.replace("GMT", "");
+}
+/** The reason this article is over its source's daily quota, or null. Counts articles of the source scored since the day began. */
+async function overSourceQuota(articleId: string): Promise<string | null> {
+  const [row] = await sql<{ source_id: string; name: string; quota: number | null }[]>`
+    SELECT s.id AS source_id, s.name, (s.config->'_aihot'->>'dailyQuota')::int AS quota FROM articles a JOIN sources s ON s.id = a.source_id WHERE a.id = ${articleId}`;
+  if (!row) return null;
+  const quota = row.quota ?? SHOPPING.sourceDailyQuota;
+  const [c] = await sql<{ n: number }[]>`SELECT count(DISTINCT an.article_id)::int AS n FROM analyses an JOIN articles a ON a.id = an.article_id WHERE a.source_id = ${row.source_id} AND an.created_at >= ${dayStart()}`;
+  return c!.n >= quota ? `Daily quota for ${row.name} reached (${quota})` : null;
+}
+/**
+ * Admission after scoring: below 60% of the day's cap anything at or above the floor; up to the cap
+ * only selected items; at the cap nothing more today. Counts the day's admitted (pass) judgements.
+ */
+async function admissionGate(score: number | null, selected: boolean): Promise<boolean> {
+  const cap = SHOPPING.dailyPublishCap;
+  const [c] = await sql<{ n: number }[]>`SELECT count(*)::int AS n FROM analyses WHERE relevance = 'pass' AND created_at >= ${dayStart()}`;
+  const n = c!.n;
+  if (n >= cap) return false;
+  if (n >= cap * 0.6) return selected;
+  return score !== null && score >= SHOPPING.admissionFloor;
+}
+
 /** attemptTag makes an explicit re-evaluation a new (paid) request; the same tag reuses its receipt. */
 export async function processArticle(articleId: string, opts: { attemptTag?: string } = {}): Promise<{ state: string }> {
   const [found] = await sql<{ participation_mode: string; processing_state: string; revision: number; backfill: boolean; published_at: Date | null; discovered_at: Date }[]>`
@@ -108,7 +137,16 @@ export async function processArticle(articleId: string, opts: { attemptTag?: str
     return { state: "skipped" };
   }
   try {
-    const result = await analyzeArticle(articleId, { attemptTag: opts.attemptTag });
+    // Shopping: a source's daily quota bounds what is even scored; the admission gate then lets only
+    // the best of the day into the paid steps. Both are plain counts, no model call.
+    if (SHOPPING.enabled && !opts.attemptTag) {
+      const quota = await overSourceQuota(articleId);
+      if (quota) {
+        await sql`UPDATE articles SET processing_state = 'skipped', processing_error = ${quota}, processing_retry_at = NULL, processing_queued_at = NULL WHERE id = ${articleId}`;
+        return { state: "skipped" };
+      }
+    }
+    const result = await analyzeArticle(articleId, { attemptTag: opts.attemptTag, ...(SHOPPING.enabled && !opts.attemptTag ? { gate: admissionGate } : {}) });
     if (!result) return { state: "missing" };
     // Only a title or a feed summary: the article page first; extraction queues the analysis again.
     if (result.needsBody || !result.output) {

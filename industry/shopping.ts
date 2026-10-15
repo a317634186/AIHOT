@@ -15,6 +15,16 @@ export const SHOPPING = {
    */
   productDealShelfDays: 3,
   couponShelfDays: 10,
+  /**
+   * Daily admission. Every article gets the cheap prefilter and one score; only the best go on to the
+   * paid writing and extraction steps. Below 60% of the cap anything that scores at least
+   * `admissionFloor` is admitted; between 60% and 100% only selected items (at or above the source
+   * tier's threshold); at the cap nothing more that day. A source's own cap (`_aihot.dailyQuota` in
+   * its config, else `sourceDailyQuota`) bounds how many of its articles are even scored.
+   */
+  dailyPublishCap: 350,
+  sourceDailyQuota: 60,
+  admissionFloor: 40,
   calibration: "Provisional: shopping thresholds have not been calibrated against human-labeled examples.",
 } as const;
 /**

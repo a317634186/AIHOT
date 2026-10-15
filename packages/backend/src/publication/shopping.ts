@@ -1,7 +1,7 @@
 // The single shopping read layer used by pages, feeds, API, MCP and briefings.
 import { isReviewContent } from '@aihot/contracts/reviews';
 import { SHOPPING, MERCHANTS } from '@aihot/industry/shopping';
-import { effectiveStatus, flashDealEvidence, sourceDealPick, isProductActivity, isOffer, safeCopy, plainTitle, offerTiming, flashSavings, affiliateLink, type Offer, type OfferTiming, type PriceObservation, type FlashDealEvidence, type DealPick } from '@aihot/contracts/shopping';
+import { effectiveStatus, flashDealEvidence, sourceDealPick, isProductActivity, isOffer, safeCopy, plainTitle, offerTiming, flashSavings, offerSavings, affiliateLink, type Offer, type OfferTiming, type PriceObservation, type FlashDealEvidence, type DealPick } from '@aihot/contracts/shopping';
 import { sql } from '../db.ts';
 import { proxiedImage, proxiedImageSet } from '../media/imgproxy.ts';
 /**
@@ -14,10 +14,13 @@ const SCAN_LIMIT = 20_000;
 export interface ItemImage {src:string;srcSet:string|null;hero:string}
 /** Why an offer sits in the limited-time strip; every flag is backed by stored evidence. */
 export interface FlashHighlight {percent:number;recordedLow:boolean;popular:boolean;clicks:number;likes:number}
-export interface ShoppingItem {flash?:FlashHighlight;productActivity?:boolean;indexable?:boolean;updatedAt?:string;dealPick?:DealPick;sourcePublishedAt?:string|null;flashDeal?:FlashDealEvidence;timing:OfferTiming|null;image:ItemImage|null; id:string;title:string;summary:string;reason:string|null;category:string|null;tags:string[];score:number|null;selected:boolean;source:string;sourceUrl:string;publishedAt:string;offer:Offer;sources:Array<{name:string;url:string}>; }
+export interface ShoppingItem {flash?:FlashHighlight;thirdPartySeller?:boolean;productActivity?:boolean;indexable?:boolean;updatedAt?:string;dealPick?:DealPick;sourcePublishedAt?:string|null;flashDeal?:FlashDealEvidence;timing:OfferTiming|null;image:ItemImage|null; id:string;title:string;summary:string;reason:string|null;category:string|null;tags:string[];score:number|null;selected:boolean;source:string;sourceUrl:string;publishedAt:string;offer:Offer;sources:Array<{name:string;url:string}>; }
 /** Sold by a retailer in the registry: the link resolves there, or the source names it as the seller (DealNews-style redirects). */
 const retailerName=(v:string|null|undefined)=>(v??'').toLowerCase().replace(/[’']/g,'').replace(/\s+/g,' ').trim();
 const knownRetailer=(d:Offer)=>!!d.merchantId||!!d.seller&&MERCHANTS.some(m=>{const a=retailerName(m.name),b=retailerName(d.seller);return a===b||b.startsWith(a+' ')||a.startsWith(b+' ');});
+const looseKey=(x:ShoppingItem)=>{const d=x.offer;if(!isOffer(d)||!d.product)return null;const price=d.checkoutPriceCents??d.listedPriceCents;if(price===null)return null;const retailer=d.merchantId??retailerName(d.seller)??'';if(!retailer)return null;return ['p',d.product.toLowerCase().replace(/[^a-z0-9]+/g,' ').trim(),(d.model??'').toLowerCase().trim(),retailer,price,d.expiresAt??''].join('|');};
+/** On a marketplace, the listing is sold by someone other than the retailer. */
+export const thirdPartySeller=(d:Offer)=>!!d.merchantId&&!!d.seller&&!!d.merchant&&retailerName(d.seller)!==retailerName(d.merchant)&&!retailerName(d.seller).startsWith(retailerName(d.merchant));
 const live=(x:ShoppingItem)=>!x.timing||x.timing.state==='current'||x.timing.state==='ending';
 const endsMs=(x:ShoppingItem)=>x.timing?.endsAt?Date.parse(x.timing.endsAt):x.timing?.endsDay?Date.parse(x.timing.endsDay+'T23:59:59-04:00'):Number.MAX_SAFE_INTEGER;
 function itemImage(url:unknown):ItemImage|null {
@@ -38,7 +41,7 @@ export async function shoppingItems(opts:{view?:string;category?:string;merchant
  AND (${opts.condition??null}::text IS NULL OR lower(d.data->>'condition')=lower(${opts.condition??null}))
  ORDER BY p.timeline_at DESC, p.article_id DESC LIMIT ${SCAN_LIMIT}`;
  const now=Date.now();
- let items:ShoppingItem[]=rows.map(r=>({id:r.article_id,indexable:r.seo_excluded_at===null&&!!r.summary?.trim(),updatedAt:r.modified.toISOString(),title:plainTitle(safeCopy(r.title)),summary:safeCopy(r.summary??''),reason:r.reason?safeCopy(r.reason):null,category:r.category,tags:r.tags,score:r.score===null?null:Number(r.score),selected:r.selected,source:r.name,sourceUrl:r.url,publishedAt:r.timeline_at.toISOString(),sourcePublishedAt:r.published_at?.toISOString()??null,offer:{...r.data,status:effectiveStatus(r.data),buyUrl:affiliateLink(r.data.buyUrl)},timing:offerTiming(r.data,r.timeline_at.toISOString(),now),image:itemImage(r.data.imageUrl),sources:[{name:r.name,url:r.url}]}));
+ let items:ShoppingItem[]=rows.map(r=>({id:r.article_id,indexable:r.seo_excluded_at===null&&!!r.summary?.trim(),updatedAt:r.modified.toISOString(),title:plainTitle(safeCopy(r.title)),summary:safeCopy(r.summary??''),reason:r.reason?safeCopy(r.reason):null,category:r.category,tags:r.tags,score:r.score===null?null:Number(r.score),selected:r.selected,source:r.name,sourceUrl:r.url,publishedAt:r.timeline_at.toISOString(),sourcePublishedAt:r.published_at?.toISOString()??null,offer:{...r.data,status:effectiveStatus(r.data),buyUrl:affiliateLink(r.data.buyUrl)},timing:offerTiming(r.data,r.timeline_at.toISOString(),now),image:itemImage(r.data.imageUrl),thirdPartySeller:thirdPartySeller(r.data),sources:[{name:r.name,url:r.url}]}));
  const view=opts.view??'latest';
  if(!opts.id){
   if(view==='top')items=items.filter(x=>isOffer(x.offer)&&x.offer.status==='Active'&&x.selected).sort((a,b)=>(b.score??0)-(a.score??0));
@@ -46,7 +49,9 @@ export async function shoppingItems(opts:{view?:string;category?:string;merchant
   else if(view==='flash'){
    // Best Deals shows what a reader can still act on: offers past a stated deadline, or older than
    // their kind's shelf life with no deadline at all, are not current recommendations.
-   const candidates=items.filter(x=>isOffer(x.offer)&&['Active','Unverified','Upcoming'].includes(x.offer.status)&&live(x));
+   // A discount above 70% against a small store's own list price is not a deal signal; only a
+   // recognised retailer's markdown of that size is shown here.
+   const candidates=items.filter(x=>isOffer(x.offer)&&['Active','Unverified','Upcoming'].includes(x.offer.status)&&live(x)&&!((offerSavings(x.offer)?.percent??0)>70&&!knownRetailer(x.offer)));
    const histories=await priceHistories(candidates.filter(x=>x.offer.expiresAt).map(x=>x.id));
    items=candidates.flatMap(x=>{
     const evidence=flashDealEvidence(x.offer,histories.get(x.id)??[]);
@@ -54,6 +59,9 @@ export async function shoppingItems(opts:{view?:string;category?:string;merchant
     const productActivity=isProductActivity(x.offer,x.sourcePublishedAt??x.publishedAt,x.title);
     return evidence||pick||productActivity?[{...x,productActivity,...(evidence?{flashDeal:evidence}:{}),...(pick?{dealPick:pick}:{})}]:[];
    });
+   // Newest day first; within a day, listings sold by the retailer itself come before marketplace sellers.
+   const dayKey=(x:ShoppingItem)=>x.publishedAt.slice(0,10);
+   items.sort((a,b)=>dayKey(b).localeCompare(dayKey(a))||Number(thirdPartySeller(a.offer))-Number(thirdPartySeller(b.offer))||Date.parse(b.publishedAt)-Date.parse(a.publishedAt));
   }
   else if(view==='any') { /* all public shopping content */ }
   else if(view==='picks'){
@@ -99,7 +107,10 @@ export async function shoppingItems(opts:{view?:string;category?:string;merchant
   else items=items.filter(x=>isOffer(x.offer)&&!['Expired','Out of Stock'].includes(x.offer.status)&&(x.offer.kind!=='product_deal'||x.offer.checkoutPriceCents!==null||x.offer.listedPriceCents!==null));
  }
  const unique=new Map<string,ShoppingItem>();
- for(const item of items){const key=item.offer.identity??item.id;const prior=unique.get(key);if(prior){if(!prior.sources.some(s=>s.url===item.sourceUrl))prior.sources.push({name:item.source,url:item.sourceUrl});}else unique.set(key,item);}
+ // The same deal reported by several sources shows once: either the strict stored identity, or the
+ // same product at the same retailer at the same price (two sources quoting one offer). The first
+ // (newest) stays and the others become its extra sources.
+ for(const item of items){const key=item.offer.identity??looseKey(item)??item.id;const prior=unique.get(key);if(prior){if(!prior.sources.some(s=>s.url===item.sourceUrl))prior.sources.push({name:item.source,url:item.sourceUrl});}else unique.set(key,item);}
  items=[...unique.values()];const total=items.length;const limit=Math.max(1,Math.min(opts.limit??24,100));const offset=Math.max(0,opts.offset??0);
  return {items:items.slice(offset,offset+limit),total,hasMore:offset+limit<total,calibration:SHOPPING.calibration,checkedAt:new Date().toISOString()};
 }
