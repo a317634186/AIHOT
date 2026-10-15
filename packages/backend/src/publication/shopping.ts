@@ -20,7 +20,7 @@ const retailerName=(v:string|null|undefined)=>(v??'').toLowerCase().replace(/[â€
 const knownRetailer=(d:Offer)=>!!d.merchantId||!!d.seller&&MERCHANTS.some(m=>{const a=retailerName(m.name),b=retailerName(d.seller);return a===b||b.startsWith(a+' ')||a.startsWith(b+' ');});
 const looseKey=(x:ShoppingItem)=>{const d=x.offer;if(!isOffer(d)||!d.product)return null;const price=d.checkoutPriceCents??d.listedPriceCents;if(price===null)return null;const retailer=d.merchantId??retailerName(d.seller)??'';if(!retailer)return null;return ['p',d.product.toLowerCase().replace(/[^a-z0-9]+/g,' ').trim(),(d.model??'').toLowerCase().trim(),retailer,price,d.expiresAt??''].join('|');};
 /** On a marketplace, the listing is sold by someone other than the retailer. */
-export const thirdPartySeller=(d:Offer)=>!!d.merchantId&&!!d.seller&&!!d.merchant&&retailerName(d.seller)!==retailerName(d.merchant)&&!retailerName(d.seller).startsWith(retailerName(d.merchant));
+export const thirdPartySeller=(d:Offer)=>!!d.merchantId&&!!d.seller&&!!d.merchant&&d.seller.length<=40&&!/[,;]|\b(?:including|various|multiple|select|retailers?|sellers?)\b/i.test(d.seller)&&retailerName(d.seller)!==retailerName(d.merchant)&&!retailerName(d.seller).startsWith(retailerName(d.merchant));
 const live=(x:ShoppingItem)=>!x.timing||x.timing.state==='current'||x.timing.state==='ending';
 const endsMs=(x:ShoppingItem)=>x.timing?.endsAt?Date.parse(x.timing.endsAt):x.timing?.endsDay?Date.parse(x.timing.endsDay+'T23:59:59-04:00'):Number.MAX_SAFE_INTEGER;
 function itemImage(url:unknown):ItemImage|null {
