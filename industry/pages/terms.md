@@ -16,4 +16,4 @@ Use [feedback](/feedback) for corrections, source rights or removal requests. No
 
 ## Affiliate disclosure
 
-No Savlume affiliate accounts are configured. Source-provided purchase links may contain the original publisher's tracking. Future Savlume affiliate links will be disclosed and will not change recommendation order.
+As an Amazon Associate, Savlume earns from qualifying purchases: Amazon links carry Savlume's affiliate tag and may pay a commission at no extra cost to you. Links to other retailers carry no Savlume tag; some source-provided links may contain the original publisher's tracking. Commissions never affect what is shown or how it is ranked.

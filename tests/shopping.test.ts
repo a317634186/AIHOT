@@ -1,7 +1,7 @@
 import {offerPriceText,offerQuestions} from '@aihot/contracts/shopping-facts';
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { isProductActivity, sourceDealPick, supportedPromotion, reportedDeadlineDay, flashDealEvidence, cents, checkoutTotal, effectiveStatus, offerIdentity, safeCopy, offerTiming, offerSavings, flashSavings, plainTitle, type Offer } from '@aihot/contracts/shopping';
+import { isProductActivity, sourceDealPick, supportedPromotion, reportedDeadlineDay, flashDealEvidence, cents, checkoutTotal, effectiveStatus, offerIdentity, safeCopy, offerTiming, offerSavings, flashSavings, plainTitle, affiliateLink, isAffiliateLink, type Offer } from '@aihot/contracts/shopping';
 import { isReviewContent, type ReviewSummary } from '@aihot/contracts/reviews';
 import { localHour, beijingDate } from '@aihot/contracts/time';
 import { merchantFor, guideFor, redirectorFor } from '@aihot/industry/shopping';
@@ -166,4 +166,11 @@ test('headlines read as a shopper would say them, and announcements are not shel
  assert.ok(!isReviewContent({kind:'buying_guide',review},'Apple HomeView Smart Display Reportedly Priced at $299 Ahead of Official Launch'));
  assert.ok(isReviewContent({kind:'buying_guide',review},'Garmin MARQ Gen3 Luxury Smartwatch Series In-Depth Review Summary'));
  assert.ok(isReviewContent({kind:'buying_guide',review},'Framework Laptop 12 after two weeks'));
+});
+test('the affiliate tag goes only on Amazon product links and replaces any publisher tag',()=>{
+ assert.equal(affiliateLink('https://www.amazon.com/dp/B0HGKSQMX6?th=1&tag=toysj-20'),'https://www.amazon.com/dp/B0HGKSQMX6?th=1&tag=savlume-20');
+ assert.equal(affiliateLink('https://www.walmart.com/ip/x/1'),'https://www.walmart.com/ip/x/1');
+ assert.equal(affiliateLink('https://amazon.com.evil.example/dp/x'),'https://amazon.com.evil.example/dp/x');
+ assert.equal(affiliateLink(null),null);
+ assert.ok(isAffiliateLink('https://www.amazon.com/dp/x?tag=savlume-20'));assert.ok(!isAffiliateLink('https://www.amazon.com/dp/x?tag=toysj-20'));
 });

@@ -1,7 +1,7 @@
 // The single shopping read layer used by pages, feeds, API, MCP and briefings.
 import { isReviewContent } from '@aihot/contracts/reviews';
 import { SHOPPING, MERCHANTS } from '@aihot/industry/shopping';
-import { effectiveStatus, flashDealEvidence, sourceDealPick, isProductActivity, isOffer, safeCopy, plainTitle, offerTiming, flashSavings, type Offer, type OfferTiming, type PriceObservation, type FlashDealEvidence, type DealPick } from '@aihot/contracts/shopping';
+import { effectiveStatus, flashDealEvidence, sourceDealPick, isProductActivity, isOffer, safeCopy, plainTitle, offerTiming, flashSavings, affiliateLink, type Offer, type OfferTiming, type PriceObservation, type FlashDealEvidence, type DealPick } from '@aihot/contracts/shopping';
 import { sql } from '../db.ts';
 import { proxiedImage, proxiedImageSet } from '../media/imgproxy.ts';
 /**
@@ -38,7 +38,7 @@ export async function shoppingItems(opts:{view?:string;category?:string;merchant
  AND (${opts.condition??null}::text IS NULL OR lower(d.data->>'condition')=lower(${opts.condition??null}))
  ORDER BY p.timeline_at DESC, p.article_id DESC LIMIT ${SCAN_LIMIT}`;
  const now=Date.now();
- let items:ShoppingItem[]=rows.map(r=>({id:r.article_id,indexable:r.seo_excluded_at===null&&!!r.summary?.trim(),updatedAt:r.modified.toISOString(),title:plainTitle(safeCopy(r.title)),summary:safeCopy(r.summary??''),reason:r.reason?safeCopy(r.reason):null,category:r.category,tags:r.tags,score:r.score===null?null:Number(r.score),selected:r.selected,source:r.name,sourceUrl:r.url,publishedAt:r.timeline_at.toISOString(),sourcePublishedAt:r.published_at?.toISOString()??null,offer:{...r.data,status:effectiveStatus(r.data)},timing:offerTiming(r.data,r.timeline_at.toISOString(),now),image:itemImage(r.data.imageUrl),sources:[{name:r.name,url:r.url}]}));
+ let items:ShoppingItem[]=rows.map(r=>({id:r.article_id,indexable:r.seo_excluded_at===null&&!!r.summary?.trim(),updatedAt:r.modified.toISOString(),title:plainTitle(safeCopy(r.title)),summary:safeCopy(r.summary??''),reason:r.reason?safeCopy(r.reason):null,category:r.category,tags:r.tags,score:r.score===null?null:Number(r.score),selected:r.selected,source:r.name,sourceUrl:r.url,publishedAt:r.timeline_at.toISOString(),sourcePublishedAt:r.published_at?.toISOString()??null,offer:{...r.data,status:effectiveStatus(r.data),buyUrl:affiliateLink(r.data.buyUrl)},timing:offerTiming(r.data,r.timeline_at.toISOString(),now),image:itemImage(r.data.imageUrl),sources:[{name:r.name,url:r.url}]}));
  const view=opts.view??'latest';
  if(!opts.id){
   if(view==='top')items=items.filter(x=>isOffer(x.offer)&&x.offer.status==='Active'&&x.selected).sort((a,b)=>(b.score??0)-(a.score??0));

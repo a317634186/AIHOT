@@ -17,6 +17,15 @@ export const SHOPPING = {
   couponShelfDays: 10,
   calibration: "Provisional: shopping thresholds have not been calibrated against human-labeled examples.",
 } as const;
+/**
+ * Affiliate programmes the site is enrolled in. The tag is a public link parameter, not a secret.
+ * Amazon's operating agreement requires the disclosure below on the site and a timestamp beside any
+ * displayed Amazon price; both are rendered from these values.
+ */
+export const AFFILIATE = {
+  amazonTag: "savlume-20",
+  disclosure: "As an Amazon Associate, Savlume earns from qualifying purchases.",
+} as const;
 export const MERCHANTS = [
   {
     "id": "amazon",

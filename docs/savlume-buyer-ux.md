@@ -38,3 +38,7 @@ Card and hero images are served through the signed image proxy (`image-336/720/1
 - The working tree is committed to git locally (no push).
 
 Still owner actions: alert webhook (`ALERT_WEBHOOK_URL`), Search Console and analytics, off-server backup storage, key rotation for the model gateway, and an affiliate program with disclosure when ready.
+
+## Amazon Associates (October 15, 2026)
+
+The site is enrolled in Amazon Associates with tag `savlume-20` (`AFFILIATE` in `industry/shopping.ts`; a public link parameter, not a secret). `affiliateLink()` adds the tag to Amazon product links at read time in the publication layer, so stored links stay clean and every exit (pages, feeds, API, text versions) is consistent; any publisher tag on a resolved link is replaced. Amazon links carry `rel="sponsored"`. The required disclosure appears in the footer and on About, and Amazon prices show "as of" the source time beside them, as the operating agreement requires. Links to other retailers are untouched. Affiliate links must not be placed in e-mails; a future newsletter links to Savlume pages instead.

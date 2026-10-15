@@ -1,5 +1,5 @@
 import type { ReviewSummary } from './reviews.ts';
-import { SHOPPING, guideFor, merchantFor } from '@aihot/industry/shopping';
+import { SHOPPING, AFFILIATE, guideFor, merchantFor } from '@aihot/industry/shopping';
 export type DealStatus = 'Active' | 'Expired' | 'Out of Stock' | 'Unverified' | 'Upcoming';
 export interface PriceObservation {at:string;listedPriceCents:number|null;checkoutPriceCents:number|null;currency:string;basis:'source-reported'|'merchant-verified';sourceUrl:string}
 export interface AiOverview {format?:'recommendation';priceReason?:string|null;summary:string;bestFor:string|null;highlights:string[];cautions:string[]}
@@ -112,6 +112,19 @@ export function plainTitle(title:string):string {
   .replace(/\s{2,}/g,' ').trim();
 }
 export function unitPrice(price:number|null, quantity:number|null):number|null { return price===null||quantity===null||!Number.isFinite(quantity)||quantity<=0?null:Math.round(price/quantity); }
+/** The stored link with the site's own affiliate tag, for merchants the site is enrolled with; other links pass through unchanged. */
+export function affiliateLink(raw:string|null):string|null {
+ if(!raw)return raw;
+ try{
+  const u=new URL(raw);
+  if(merchantFor(u.href)?.id==='amazon'&&AFFILIATE.amazonTag){u.searchParams.set('tag',AFFILIATE.amazonTag);return u.href;}
+ }catch{}
+ return raw;
+}
+export function isAffiliateLink(url:string|null|undefined):boolean {
+ if(!url)return false;
+ try{return new URL(url).searchParams.get('tag')===AFFILIATE.amazonTag;}catch{return false;}
+}
 export function cleanMerchantLink(raw:string):string {
  const u=new URL(raw);
  for(const key of [...u.searchParams.keys()])if(/^(utm_.+|tag|linkCode|linkId|ascsubtag|irclickid|irgwc|irpid|irext|isir|irsrc|camp|creative|ref_|clickid|afsrc|sourceid|veh|wmlspartner|affiliates_ad_id|campaign_id|sharedid|subid\d*|cm_mmc|gaOptInStatus)$/i.test(key))u.searchParams.delete(key);
