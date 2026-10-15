@@ -27,11 +27,12 @@ function itemImage(url:unknown):ItemImage|null {
  if(typeof url!=='string')return null;
  try{const src=proxiedImage(url,'image-720');const hero=proxiedImage(url,'image-1200');if(!src||!hero)return null;return {src,srcSet:proxiedImageSet(url,'card'),hero};}catch{return null;}
 }
-export async function shoppingItems(opts:{view?:string;category?:string;merchant?:string;q?:string;limit?:number;offset?:number;id?:string;product?:string;model?:string;variant?:string;condition?:string}={}) {
+export async function shoppingItems(opts:{view?:string;category?:string;merchant?:string;q?:string;limit?:number;offset?:number;id?:string;ids?:string[];product?:string;model?:string;variant?:string;condition?:string}={}) {
  const rows=await sql`SELECT p.article_id,p.title,p.summary,p.reason,p.category,p.tags,p.score,p.selected,p.url,p.timeline_at,p.published_at,p.seo_excluded_at,GREATEST(p.updated_at,d.content_updated_at) AS modified,s.name,d.data
  FROM publications p JOIN articles a ON a.id=p.article_id JOIN shopping_offers d ON d.article_id=p.article_id JOIN sources s ON s.id=p.source_id
  WHERE p.visibility='public' AND p.eligible AND a.processing_state<>'blocked' AND s.participation_mode='editorial' AND p.timeline_at<=now()+interval '5 minutes'
  AND (${opts.id??null}::text IS NULL OR p.article_id=${opts.id??null})
+ AND (${opts.ids??null}::text[] IS NULL OR p.article_id=ANY(${opts.ids??null}::text[]))
  AND (${opts.category??null}::text IS NULL OR p.category=${opts.category??null})
  AND (${opts.merchant??null}::text IS NULL OR d.data->>'merchantId'=${opts.merchant??null})
  AND (${opts.q??null}::text IS NULL OR p.search_text ILIKE ${'%'+(opts.q??'').replace(/[\\%_]/g,'\\$&')+'%'})
@@ -43,7 +44,7 @@ export async function shoppingItems(opts:{view?:string;category?:string;merchant
  const now=Date.now();
  let items:ShoppingItem[]=rows.map(r=>({id:r.article_id,indexable:r.seo_excluded_at===null&&!!r.summary?.trim(),updatedAt:r.modified.toISOString(),title:plainTitle(safeCopy(r.title)),summary:safeCopy(r.summary??''),reason:r.reason?safeCopy(r.reason):null,category:r.category,tags:r.tags,score:r.score===null?null:Number(r.score),selected:r.selected,source:r.name,sourceUrl:r.url,publishedAt:r.timeline_at.toISOString(),sourcePublishedAt:r.published_at?.toISOString()??null,offer:{...r.data,status:effectiveStatus(r.data),buyUrl:affiliateLink(r.data.buyUrl)},timing:offerTiming(r.data,r.timeline_at.toISOString(),now),image:itemImage(r.data.imageUrl),thirdPartySeller:thirdPartySeller(r.data),sources:[{name:r.name,url:r.url}]}));
  const view=opts.view??'latest';
- if(!opts.id){
+ if(!opts.id&&!opts.ids){
   if(view==='top')items=items.filter(x=>isOffer(x.offer)&&x.offer.status==='Active'&&x.selected).sort((a,b)=>(b.score??0)-(a.score??0));
   else if(view==='recommended'||view==='new') { /* Complete public feed, newest first, including labeled past offers. */ }
   else if(view==='flash'){

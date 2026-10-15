@@ -3,6 +3,7 @@ import { discoverShopping } from "@aihot/backend/shopping/discovery";
 // Cron-style schedules (Asia/Shanghai). Each run is recorded in job_runs; missed slots run once.
 import { SHOPPING } from "@aihot/industry/shopping";
 import { recheckShopping } from "@aihot/backend/shopping/offers";
+import { checkPriceWatches } from "@aihot/backend/shopping/watch";
 import type { PgBoss } from "pg-boss";
 import { FEATURES } from "@aihot/industry/features";
 import { credential } from "@aihot/backend/config";
@@ -44,6 +45,7 @@ export const SCHEDULES: Scheduled[] = [
   ...(SHOPPING.enabled && collecting && process.env.SHOPPING_SEARCH_ENABLED === "true" ? [{name:"shopping.discover",cron:"10 */3 * * *",run:()=>discoverShopping()},{name:"shopping.review-discover",cron:"35 */6 * * *",run:()=>discoverShopping(undefined,'reviews')}] : []),
   { name: "content.sweep", cron: "*/5 * * * *", run: sweepUnprocessed },
   // Full-text translations of newly selected items (model calls; off with MODEL_CALLS_ENABLED=false).
+  ...(SHOPPING.enabled ? [{ name: "shopping.price-watch", cron: "12,42 * * * *", run: () => checkPriceWatches() }] : []),
   ...(SHOPPING.enabled ? [{ name: "shopping.recheck", cron: "*/30 * * * *", run: recheckShopping }] : [{ name: "content.translate", cron: "*/5 * * * *", run: () => translatePending() }]),
   { name: "hot.rank", cron: "*/5 * * * *", run: () => computeHotRanking() },
   { name: "hot.snapshot", cron: "2 * * * *", run: () => snapshotHeat() },
