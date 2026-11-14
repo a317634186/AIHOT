@@ -33,6 +33,9 @@ function supportedHubSeoTitle(raw: string, label: string): string | null {
   const cleaned = raw
     .replace(/\s*[|·-]\s*Savlume(?:\s*Shopping)?\s*$/i, '')
     .replace(/\b(?:reported|listed)\s+(?:at|for|from)\b[^.!?|]*/gi, ' ')
+    // The document title appends " | Savlume", so an inner pipe would read as a second separator.
+    .replace(/\s*\|\s*/g, ', ')
+    .replace(/,\s*,/g, ',')
     .replace(/\s+/g, ' ')
     .trim();
   if (cleaned.length < 55 || cleaned.length > 68) return null;

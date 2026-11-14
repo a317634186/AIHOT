@@ -51,7 +51,7 @@ const collecting = process.env.COLLECT_ENABLED !== "false";
 
 export const SCHEDULES: Scheduled[] = [
   ...(SHOPPING.enabled && process.env.MODEL_CALLS_ENABLED !== 'false' ? [{name:'shopping.recommendations',cron:'17 * * * *',run:()=>refreshMissingShoppingRecommendations(20)}] : []),
-  ...(SHOPPING.enabled && process.env.MODEL_CALLS_ENABLED !== 'false' ? [{name:'shopping.seo-descriptions',cron:'4,24,44 * * * *',run:()=>refreshMissingShoppingSeoDescriptions(15)}] : []),
+  ...(SHOPPING.enabled && process.env.MODEL_CALLS_ENABLED !== 'false' ? [{name:'shopping.seo-descriptions',cron:'4,24,44 * * * *',run:()=>refreshMissingShoppingSeoDescriptions(60)}] : []),
   ...(SHOPPING.enabled && process.env.MODEL_CALLS_ENABLED !== 'false' ? [{name:'shopping.hub-seo-titles',cron:'23 */6 * * *',missed:'once' as const,run:()=>refreshMissingShoppingHubSeoTitles(8)}] : []),
   ...(SHOPPING.enabled && process.env.MODEL_CALLS_ENABLED !== 'false' ? [{name:'shopping.resolve-missing-links',cron:'8,38 * * * *',run:()=>resolveMissingShoppingLinks(8)}] : []),
   ...(SHOPPING.enabled && process.env.MODEL_CALLS_ENABLED !== 'false' ? [{name:'shopping.price-comparisons',cron:'0 */6 * * *',run:()=>researchShoppingComparisons(3)}] : []),

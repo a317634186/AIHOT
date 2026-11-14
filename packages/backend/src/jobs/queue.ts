@@ -47,7 +47,9 @@ const ensured = new Set<string>();
 export async function getBoss(): Promise<PgBoss> {
   if (boss) return boss;
   starting ??= (async () => {
-    const b = new PgBoss({ connectionString: config.databaseUrl, max: 4, schema: "pgboss", application_name: "aihot-jobs" });
+    // One polling worker per queue competes for the pool; 4 connections for ~40 queues left polls
+    // waiting past the connect timeout and produced "timeout exceeded when trying to connect".
+    const b = new PgBoss({ connectionString: config.databaseUrl, max: Number(process.env.PGBOSS_POOL_MAX || 12), schema: "pgboss", application_name: "aihot-jobs" });
     b.on("error", (err) => console.error("[pg-boss]", err));
     await b.start();
     boss = b;
