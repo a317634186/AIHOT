@@ -7,7 +7,7 @@ import { registerExtractionJobs } from "./content.ts";
 
 export async function registerSourceJobs(boss: PgBoss) {
   await ensureQueue(QUEUES.fetchSource);
-  await boss.work<{ sourceId: string; force?: boolean }>(QUEUES.fetchSource, { localConcurrency: Number(process.env.FETCH_CONCURRENCY || 8), pollingIntervalSeconds: 2 }, async ([job]) => {
+  await boss.work<{ sourceId: string; force?: boolean }>(QUEUES.fetchSource, { localConcurrency: Number(process.env.FETCH_CONCURRENCY || 4), pollingIntervalSeconds: 2 }, async ([job]) => {
     if (!job) return;
     return collectSource(job.data.sourceId, { force: job.data.force });
   });

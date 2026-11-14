@@ -40,9 +40,9 @@ export default function StatsAdmin({ loaderData: s }: Route.ComponentProps) {
       <div className="flex gap-1">{[7, 30, 90].map((d) => <Link key={d} to={`?days=${d}`} className={`rounded-full px-3 py-1 text-[13px] ring-1 ring-line ${d === days ? "bg-ink text-bg" : "text-ink-3"}`}>{d} 天</Link>)}</div>
     }>
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <Stat label="今日浏览 / 访客" value={<>{num(s.traffic.today.views)} <span className="text-ink-4">/</span> {num(s.traffic.today.visitors)}</>} hint={`近 7 天 ${num(s.traffic.last7.views)} / ${num(s.traffic.last7.visitors)}`} />
-        <Stat label={`${days} 天浏览量`} value={num(s.traffic.window.views)} hint={`访客 ${num(s.traffic.window.visitors)}`} />
-        <Stat label="外链点击率" value={pct(ctr * 100)} hint={`${num(s.traffic.window.clicks)} 次点击 / ${num(s.traffic.window.views)} 次浏览`} tone={ctr >= 0.05 ? "ok" : undefined} />
+        <Stat label="今日浏览 / 当日去重访客" value={<>{num(s.traffic.today.views)} <span className="text-ink-4">/</span> {num(s.traffic.today.visitors)}</>} hint={`近 7 天浏览 ${num(s.traffic.last7.views)} · 日访客累计 ${num(s.traffic.last7.visitors)}`} />
+        <Stat label={`${days} 天浏览量`} value={num(s.traffic.window.views)} hint={`日访客累计 ${num(s.traffic.window.dailyVisitors)}`} />
+        <Stat label="外链点击 / 浏览（事件比率）" value={pct(ctr * 100)} hint={`${num(s.traffic.window.clicks)} 次外链点击 / ${num(s.traffic.window.views)} 次页面浏览`} />
         <Stat label="公开条目" value={num(cov.total)} hint={`近 24 小时新增 ${num(cov.last24h)}`} />
       </div>
 
@@ -52,11 +52,19 @@ export default function StatsAdmin({ loaderData: s }: Route.ComponentProps) {
           { key: "visitors", label: "访客", color: C[2], values: s.traffic.daily.map((d) => d.visitors) },
           { key: "clicks", label: "外链点击", color: C[1], values: s.traffic.daily.map((d) => d.clicks), dashed: true },
         ]} />
-        <p className="mt-2 text-[12px] text-ink-4">计数由浏览器上报，不含搜索引擎与机器人；访客按每日轮换的匿名哈希去重，不使用 Cookie。</p>
+        <p className="mt-2 text-[12px] text-ink-4">数据来自浏览器上报并过滤已识别的机器人。访客按自然日用轮换哈希去重；区间“日访客累计”会重复计算跨日回访者。点击/浏览是事件比率，不等同于会话转化率。</p>
       </Card>
 
       <div className="mt-4 grid gap-4 lg:grid-cols-3">
-        <Card title="访问最多的页面"><ShareBars rows={s.traffic.paths.map((r) => ({ label: r.path, value: r.hits }))} /></Card>
+        <Card title="页面表现（按浏览量）" className="lg:col-span-2">
+          <DataTable rows={s.traffic.paths} rowKey={(r) => r.path} dense columns={[
+            { key: "path", label: "页面", render: (r) => <span className="break-all">{r.path}</span> },
+            { key: "views", label: "浏览", align: "right", render: (r) => num(r.views) },
+            { key: "clicks", label: "外链点击", align: "right", render: (r) => num(r.clicks) },
+            { key: "rate", label: "点击 / 浏览", align: "right", render: (r) => pct(Number(r.click_rate)) },
+          ]} />
+          <p className="mt-2 text-[12px] text-ink-4">仅统计已上报的外链点击；点击率按该页面点击事件 ÷ 页面浏览事件计算。</p>
+        </Card>
         <Card title="来源站点"><ShareBars rows={s.traffic.referrers.map((r) => ({ label: r.host, value: r.hits }))} />{!s.traffic.referrers.length && <p className="text-[13px] text-ink-4">还没有外部来源；直接访问不计入。</p>}</Card>
         <Card title="点击去向（零售商）"><ShareBars rows={s.traffic.clickTargets.map((r) => ({ label: r.host || "(unknown)", value: r.hits }))} />{!s.traffic.clickTargets.length && <p className="text-[13px] text-ink-4">还没有外链点击。</p>}</Card>
       </div>

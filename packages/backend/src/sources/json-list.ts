@@ -1,7 +1,8 @@
 // JSON sources: plain JSON APIs, JSON embedded in HTML (script tags, window variables).
 import { credential } from "../config.ts";
-import { guardedFetch } from "../lib/http-fetch.ts";
+import { crawlerFetch } from "../lib/crawler-fetch.ts";
 import { collapseWhitespace, stripTags } from "../lib/text.ts";
+import { truncateAtWord } from "@aihot/contracts/shopping";
 import { FetchError, type Candidate, type SourceRow } from "./types.ts";
 
 export function getPath(obj: unknown, path: string): unknown {
@@ -136,7 +137,7 @@ export async function fetchJsonList(source: SourceRow): Promise<Candidate[]> {
     const token = credential("collectors", "GITHUB_TOKEN");
     if (token) headers.authorization = `Bearer ${token}`;
   }
-  const res = await guardedFetch(url, {
+  const res = await crawlerFetch(url, {
     method: c.method ?? "GET",
     headers: c.bodyJson ? { ...headers, "content-type": "application/json" } : headers,
     body: c.bodyJson ? JSON.stringify(c.bodyJson) : undefined,
@@ -173,7 +174,7 @@ export async function fetchJsonList(source: SourceRow): Promise<Candidate[]> {
       title: collapseWhitespace(stripTags(title)),
       author: firstString(item, c.authorPaths),
       publishedAt: toDate(getPath(item, c.publishedAtPath), c.publishedAtUnit),
-      excerpt: summary ? collapseWhitespace(stripTags(summary)).slice(0, 2000) : null,
+      excerpt: summary ? truncateAtWord(collapseWhitespace(stripTags(summary)), 2000) : null,
       bodyText: summaryIsBody ? stripTags(summary!) : null,
       bodyStatus: summaryIsBody ? "ok" : "pending",
       raw: { externalId: externalId ?? null },

@@ -1,0 +1,37 @@
+import './setup.ts';
+import {test,after} from 'node:test';
+import assert from 'node:assert/strict';
+import {registerCommunityMember} from '../packages/backend/src/community/auth.ts';
+import {communityFeed,createCommunityPost} from '../packages/backend/src/community/service.ts';
+import {communitySubmissions,reviewCommunityPost} from '../packages/backend/src/community/admin.ts';
+import {closeDb} from '../packages/backend/src/db.ts';
+import {checkCommunityRetailerBatch} from '../packages/backend/src/community/retailer-checks.ts';
+import type {guardedFetch} from '../packages/backend/src/lib/http-fetch.ts';
+
+after(async()=>{await closeDb();});
+test('user submissions stay private until approved, and retain event details and affiliate links',async()=>{
+ const {member}=await registerCommunityMember({handle:'deal_test_'+Date.now().toString(36),password:'test-password-12345'});
+ const base={kind:'offer_submission',body:'Member shared the conditions for this offer.',category:'electronics'};
+ const product=await createCommunityPost(member,{...base,title:'Sample product offer',productUrl:'https://www.amazon.com/dp/B012345678?tag=other-20',price:'19.99'},'192.0.2.1','test');
+ const event=await createCommunityPost(member,{...base,title:'Sample sale event',offerType:'event',productUrl:'https://www.walmart.com/deals',price:'',endsOn:'2020-01-01'},'192.0.2.1','test');
+ const unverified=await createCommunityPost(member,{...base,productUrl:'https://www.amazon.com/dp/B012345679'},'192.0.2.1','test');
+ await assert.rejects(()=>createCommunityPost(member,{...base,title:'Bad link',productUrl:'https://slickdeals.net/f/123',price:'3'},'192.0.2.1','test'));
+ assert.equal((await communityFeed({kind:'offer_submission'})).some(x=>x.id===product.id),false);
+ assert.equal((await communitySubmissions(1,'pending_ai')).items.filter(x=>[product.id,event.id,unverified.id].includes(x.id)).length,3);
+ const calls:string[]=[];const fakeFetch:typeof guardedFetch=async url=>{calls.push(url);if(url.includes('B012345679'))return {status:302,url,headers:new Headers({location:'https://example.invalid/redirect'}),body:Buffer.alloc(0),text:()=>''};const body=JSON.stringify({'@type':'Product',url,name:'Example product from Amazon',offers:{'@type':'Offer',price:'24.99',priceCurrency:'USD',seller:{name:'Amazon'},availability:'https://schema.org/InStock'}});const text=`<script type="application/ld+json">${body}</script>`;return {status:200,url,headers:new Headers(),body:Buffer.from(text),text:()=>text};};
+ const checked=await checkCommunityRetailerBatch(10,fakeFetch);assert.equal(checked.verified,1);assert.equal(checked.unverified,1);assert.equal(calls.length,2);
+ await reviewCommunityPost(product.id,'approve','Reviewed for testing','test');
+ await reviewCommunityPost(event.id,'approve','Reviewed for testing','test');
+ await reviewCommunityPost(unverified.id,'approve','Reviewed for testing','test');
+ const items=await communityFeed({kind:'offer_submission'});
+ const productCard=items.find(x=>x.id===product.id)!;const eventCard=items.find(x=>x.id===event.id)!;
+ assert.equal(new URL(productCard.productUrl!).searchParams.get('tag'),'savlume-20');
+ assert.equal(productCard.reportedPriceCents,1999);
+ assert.equal(productCard.retailerCheck?.state,'verified');assert.equal(productCard.retailerCheck?.priceCents,2499);assert.equal(productCard.retailerCheck?.productName,'Example product from Amazon');
+ const unknownCard=items.find(x=>x.id===unverified.id)!;assert.equal(unknownCard.reportedPriceCents,null);assert.equal(unknownCard.retailerCheck?.state,'unverified');assert.equal(unknownCard.retailerCheck?.priceCents,null);
+ assert.equal(eventCard.offerType,'event');assert.equal(eventCard.reportedPriceCents,null);
+ assert.equal(eventCard.endsOn,'2020-01-01');assert.equal(eventCard.reportedEndPassed,true);
+ assert.equal((await communitySubmissions(1,'published')).items.filter(x=>[product.id,event.id].includes(x.id)).length,2);
+ const first=await communityFeed({kind:'offer_submission',limit:1});const second=await communityFeed({kind:'offer_submission',limit:1,offset:1});
+ assert.equal(first.length,1);assert.equal(second.length,1);assert.notEqual(first[0]!.id,second[0]!.id);
+});

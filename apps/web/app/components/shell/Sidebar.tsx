@@ -60,7 +60,7 @@ export function Sidebar({ changelogVersion }: { changelogVersion: string | null 
       <div className="mt-2 space-y-2.5 px-1 pt-1">
         <ThemeSwitch className="mx-1" />
         {SITE.icp && (
-          <a href="https://beian.miit.gov.cn/" target="_blank" rel="noopener noreferrer" className="block px-2 text-[10px] text-ink-4 hover:text-ink-3">
+          <a href="https://beian.miit.gov.cn/" target="_blank" rel="nofollow noopener noreferrer" className="block px-2 text-[10px] text-ink-4 hover:text-ink-3">
             {SITE.icp}
           </a>
         )}

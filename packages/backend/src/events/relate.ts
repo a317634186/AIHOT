@@ -10,6 +10,7 @@
 // "prefer no" refused half of the true merges (measured 2026-09-28 on 370 labelled pairs).
 import { z } from "zod";
 import { beijingDate, beijingTime } from "@aihot/contracts/time";
+import { truncateAtWord } from "@aihot/contracts/shopping";
 import { promptText, promptVersion } from "../editorial/prompts.ts";
 
 export const RELATE_PROMPT_VERSION = promptVersion("group-batch", "group-pair", "group-signal");
@@ -81,7 +82,7 @@ export function describeReport(r: ReportView, label: string, extra = ""): string
     `【${label}】${extra}`,
     `标题：${r.title}`,
     `来源：${r.source}${r.firstParty ? "（当事方/官方）" : ""}｜发布时间：${when(r.at)}`,
-    `摘要：${(r.summary ?? "").slice(0, 360) || "（无）"}`,
+    `摘要：${truncateAtWord(r.summary ?? "", 360) || "（无）"}`,
     f && (f.subject || f.action || f.object)
       ? `事实要素：主体=${f.subject || "?"}；动作=${f.action || "?"}；对象=${f.object || "?"}；日期=${f.occurredAt || "未知"}`
       : null,
@@ -159,7 +160,7 @@ export const STORY_REVIEW_MIN_CONFIDENCE = 0.75;
 
 /** The text a report is embedded with: title and the start of the summary, the same on both sides of a comparison. */
 export function reportText(title: string, summary: string | null | undefined): string {
-  return `${title}。${(summary ?? "").slice(0, 300)}`;
+  return `${title}。${truncateAtWord(summary ?? "", 300)}`;
 }
 
 /** Lexical stand-in for cosine when embeddings are off (tests, development without a key): shared character bigrams. */

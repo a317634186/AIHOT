@@ -187,7 +187,7 @@ export async function chatJson<S extends z.ZodType>(opts: ChatJsonOptions<S>): P
   if (!baseUrl || !apiKey || !spec.model) throw new Error(`Model ${opts.model} is not configured (${spec.baseUrlEnv}, ${spec.apiKeyEnv}${spec.key === "default" ? ", LLM_MODEL" : ""})`);
 
   const temperature = opts.temperature ?? 0.2;
-  const maxTokens = Math.max(opts.maxTokens ?? 1500, 512) + (spec.key.endsWith("-think") ? 4000 : 0);
+  const maxTokens = Math.max(opts.maxTokens ?? 1500, 512) + (spec.key.endsWith("-think") || spec.model.endsWith("-high") ? 4000 : 0);
   const userContent=redactSecrets(opts.user) as typeof opts.user;
   const systemText=safeErrorText(opts.system);
   const userText = typeof userContent === "string" ? userContent : JSON.stringify(userContent);

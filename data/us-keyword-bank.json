@@ -1,0 +1,108 @@
+{
+  "version": 1,
+  "modifiers": [
+    "Promo Code",
+    "Coupon Code",
+    "Price History",
+    "Deal & Review",
+    "Deals & Reviews",
+    "Black Friday Deal",
+    "Cyber Monday Deal",
+    "Clearance",
+    "Rollbacks",
+    "Circle Offers",
+    "Stocking Stuffers",
+    "Gift Ideas",
+    "Price Drop",
+    "Sale Price",
+    "Best Price"
+  ],
+  "categoryPhrases": {
+    "electronics": [
+      "4K Smart TV",
+      "Noise-Cancelling Earbuds",
+      "Wireless Headphones",
+      "Gaming Monitor",
+      "Portable SSD",
+      "Smartwatch"
+    ],
+    "home": [
+      "Cordless Vacuum",
+      "Robot Vacuum",
+      "Air Purifier",
+      "Standing Desk",
+      "Coffee Maker",
+      "Cookware Set"
+    ],
+    "grocery": [
+      "Household Essentials",
+      "Laundry Detergent",
+      "Paper Towels",
+      "Coffee Pods",
+      "Protein Snacks",
+      "Pantry Stock-Up"
+    ],
+    "beauty": [
+      "Skincare Bundle",
+      "Dry Shampoo",
+      "Hair Care Set",
+      "Moisturizer",
+      "Beauty Gift Set"
+    ],
+    "fashion": [
+      "Running Shoes",
+      "Puffer Jacket",
+      "Fleece Hoodie",
+      "Winter Coat",
+      "Everyday Sneakers"
+    ],
+    "kids": [
+      "LEGO Set",
+      "Board Game",
+      "Kids Toy",
+      "Stocking Stuffer",
+      "Holiday Gift"
+    ],
+    "pets": [
+      "Pet Bed",
+      "Automatic Cat Feeder",
+      "Pet Camera",
+      "Litter Box",
+      "Pet Fountain"
+    ],
+    "outdoors": [
+      "Camping Gear",
+      "Patio Lights",
+      "Cordless Drill",
+      "Power Tool Battery",
+      "Outdoor String Lights"
+    ],
+    "software": [
+      "Lifetime License",
+      "VPN Deal",
+      "PDF Editor",
+      "Cloud Storage",
+      "AI Software"
+    ]
+  },
+  "brandPatterns": [
+    "20V Max Tools",
+    "M18 FUEL",
+    "M12 Tools",
+    "One+ 18V",
+    "AirPods Deal",
+    "Galaxy Deal",
+    "Fire TV Deal",
+    "QuietComfort Deal",
+    "WH-1000XM Deal"
+  ],
+  "genericPromotionPrefixes": [
+    "Select",
+    "Selected",
+    "Amazon Haul",
+    "Flash",
+    "Limited Time",
+    "Today Only",
+    "Hot Deal"
+  ]
+}

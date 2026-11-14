@@ -5,24 +5,31 @@ import { Link } from 'react-router';
  * subscription) or e-mail (confirmed by a link); the saved list lives in this browser only.
  */
 const SAVED_KEY='savlume.saved';
+let accountSaved:Promise<{userId:string;ids:Set<string>}|null>|null=null;
+export function invalidateAccountSaved(){accountSaved=null;}
 export function savedIds():string[]{try{const v=JSON.parse(localStorage.getItem(SAVED_KEY)??'[]');return Array.isArray(v)?v.filter((x):x is string=>typeof x==='string').slice(0,200):[];}catch{return [];}}
 function setSaved(ids:string[]){try{localStorage.setItem(SAVED_KEY,JSON.stringify(ids.slice(0,200)));}catch{}}
+async function accountSavedIds(){
+ if(!accountSaved)accountSaved=(async()=>{const me=await fetch('/api/community/me',{credentials:'same-origin'}).then(r=>r.ok?r.json():null).catch(()=>null);if(!me?.user)return null;const result=await fetch('/api/community/bookmarks',{credentials:'same-origin'}).then(r=>r.ok?r.json():null).catch(()=>null);if(!result)return null;return {userId:me.user.id as string,ids:new Set<string>((result.items??[]).map((x:any)=>x.id))};})();
+ return accountSaved;
+}
 export function SaveButton({id,compact}:{id:string;compact?:boolean}){
  const [saved,setSavedState]=useState(false);
- useEffect(()=>{setSavedState(savedIds().includes(id));},[id]);
- const toggle=()=>{const ids=savedIds();const next=ids.includes(id)?ids.filter(x=>x!==id):[id,...ids];setSaved(next);setSavedState(next.includes(id));};
+ useEffect(()=>{let alive=true;const local=savedIds();setSavedState(local.includes(id));void accountSavedIds().then(account=>{if(!alive||!account?.ids.has(id))return;setSavedState(true);if(!local.includes(id))setSaved([id,...local]);}).catch(()=>{});return()=>{alive=false;};},[id]);
+ const toggle=async()=>{const ids=savedIds(),next=ids.includes(id)?ids.filter(x=>x!==id):[id,...ids];setSaved(next);setSavedState(next.includes(id));try{const account=await accountSavedIds();if(!account)return;const response=await fetch('/api/community/bookmarks',{method:'POST',credentials:'same-origin',headers:{'content-type':'application/json','x-community-csrf':(await fetch('/api/community/me',{credentials:'same-origin'}).then(r=>r.json())).user.csrf},body:JSON.stringify({articleId:id,saved:next.includes(id)})});if(!response.ok)throw Error();if(next.includes(id))account.ids.add(id);else account.ids.delete(id);}catch{}}
  return <button type="button" className={'db-save'+(saved?' is-saved':'')+(compact?' db-save-compact':'')} onClick={toggle} aria-pressed={saved} aria-label={saved?'Remove from saved':'Save for later'}><svg viewBox="0 0 24 24" aria-hidden><path d="M12 21s-7-4.6-9.5-9A5.5 5.5 0 0 1 12 6a5.5 5.5 0 0 1 9.5 6c-2.5 4.4-9.5 9-9.5 9Z"/></svg>{!compact&&<span>{saved?'Saved':'Save'}</span>}</button>;
 }
 const toKey=(b64:string)=>{const pad='='.repeat((4-b64.length%4)%4);const raw=atob((b64+pad).replace(/-/g,'+').replace(/_/g,'/'));return Uint8Array.from(raw,c=>c.charCodeAt(0));};
-export function WatchPrice({articleId,price}:{articleId:string;price:number|null}){
+export function WatchPrice({articleId,price,sourceReported=false,available=true}:{articleId:string;price:number|null;sourceReported?:boolean;available?:boolean}){
  const [options,setOptions]=useState<{email:boolean;push:boolean;vapidPublicKey:string}|null>(null);
- const [state,setState]=useState<'idle'|'busy'|'push-on'|'email-sent'|'error'>('idle');
+ const [state,setState]=useState<'idle'|'busy'|'email-sent'|'error'>('idle');const [pushActive,setPushActive]=useState(false);
  const [message,setMessage]=useState('');
  const [email,setEmail]=useState('');
  const pushSupported=typeof window!=='undefined'&&'serviceWorker' in navigator&&'PushManager' in window&&'Notification' in window;
  useEffect(()=>{const c=new AbortController();fetch('/api/site/watch/options',{signal:c.signal}).then(r=>r.ok?r.json():null).then(o=>{if(o&&!c.signal.aborted)setOptions(o);}).catch(()=>{});return ()=>c.abort();},[]);
+ useEffect(()=>{setPushActive(false);if(!pushSupported)return;let alive=true;void (async()=>{const reg=await navigator.serviceWorker.getRegistration('/');const sub=await reg?.pushManager.getSubscription();if(!sub)return;const r=await fetch('/api/site/watch/status',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({articleId,endpoint:sub.endpoint})});if(r.ok&&alive)setPushActive(!!(await r.json()).active);})().catch(()=>{});return()=>{alive=false;};},[articleId,pushSupported]);
  useEffect(()=>{if(new URLSearchParams(location.search).get('alert')==='confirmed'){setState('email-sent');setMessage('Your e-mail alert is confirmed.');}},[]);
- if(price===null)return null;
+ if((!available||price===null)&&!pushActive)return null;
  const enablePush=async()=>{
   if(!options||!pushSupported)return;setState('busy');setMessage('');
   try{
@@ -31,9 +38,10 @@ export function WatchPrice({articleId,price}:{articleId:string;price:number|null
    const sub=(await reg.pushManager.getSubscription())??(await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:toKey(options.vapidPublicKey)}));
    const r=await fetch('/api/site/watch',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({articleId,channel:'push',subscription:sub.toJSON()})});
    if(!r.ok)throw new Error((await r.json().catch(()=>({})) as {detail?:string}).detail??'Could not save the alert.');
-   setState('push-on');setMessage('You will get a notification in this browser when the price drops.');
+   setPushActive(true);setState('idle');setMessage('We will notify you if the retailer confirms a lower price.');
   }catch(e){setState('error');setMessage(e instanceof Error?e.message:'Could not enable notifications.');}
  };
+ const disablePush=async()=>{setState('busy');setMessage('');try{const reg=await navigator.serviceWorker.getRegistration('/');const sub=await reg?.pushManager.getSubscription();if(sub){const r=await fetch('/api/site/watch/stop',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({articleId,endpoint:sub.endpoint})});if(!r.ok)throw Error('Could not stop this alert.');}setPushActive(false);setState('idle');setMessage('The alert for this offer has been stopped.');}catch(e){setState('error');setMessage(e instanceof Error?e.message:'Could not stop this alert.');}};
  const sendEmail=async()=>{
   setState('busy');setMessage('');
   try{const r=await fetch('/api/site/watch',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({articleId,channel:'email',email})});
@@ -41,11 +49,11 @@ export function WatchPrice({articleId,price}:{articleId:string;price:number|null
    setState('email-sent');setMessage(data.confirmed?'This e-mail is already confirmed for this offer.':'Check your inbox and click the confirmation link to start the alert.');
   }catch(e){setState('error');setMessage(e instanceof Error?e.message:'Could not save the alert.');}
  };
- return <section className="db-panel db-watch"><div className="db-section-title"><h2>Price-drop alert</h2><span>We check prices every 30 minutes</span></div>
-  <p className="db-muted">Get told when this offer drops below its current price. No account needed.</p>
+ return <section className="db-panel db-watch"><div className="db-section-title"><h2>Price-drop alert</h2><span>Retailer-confirmed drops</span></div>
+  <p className="db-muted">{available?(<>{sourceReported?'The starting price is source-reported and has not been verified by the retailer. ':''}We notify you only after the retailer confirms a lower price. Some retailer pages or coupon prices may not be available for automatic checks. No account needed.</>):'This offer is no longer eligible for new alerts. You can stop your existing browser alert below.'}</p>
   <div className="db-watch-actions">
-   {pushSupported&&<button type="button" className="db-buy" disabled={state==='busy'||state==='push-on'||!options} onClick={()=>void enablePush()}>{state==='push-on'?'Browser alerts on ✓':'Notify me in this browser'}</button>}
-   {options?.email&&<form className="db-watch-email" onSubmit={e=>{e.preventDefault();void sendEmail();}}><input type="email" required placeholder="you@example.com" value={email} onChange={e=>setEmail(e.target.value)} aria-label="E-mail address for the alert"/><button type="submit" className="db-buy db-buy-secondary" disabled={state==='busy'}>E-mail me</button></form>}
+   {pushSupported&&<button type="button" className="db-buy" disabled={state==='busy'||!pushActive&&(!options||!available)} onClick={()=>void (pushActive?disablePush():enablePush())}>{pushActive?'Stop this alert':'Notify me in this browser'}</button>}
+   {available&&options?.email&&<form className="db-watch-email" onSubmit={e=>{e.preventDefault();void sendEmail();}}><input type="email" required placeholder="you@example.com" value={email} onChange={e=>setEmail(e.target.value)} aria-label="E-mail address for the alert"/><button type="submit" className="db-buy db-buy-secondary" disabled={state==='busy'}>E-mail me</button></form>}
    {!pushSupported&&!options?.email&&<p className="db-muted">Alerts are not available in this browser yet.</p>}
   </div>
   {message&&<p role="status" className={'db-watch-status'+(state==='error'?' is-error':'')}>{message}</p>}

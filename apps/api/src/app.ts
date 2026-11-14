@@ -11,6 +11,8 @@ import { registerLeaderboard } from "./routes/leaderboard.ts";
 import { registerOg } from "./routes/og.ts";
 import { registerAdminAuth } from "./routes/admin-auth.ts";
 import { registerAdmin } from "./routes/admin.ts";
+import { registerCommunity } from "./routes/community.ts";
+import { registerShoppingAiAssistant } from "./routes/ai-assistant.ts";
 import { registerIngest } from "./routes/ingest.ts";
 import { registerV1, registerV1Fallbacks } from "./routes/v1.ts";
 import { registerMedia } from "./routes/media.ts";
@@ -73,6 +75,8 @@ export async function buildApp(): Promise<FastifyInstance> {
 
   if (SHOPPING.enabled) registerShopping(app);
   else registerSite(app);
+  if (SHOPPING.enabled) registerShoppingAiAssistant(app);
+  registerCommunity(app);
   if (FEATURES.leaderboard) registerLeaderboard(app);
   if (!SHOPPING.enabled) registerOg(app);
   registerAdminAuth(app);

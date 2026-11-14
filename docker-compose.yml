@@ -7,6 +7,11 @@ x-app: &app
   image: aihot-app
   env_file: .env
   restart: unless-stopped
+  logging:
+    driver: json-file
+    options:
+      max-size: "50m"
+      max-file: "3"
   environment: &app-env
     NODE_ENV: production
     DATABASE_URL: postgres://aihot:${POSTGRES_PASSWORD:-aihot}@db:5432/aihot
@@ -23,6 +28,11 @@ services:
   db:
     image: postgres:17-alpine
     restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "50m"
+        max-file: "3"
     environment:
       POSTGRES_USER: aihot
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-aihot}

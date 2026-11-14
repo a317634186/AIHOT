@@ -94,6 +94,7 @@ export const RESTRICTION_TAGS = [
 export const TOPIC_TAGS = [...OFFER_TAGS, ...RESTRICTION_TAGS] as const;
 export const ENTITY_TAGS = [
   "Amazon",
+  "Woot",
   "Walmart",
   "Target",
   "Best Buy",
@@ -127,6 +128,11 @@ export const ENTITIES: Record<string,{name:string;displayTag:string|null;aliases
     "aliases": [
       "Amazon"
     ]
+  },
+  "woot": {
+    "name": "Woot",
+    "displayTag": "Woot",
+    "aliases": ["Woot"]
   },
   "walmart": {
     "name": "Walmart",
@@ -237,6 +243,10 @@ export const ENTITIES: Record<string,{name:string;displayTag:string|null;aliases
 export const IDENTITY_LEXICON: ReadonlyArray<{id:string;name:string;patterns:RegExp[]}> = Object.entries(ENTITIES).map(([id,e])=>({id,name:e.name,patterns:[new RegExp("\\b"+e.name.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")+"\\b","i")]}));
 export const PUBLISHER_DOMAINS: ReadonlyArray<{entityId:string;domains:readonly string[]}> = [
   {
+    "entityId": "woot",
+    "domains": ["woot.com"]
+  },
+  {
     "entityId": "amazon",
     "domains": [
       "amazon.com"
@@ -333,4 +343,6 @@ export const PUBLISHER_DOMAINS: ReadonlyArray<{entityId:string;domains:readonly 
     ]
   }
 ];
-export const IDENTITY_CONTEXT_ALIASES: ReadonlyArray<{entityId:string;pattern:RegExp}> = [];
+export const IDENTITY_CONTEXT_ALIASES: ReadonlyArray<{entityId:string;pattern:RegExp}> = [
+  {entityId:"amazon",pattern:/\bprime\s+(?:membership|members?|shipping)\b/i}
+];

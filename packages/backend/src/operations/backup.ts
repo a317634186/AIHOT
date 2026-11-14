@@ -19,6 +19,7 @@ interface Store {
   bucket: string;
   region: string;
   endpoint: string;
+  pathStyle: boolean;
 }
 
 /** Backups run where the object store is configured (production); development never uploads. */
@@ -34,7 +35,7 @@ function store(): Store | null {
   const region = get("DB_BACKUP_STORE_REGION");
   if (!secretId || !secretKey || !bucket || !region) return null;
   const domain = get("DB_BACKUP_STORE_DOMAIN");
-  return { secretId, secretKey, bucket, region, endpoint: domain ? `https://${domain.replace(/^https?:\/\//, "")}` : `https://${bucket}.cos.${region}.myqcloud.com` };
+  return { secretId, secretKey, bucket, region, endpoint: domain ? `https://${domain.replace(/^https?:\/\//, "").replace(/\/$/, "")}` : `https://${bucket}.cos.${region}.myqcloud.com`, pathStyle: Boolean(domain) };
 }
 
 const hex = (b: Buffer | string) => createHash("sha256").update(b).digest("hex");
@@ -68,7 +69,9 @@ async function fileSha256(file: string): Promise<string> {
 }
 
 async function upload(s: Store, key: string, file: string, sha: string, size: number) {
-  const url = new URL(`${s.endpoint}/${key}`);
+  const bucketPath=s.pathStyle?`/${encodeURIComponent(s.bucket)}`:"";
+  const objectPath=key.split("/").map(encodeURIComponent).join("/");
+  const url = new URL(`${s.endpoint}${bucketPath}/${objectPath}`);
   const headers = signV4({ method: "PUT", url, region: s.region, accessKey: s.secretId, secretKey: s.secretKey, payloadHash: sha, headers: { "content-length": String(size), "content-type": "application/octet-stream" } });
   const res = await fetch(url, { method: "PUT", headers, body: createReadStream(file) as never, duplex: "half", signal: AbortSignal.timeout(60 * 60_000) } as RequestInit);
   if (!res.ok) throw new Error(`backup upload ${key}: HTTP ${res.status} ${(await res.text()).slice(0, 300)}`);
@@ -87,8 +90,10 @@ export async function runBackup(now = new Date()) {
   // An empty archive only when there is nothing to keep. A failure to read or pack existing files is
   // tried once more and otherwise reported: the database dump still ships, but the run fails.
   const kept: string[] = [];
-  // Feedback screenshots waiting to be forwarded are not kept: the privacy notice keeps only Feishu image keys.
-  for (const d of ["uploads"]) if (await stat(path.join(config.dataDir, d)).then((i) => i.isDirectory(), () => false)) kept.push(d);
+  // Preserve user-uploaded media and the key required to decrypt model credentials stored in PostgreSQL.
+  for (const d of ["uploads", "community-images"]) if (await stat(path.join(config.dataDir, d)).then((i) => i.isDirectory(), () => false)) kept.push(d);
+  const modelSettingsKey="credentials/model-settings.key";
+  if(await stat(path.join(config.dataDir,modelSettingsKey)).then(i=>i.isFile(),()=>false))kept.push(modelSettingsKey);
   let filesError: string | null = null;
   if (!kept.length) await run("tar", ["-czf", files, "-T", "/dev/null"]);
   else {
@@ -114,8 +119,8 @@ export async function runBackup(now = new Date()) {
     }
   }
   // Local copies: keep the newest few of each kind.
-  for (const kind of ["aihot-2", "aihot-files-"]) {
-    const list = (await readdir(dir)).filter((f) => f.startsWith(kind)).sort().reverse();
+  for (const matches of [/^aihot-\d+\.dump$/, /^aihot-files-\d+\.tar\.gz$/]) {
+    const list = (await readdir(dir)).filter((f) => matches.test(f)).sort().reverse();
     for (const f of list.slice(KEEP_LOCAL)) await rm(path.join(dir, f), { force: true });
   }
   const summary = { at: now.toISOString(), uploaded: !!s && !filesError, objects: out, ...(filesError ? { filesError } : {}) };

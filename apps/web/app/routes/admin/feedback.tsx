@@ -54,7 +54,7 @@ function FeedbackCard({ f }: { f: Feedback }) {
         <Badge tone={TONE[f.status] ?? "muted"}>{FEEDBACK_STATUS[f.status] ?? f.status}</Badge>
         <Time at={f.created_at} />
         {f.email && <a className="text-accent" href={`mailto:${f.email}`}>{f.email}</a>}
-        {f.page_url && <a className="max-w-[320px] truncate hover:text-accent" href={f.page_url} target="_blank" rel="noreferrer">{f.page_url}</a>}
+        {f.page_url && <a className="max-w-[320px] truncate hover:text-accent" href={f.page_url} target="_blank" rel="nofollow noreferrer">{f.page_url}</a>}
         {f.from_source > 1 && <Badge tone="info" title="同一来源（IP 与浏览器家族的不可逆标识）">同来源 {f.from_source} 条</Badge>}
         {f.banned && <Badge tone="bad">来源已封禁</Badge>}
         {!f.forwarded_at && f.status === "new" && (
@@ -63,8 +63,8 @@ function FeedbackCard({ f }: { f: Feedback }) {
       </div>
       <p className="mt-2.5 whitespace-pre-wrap text-[14px] leading-relaxed text-ink">{f.content}</p>
       {f.screenshot === "local" && (
-        <a href={`${base}/screenshot`} target="_blank" rel="noreferrer" className="mt-2 inline-block">
-          <img src={`${base}/screenshot`} alt="反馈截图" loading="lazy" className="max-h-48 rounded-control ring-1 ring-line" />
+        <a href={`${base}/screenshot`} target="_blank" rel="nofollow noreferrer" className="mt-2 inline-block">
+          <img src={`${base}/screenshot`} alt="Screenshot attached to feedback" loading="lazy" className="max-h-48 rounded-control ring-1 ring-line" />
         </a>
       )}
       {f.screenshot === "feishu" && <p className="mt-2 text-[12.5px] text-ink-4">截图已随反馈转到内部飞书群。</p>}

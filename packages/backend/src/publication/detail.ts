@@ -90,8 +90,8 @@ export async function loadItemDetail(id: string, now = new Date()): Promise<Deta
     };
   } else if (row.body_mode === "full" && row.body_html) {
     const isZh = row.language === "zh" || (/[一-鿿]/.test(row.body_text?.slice(0, 400) ?? "") && row.language !== "en");
-    const original = proxyBodyImages(row.body_html);
-    const zh = isZh ? original : row.tr_html ? proxyBodyImages(row.tr_html) : null;
+    const original = proxyBodyImages(row.body_html, false, undefined, row.title);
+    const zh = isZh ? original : row.tr_html ? proxyBodyImages(row.tr_html, false, undefined, row.title) : null;
     const primary = withOutline(zh ?? original);
     outline = primary.outline;
     body = {

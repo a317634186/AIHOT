@@ -1,6 +1,7 @@
 // Collection run for one source: fetch listing → filter → store material → enqueue processing.
 // A failed fetch never advances the success cursor; the source's health reflects consecutive failures.
 import { sql } from "../db.ts";
+import { RobotsDeniedError } from "../lib/crawler-fetch.ts";
 import { identityKeyFor, upsertMaterial } from "../content/materials.ts";
 import { enqueue, QUEUES } from "../jobs/queue.ts";
 import { queueProcessing } from "../jobs/content.ts";
@@ -39,8 +40,19 @@ export function noiseFiltered(c: Candidate, source: SourceRow): boolean {
 
 function rewriteUrl(c: Candidate, source: SourceRow): Candidate {
   const rw = source.config.itemUrlPrefixRewrite;
-  if (rw?.from && rw?.to && c.url.startsWith(rw.from)) return { ...c, url: rw.to + c.url.slice(rw.from.length) };
-  return c;
+  let url = rw?.from && rw?.to && c.url.startsWith(rw.from) ? rw.to + c.url.slice(rw.from.length) : c.url;
+  const strip = source.config.stripQueryParams;
+  if (Array.isArray(strip) && strip.length) {
+    try {
+      const parsed = new URL(url);
+      const keys = new Set(strip.filter((key: unknown): key is string => typeof key === "string").map((key: string) => key.toLowerCase()));
+      for (const key of [...parsed.searchParams.keys()]) if (keys.has(key.toLowerCase())) parsed.searchParams.delete(key);
+      url = parsed.toString();
+    } catch {
+      // The collector will reject malformed URLs during identity/storage; keep this rewrite side-effect free.
+    }
+  }
+  return url === c.url ? c : { ...c, url };
 }
 
 async function loadSource(id: string): Promise<SourceRow | null> {
@@ -177,6 +189,9 @@ export async function collectSource(sourceId: string, opts: { force?: boolean } 
       } catch {
         // detail is best effort
       }
+      if (detailBudget > 1) {
+        await new Promise((r) => setTimeout(r, 250 + Math.floor(Math.random() * 250)));
+      }
     }
 
     ({ created, revised } = await store(sourceId, candidates, firstImport ? "first-import" : null));
@@ -186,7 +201,7 @@ export async function collectSource(sourceId: string, opts: { force?: boolean } 
     await sql`
       UPDATE sources SET last_fetch_at = now(), last_ok_at = now(), fail_count = 0, last_error = NULL,
         health = 'ok', cursor = ${sql.json(nextCursor as never)}, updated_at = now(),
-        next_fetch_at = now() + make_interval(mins => interval_minutes)
+        next_fetch_at = now() + make_interval(mins => interval_minutes) + (random() * interval '3 minutes')
       WHERE id = ${sourceId}`;
     await sql`UPDATE fetch_runs SET status = 'ok', finished_at = now(), found_count = ${found}, new_count = ${created},
                 detail = ${detail ? sql.json(detail as never) : null} WHERE id = ${run!.id}`;
@@ -194,12 +209,17 @@ export async function collectSource(sourceId: string, opts: { force?: boolean } 
   } catch (error) {
     const message = String(error instanceof Error ? error.message : error).slice(0, 1000);
     const budget = error instanceof BudgetExceededError;
+    if(error instanceof RobotsDeniedError){
+      await sql`UPDATE sources SET last_fetch_at=now(),last_error=${message},health='ok',next_fetch_at=now()+make_interval(mins=>interval_minutes)+(random()*interval '3 minutes'),updated_at=now() WHERE id=${sourceId}`;
+      await sql`UPDATE fetch_runs SET status='skipped',finished_at=now(),found_count=${found},new_count=${created},error=${message} WHERE id=${run!.id}`;
+      return {sourceId,status:'skipped',found,created,revised,error:message};
+    }
     await sql`
       UPDATE sources SET last_fetch_at = now(),
         fail_count = CASE WHEN ${budget} THEN fail_count ELSE fail_count + 1 END,
         last_error = ${message},
         health = CASE WHEN ${budget} THEN health WHEN fail_count + 1 >= 5 THEN 'failing' ELSE 'degraded' END,
-        next_fetch_at = now() + make_interval(mins => CASE WHEN ${budget} THEN 15 ELSE LEAST(interval_minutes * (fail_count + 2), 360) END),
+        next_fetch_at = now() + make_interval(mins => CASE WHEN ${budget} THEN 15 ELSE LEAST(interval_minutes * (fail_count + 2), 360) END) + (random() * interval '2 minutes'),
         updated_at = now()
       WHERE id = ${sourceId}`;
     await sql`UPDATE fetch_runs SET status = 'failed', finished_at = now(), found_count = ${found}, new_count = ${created}, error = ${message} WHERE id = ${run!.id}`;
@@ -291,7 +311,7 @@ export async function collectXShard(key: string, sourceIds: string[]): Promise<{
     await sql`
       UPDATE sources SET last_fetch_at = now(), last_ok_at = now(), fail_count = 0, last_error = NULL,
         health = 'ok', cursor = ${sql.json(cursor as never)}, interval_minutes = ${minutes}, updated_at = now(),
-        next_fetch_at = now() + make_interval(mins => ${minutes})
+        next_fetch_at = now() + make_interval(mins => ${minutes}) + (random() * interval '3 minutes')
       WHERE id = ${m.id}`;
     await sql`UPDATE fetch_runs SET status = 'ok', finished_at = now(), found_count = ${mine.length}, new_count = ${stored.created},
                 detail = ${sql.json(detail as never)} WHERE id = ${runs.get(m.id)!}`;
@@ -330,15 +350,15 @@ export async function scheduleDueSources(limit = Number(process.env.FETCH_SCHEDU
     ORDER BY next_fetch_at NULLS FIRST LIMIT ${limit}`;
   for (const r of rows) {
     await enqueue(QUEUES.fetchSource, { sourceId: r.id }, { singletonKey: r.id });
-    await sql`UPDATE sources SET next_fetch_at = now() + interval '10 minutes' WHERE id = ${r.id}`;
+    await sql`UPDATE sources SET next_fetch_at = now() + interval '10 minutes' + (random() * interval '2 minutes') WHERE id = ${r.id}`;
   }
   const shards = kinds.includes("x_search") ? await scheduleXShards() : 0;
   return { enqueued: rows.length, shards };
 }
 
 /**
- * Daily: adapt each source's interval to its recent output (active 15 min … quiet 120 min).
- * hot_signal sources are allowed to be slower.
+ * Daily: adapt feed/list scans to their recent output (15 … 30 min). Paid Jina listings retain
+ * their slower, budget-bound cadence; X searches and hot signals keep their own limits.
  */
 export async function adaptIntervals(): Promise<{ updated: number }> {
   const rows = await sql<Array<Pick<SourceRow, "id" | "participation_mode" | "kind" | "config" | "cursor"> & { paid_listing: boolean; per_day: number }>>`
@@ -348,10 +368,9 @@ export async function adaptIntervals(): Promise<{ updated: number }> {
   let updated = 0;
   for (const r of rows) {
     const perDay = Number(r.per_day);
-    // Editorial sites and feeds are looked at hourly at least (they cost nothing);
-    // editorial X and listings read through Jina stop at two hours (paid per call, within their budgets);
-    // hot signals may wait longer.
-    const max = r.participation_mode === "hot_signal" ? 180 : r.kind === "x_search" || r.paid_listing ? 120 : 60;
+    // RSS and direct listings are checked at least every 30 minutes; successful, high-output sources
+    // can be checked every 15. Paid Jina listings and X searches keep budget-aware slower limits.
+    const max = r.paid_listing ? 120 : r.kind === "x_search" ? (r.participation_mode === "hot_signal" ? 180 : 120) : 30;
     // Listings read through Jina are not looked at more than hourly: busy ones would outrun its daily budget.
     const min = r.paid_listing ? 60 : 15;
     // X accounts read by shard follow the shard's pace, whatever their own volume.

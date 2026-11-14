@@ -1,6 +1,8 @@
 import { type RouteConfig, index, layout, route } from "@react-router/dev/routes";
 export default [
   index("routes/dealbrief.tsx", {id:"shopping-home"}),
+  route("blog", "routes/blog-index.tsx"),
+  route("blog/:slug", "routes/blog-post.tsx"),
   route("*", "routes/dealbrief.tsx", {id:"shopping-page"}),
   route("admin/login", "routes/admin-login.tsx"),
   layout("routes/admin/layout.tsx", { id: "admin-layout" }, [
@@ -9,10 +11,13 @@ export default [
     route("admin/content", "routes/admin/content.tsx"),
     route("admin/content/:id", "routes/admin/content-item.tsx"),
     route("admin/sources", "routes/admin/sources.tsx"),
+    route("admin/deal-hunter", "routes/admin/deal-hunter.tsx"),
     route("admin/sources/new", "routes/admin/source-new.tsx"),
     route("admin/sources/:id", "routes/admin/source.tsx"),
     route("admin/monitor", "routes/admin/monitor.tsx"),
     route("admin/feedback", "routes/admin/feedback.tsx"),
+    route("admin/community", "routes/admin/community.tsx"),
+    route("admin/community/submissions", "routes/admin/community-submissions.tsx"),
     route("admin/runs", "routes/admin/runs.tsx"),
     route("admin/models", "routes/admin/models.tsx"),
     route("admin/selectbench", "routes/admin/selectbench.tsx"),

@@ -15,7 +15,7 @@
       "tier": "T2",
       "first_party": false,
       "participation_mode": "editorial",
-      "interval_minutes": 120,
+      "interval_minutes": 30,
       "site_fulltext": false,
       "syndicate_fulltext": false,
       "tags": [
@@ -39,7 +39,7 @@
       "tier": "T2",
       "first_party": false,
       "participation_mode": "editorial",
-      "interval_minutes": 120,
+      "interval_minutes": 30,
       "site_fulltext": false,
       "syndicate_fulltext": false,
       "tags": [
@@ -63,7 +63,7 @@
       "tier": "T2",
       "first_party": false,
       "participation_mode": "editorial",
-      "interval_minutes": 120,
+      "interval_minutes": 15,
       "site_fulltext": false,
       "syndicate_fulltext": false,
       "tags": [
@@ -86,7 +86,7 @@
       "tier": "T1",
       "first_party": true,
       "participation_mode": "editorial",
-      "interval_minutes": 120,
+      "interval_minutes": 30,
       "site_fulltext": false,
       "syndicate_fulltext": false,
       "tags": [
@@ -110,7 +110,7 @@
       "tier": "T2",
       "first_party": false,
       "participation_mode": "editorial",
-      "interval_minutes": 120,
+      "interval_minutes": 30,
       "site_fulltext": false,
       "syndicate_fulltext": false,
       "tags": [
@@ -118,6 +118,85 @@
         "Shopping",
         "Frontpage picks",
         "Discovery"
+      ]
+    },
+    {
+      "id": "shopping-amazon-deals",
+      "name": "Amazon Today’s Deals",
+      "kind": "web_list",
+      "config": {
+        "url": "https://www.amazon.com/gp/goldbox",
+        "baseUrl": "https://www.amazon.com",
+        "itemSelector": "li.a-carousel-card",
+        "linkSelector": "a[class*=\"faceoutLink\"]",
+        "titleSelector": "[class*=\"title\"]",
+        "allowUrlPrefixes": [
+          "https://www.amazon.com/"
+        ],
+        "stripQueryParams": [
+          "_encoding",
+          "pd_rd_i",
+          "pd_rd_w",
+          "content-id",
+          "pf_rd_p",
+          "pf_rd_r",
+          "pd_rd_wg",
+          "pd_rd_r",
+          "ref_"
+        ],
+        "_aihot": {
+          "initialBackfillLimit": 15,
+          "initialBackfillMonths": 1,
+          "dailyQuota": 18
+        }
+      },
+      "tier": "T1",
+      "first_party": true,
+      "participation_mode": "editorial",
+      "interval_minutes": 30,
+      "site_fulltext": false,
+      "syndicate_fulltext": false,
+      "tags": [
+        "US",
+        "Shopping",
+        "Official retailer",
+        "Discovery"
+      ]
+    },
+    {
+      "id": "shopping-woot-sellout",
+      "name": "Woot Sellout Daily Deals",
+      "kind": "web_list",
+      "config": {
+        "url": "https://www.woot.com/category/sellout",
+        "baseUrl": "https://sellout.woot.com",
+        "itemSelector": "#daily-deal-section .featured-event",
+        "linkSelector": "a.tc-shop-now",
+        "titleSelector": ".main-title",
+        "allowUrlPrefixes": [
+          "https://sellout.woot.com/offers/"
+        ],
+        "stripQueryParams": [
+          "ref"
+        ],
+        "_aihot": {
+          "initialBackfillLimit": 3,
+          "initialBackfillMonths": 1,
+          "dailyQuota": 8
+        }
+      },
+      "tier": "T1",
+      "first_party": true,
+      "owner_entity_id": "amazon",
+      "participation_mode": "editorial",
+      "interval_minutes": 30,
+      "site_fulltext": false,
+      "syndicate_fulltext": false,
+      "tags": [
+        "US",
+        "Shopping",
+        "Official retailer",
+        "Clearance"
       ]
     },
     {
@@ -134,7 +213,7 @@
       "tier": "T2",
       "first_party": false,
       "participation_mode": "editorial",
-      "interval_minutes": 240,
+      "interval_minutes": 30,
       "site_fulltext": false,
       "syndicate_fulltext": false,
       "tags": [
@@ -157,7 +236,7 @@
       "tier": "T2",
       "first_party": false,
       "participation_mode": "editorial",
-      "interval_minutes": 240,
+      "interval_minutes": 30,
       "site_fulltext": false,
       "syndicate_fulltext": false,
       "tags": [
@@ -180,7 +259,7 @@
       "tier": "T2",
       "first_party": false,
       "participation_mode": "editorial",
-      "interval_minutes": 240,
+      "interval_minutes": 30,
       "site_fulltext": false,
       "syndicate_fulltext": false,
       "tags": [
@@ -203,7 +282,7 @@
       "tier": "T2",
       "first_party": false,
       "participation_mode": "editorial",
-      "interval_minutes": 240,
+      "interval_minutes": 30,
       "site_fulltext": false,
       "syndicate_fulltext": false,
       "tags": [
@@ -226,7 +305,7 @@
       "tier": "T2",
       "first_party": false,
       "participation_mode": "editorial",
-      "interval_minutes": 240,
+      "interval_minutes": 30,
       "site_fulltext": false,
       "syndicate_fulltext": false,
       "tags": [
@@ -249,7 +328,7 @@
       "tier": "T2",
       "first_party": false,
       "participation_mode": "editorial",
-      "interval_minutes": 240,
+      "interval_minutes": 30,
       "site_fulltext": false,
       "syndicate_fulltext": false,
       "tags": [
@@ -273,7 +352,7 @@
       "tier": "T2",
       "first_party": false,
       "participation_mode": "editorial",
-      "interval_minutes": 120,
+      "interval_minutes": 30,
       "site_fulltext": false,
       "syndicate_fulltext": false,
       "tags": [
@@ -297,7 +376,7 @@
       "tier": "T2",
       "first_party": false,
       "participation_mode": "editorial",
-      "interval_minutes": 180,
+      "interval_minutes": 30,
       "site_fulltext": false,
       "syndicate_fulltext": false,
       "tags": [
@@ -321,7 +400,7 @@
       "tier": "T2",
       "first_party": false,
       "participation_mode": "editorial",
-      "interval_minutes": 180,
+      "interval_minutes": 30,
       "site_fulltext": false,
       "syndicate_fulltext": false,
       "tags": [
@@ -345,7 +424,7 @@
       "tier": "T2",
       "first_party": false,
       "participation_mode": "editorial",
-      "interval_minutes": 180,
+      "interval_minutes": 30,
       "site_fulltext": false,
       "syndicate_fulltext": false,
       "tags": [
@@ -369,7 +448,7 @@
       "tier": "T2",
       "first_party": false,
       "participation_mode": "editorial",
-      "interval_minutes": 240,
+      "interval_minutes": 30,
       "site_fulltext": false,
       "syndicate_fulltext": false,
       "tags": [
@@ -393,7 +472,7 @@
       "tier": "T2",
       "first_party": false,
       "participation_mode": "editorial",
-      "interval_minutes": 180,
+      "interval_minutes": 30,
       "site_fulltext": false,
       "syndicate_fulltext": false,
       "tags": [
@@ -417,7 +496,7 @@
       "tier": "T2",
       "first_party": false,
       "participation_mode": "editorial",
-      "interval_minutes": 240,
+      "interval_minutes": 30,
       "site_fulltext": false,
       "syndicate_fulltext": false,
       "tags": [
@@ -441,7 +520,7 @@
       "tier": "T2",
       "first_party": false,
       "participation_mode": "editorial",
-      "interval_minutes": 120,
+      "interval_minutes": 30,
       "site_fulltext": false,
       "syndicate_fulltext": false,
       "tags": [
@@ -465,7 +544,7 @@
       "tier": "T2",
       "first_party": false,
       "participation_mode": "editorial",
-      "interval_minutes": 120,
+      "interval_minutes": 30,
       "site_fulltext": false,
       "syndicate_fulltext": false,
       "tags": [
@@ -477,19 +556,26 @@
     {
       "id": "shopping-heyitsfree",
       "name": "Hey, It’s Free!",
-      "kind": "rss",
+      "kind": "web_list",
       "config": {
-        "feedUrl": "https://www.heyitsfree.net/feed/",
+        "url": "https://www.heyitsfree.net/",
+        "baseUrl": "https://www.heyitsfree.net",
+        "itemSelector": "article",
+        "linkSelector": "h2.entry-title a",
+        "titleSelector": "h2.entry-title a",
+        "publishedAtSelector": "time.entry-date",
+        "allowUrlPrefixes": [
+          "https://www.heyitsfree.net/"
+        ],
         "_aihot": {
-          "initialBackfillLimit": 3,
+          "initialBackfillLimit": 5,
           "dailyQuota": 15
-        },
-        "summaryIsBody": false
+        }
       },
       "tier": "T2",
       "first_party": false,
       "participation_mode": "editorial",
-      "interval_minutes": 240,
+      "interval_minutes": 30,
       "site_fulltext": false,
       "syndicate_fulltext": false,
       "tags": [
@@ -513,7 +599,7 @@
       "tier": "T2",
       "first_party": false,
       "participation_mode": "editorial",
-      "interval_minutes": 360,
+      "interval_minutes": 30,
       "site_fulltext": false,
       "syndicate_fulltext": false,
       "tags": [
@@ -536,7 +622,7 @@
       "tier": "T2",
       "first_party": false,
       "participation_mode": "editorial",
-      "interval_minutes": 240,
+      "interval_minutes": 30,
       "site_fulltext": false,
       "syndicate_fulltext": false,
       "tags": [
@@ -559,13 +645,264 @@
       "tier": "T2",
       "first_party": false,
       "participation_mode": "editorial",
-      "interval_minutes": 240,
+      "interval_minutes": 30,
       "site_fulltext": false,
       "syndicate_fulltext": false,
       "tags": [
         "US",
         "Reviews & Picks",
         "Source-attributed"
+      ]
+    },
+    {
+      "id": "shopping-9to5mac-deals",
+      "name": "9to5Mac Deals",
+      "kind": "rss",
+      "config": {
+        "feedUrl": "https://9to5mac.com/category/deals/feed/",
+        "_aihot": {
+          "initialBackfillLimit": 5,
+          "dailyQuota": 20
+        },
+        "summaryIsBody": false
+      },
+      "tier": "T2",
+      "first_party": false,
+      "participation_mode": "editorial",
+      "interval_minutes": 30,
+      "site_fulltext": false,
+      "syndicate_fulltext": false,
+      "tags": [
+        "US",
+        "Shopping",
+        "Discovery"
+      ]
+    },
+    {
+      "id": "shopping-krazycouponlady",
+      "name": "The Krazy Coupon Lady",
+      "kind": "web_list",
+      "config": {
+        "url": "https://thekrazycouponlady.com/deals",
+        "baseUrl": "https://thekrazycouponlady.com",
+        "itemSelector": "article",
+        "linkSelector": "a[href]",
+        "titleSelector": "h3",
+        "allowUrlPrefixes": [
+          "https://thekrazycouponlady.com/"
+        ],
+        "detail": {
+          "maxFetches": 5
+        },
+        "_aihot": {
+          "initialBackfillLimit": 5,
+          "dailyQuota": 20
+        }
+      },
+      "tier": "T2",
+      "first_party": false,
+      "participation_mode": "editorial",
+      "interval_minutes": 30,
+      "site_fulltext": false,
+      "syndicate_fulltext": false,
+      "tags": [
+        "US",
+        "Shopping",
+        "Discovery"
+      ]
+    },
+    {
+      "id": "shopping-dansdeals",
+      "name": "DansDeals",
+      "kind": "rss",
+      "config": {
+        "feedUrl": "https://www.dansdeals.com/feed/",
+        "_aihot": {
+          "initialBackfillLimit": 20,
+          "dailyQuota": 80
+        },
+        "summaryIsBody": false
+      },
+      "tier": "T2",
+      "first_party": false,
+      "participation_mode": "editorial",
+      "interval_minutes": 20,
+      "site_fulltext": false,
+      "syndicate_fulltext": false,
+      "tags": [
+        "US",
+        "Shopping",
+        "Discovery",
+        "Flash Sales"
+      ]
+    },
+    {
+      "id": "shopping-theinventory",
+      "name": "The Inventory Deals",
+      "kind": "rss",
+      "config": {
+        "feedUrl": "https://theinventory.com/rss",
+        "_aihot": {
+          "initialBackfillLimit": 15,
+          "dailyQuota": 60
+        },
+        "summaryIsBody": false
+      },
+      "tier": "T2",
+      "first_party": false,
+      "participation_mode": "editorial",
+      "interval_minutes": 25,
+      "site_fulltext": false,
+      "syndicate_fulltext": false,
+      "tags": [
+        "US",
+        "Shopping",
+        "Discovery",
+        "Tech & Home"
+      ]
+    },
+    {
+      "id": "shopping-tomshardware-deals",
+      "name": "Tom's Hardware Deals",
+      "kind": "rss",
+      "config": {
+        "feedUrl": "https://www.tomshardware.com/feeds/tag/deals",
+        "_aihot": {
+          "initialBackfillLimit": 15,
+          "dailyQuota": 50
+        },
+        "summaryIsBody": false
+      },
+      "tier": "T2",
+      "first_party": false,
+      "participation_mode": "editorial",
+      "interval_minutes": 30,
+      "site_fulltext": false,
+      "syndicate_fulltext": false,
+      "tags": [
+        "US",
+        "Shopping",
+        "PC & Electronics"
+      ]
+    },
+    {
+      "id": "shopping-mashable-deals",
+      "name": "Mashable Shopping",
+      "kind": "rss",
+      "config": {
+        "feedUrl": "https://mashable.com/feeds/rss/shopping",
+        "_aihot": {
+          "initialBackfillLimit": 20,
+          "dailyQuota": 80
+        },
+        "summaryIsBody": false
+      },
+      "tier": "T2",
+      "first_party": false,
+      "participation_mode": "editorial",
+      "interval_minutes": 25,
+      "site_fulltext": false,
+      "syndicate_fulltext": false,
+      "tags": [
+        "US",
+        "Shopping",
+        "Tech & Lifestyle"
+      ]
+    },
+    {
+      "id": "shopping-arstechnica-deals",
+      "name": "Ars Technica Deals",
+      "kind": "rss",
+      "config": {
+        "feedUrl": "https://arstechnica.com/tag/deals/feed/",
+        "_aihot": {
+          "initialBackfillLimit": 10,
+          "dailyQuota": 30
+        },
+        "summaryIsBody": false
+      },
+      "tier": "T2",
+      "first_party": false,
+      "participation_mode": "editorial",
+      "interval_minutes": 30,
+      "site_fulltext": false,
+      "syndicate_fulltext": false,
+      "tags": [
+        "US",
+        "Shopping",
+        "Gadgets & Tech"
+      ]
+    },
+    {
+      "id": "shopping-gizmodo-deals",
+      "name": "Gizmodo Deals",
+      "kind": "rss",
+      "config": {
+        "feedUrl": "https://gizmodo.com/deals/rss",
+        "_aihot": {
+          "initialBackfillLimit": 10,
+          "dailyQuota": 30
+        },
+        "summaryIsBody": false
+      },
+      "tier": "T2",
+      "first_party": false,
+      "participation_mode": "editorial",
+      "interval_minutes": 30,
+      "site_fulltext": false,
+      "syndicate_fulltext": false,
+      "tags": [
+        "US",
+        "Shopping",
+        "Consumer Tech"
+      ]
+    },
+    {
+      "id": "shopping-gamespot-deals",
+      "name": "GameSpot Deals",
+      "kind": "rss",
+      "config": {
+        "feedUrl": "https://www.gamespot.com/feeds/deals/",
+        "_aihot": {
+          "initialBackfillLimit": 10,
+          "dailyQuota": 30
+        },
+        "summaryIsBody": false
+      },
+      "tier": "T2",
+      "first_party": false,
+      "participation_mode": "editorial",
+      "interval_minutes": 30,
+      "site_fulltext": false,
+      "syndicate_fulltext": false,
+      "tags": [
+        "US",
+        "Shopping",
+        "Gaming & Entertainment"
+      ]
+    },
+    {
+      "id": "shopping-zdnet-deals",
+      "name": "ZDNet Deals",
+      "kind": "rss",
+      "config": {
+        "feedUrl": "https://www.zdnet.com/topic/deals/rss.xml",
+        "_aihot": {
+          "initialBackfillLimit": 10,
+          "dailyQuota": 30
+        },
+        "summaryIsBody": false
+      },
+      "tier": "T2",
+      "first_party": false,
+      "participation_mode": "editorial",
+      "interval_minutes": 30,
+      "site_fulltext": false,
+      "syndicate_fulltext": false,
+      "tags": [
+        "US",
+        "Shopping",
+        "Smart Tech"
       ]
     }
   ]

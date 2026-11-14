@@ -15,6 +15,7 @@
 // look when a report founds a fact close to them (rematchSignals); history (isHistorical) founds no
 // event. Runs serially (queue concurrency 1).
 import { modelFor } from "../editorial/models.ts";
+import { truncateAtWord } from "@aihot/contracts/shopping";
 import { sql, type Db } from "../db.ts";
 import { newShortId, newUuid, sha256 } from "../lib/ids.ts";
 import { chatJson } from "../providers/llm.ts";
@@ -854,7 +855,7 @@ async function groupSignal(a: ArticleRow, source: { id: string; signal_group_id:
   }
   const cands = await candidateViews(recalled);
   if (cands.length === 0) return { verdict: "signal-unmatched" };
-  const query: ReportView = { title: a.title, source: a.source_name, firstParty: false, at: observedAt, summary: a.body_text?.slice(0, 300) ?? null };
+  const query: ReportView = { title: a.title, source: a.source_name, firstParty: false, at: observedAt, summary: a.body_text ? truncateAtWord(a.body_text, 300) : null };
   const { verdicts, receiptId } = await judgeSignal(a.id, query, cands);
   const target = signalTarget(cands, verdicts);
   if (target) await recordSignal(sql, target.storyId, a.id, source, "signal", observedAt);

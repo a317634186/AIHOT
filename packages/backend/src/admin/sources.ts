@@ -12,6 +12,7 @@ import type { SourceRow } from "../sources/types.ts";
 import { fetchWebList } from "../sources/web-list.ts";
 import { fetchXSearch } from "../sources/x.ts";
 import { audit } from "./auth.ts";
+import { truncateAtWord } from "@aihot/contracts/shopping";
 
 export class Conflict extends Error {
   code = "conflict";
@@ -79,7 +80,7 @@ export async function previewSource(draft: Pick<SourceRow, "id" | "kind" | "conf
   return {
     ms: Date.now() - started,
     count: candidates.length,
-    items: candidates.slice(0, 20).map((c) => ({ title: c.title, url: c.url, publishedAt: c.publishedAt?.toISOString() ?? null, excerpt: (c.excerpt ?? c.bodyText ?? "").slice(0, 200) })),
+    items: candidates.slice(0, 20).map((c) => ({ title: c.title, url: c.url, publishedAt: c.publishedAt?.toISOString() ?? null, excerpt: truncateAtWord(c.excerpt ?? c.bodyText ?? "", 200) })),
   };
 }
 

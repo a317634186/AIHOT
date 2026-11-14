@@ -4,19 +4,37 @@ import { sql } from "../db.ts";
 import { trafficDay } from "../site/traffic.ts";
 
 type Row = Record<string, any>;
-const days = (n: number) => Array.from({ length: n }, (_, i) => new Date(Date.now() - (n - 1 - i) * 86400_000).toLocaleDateString("sv-SE", { timeZone: "America/New_York" }));
+const days = (n: number, today = trafficDay()) => {
+  const [year, month, day] = today.split("-").map(Number);
+  const last = new Date(Date.UTC(year!, month! - 1, day!));
+  return Array.from({ length: n }, (_, i) => {
+    const date = new Date(last);
+    date.setUTCDate(last.getUTCDate() - (n - i - 1));
+    return date.toISOString().slice(0, 10);
+  });
+};
 const byDay = (rows: Row[], key: string, field: string) => { const m = new Map<string, number>(); for (const r of rows) m.set(String(r[key]).slice(0, 10), Number(r[field])); return m; };
 
 export async function siteStats(window = 30) {
   const n = Math.max(7, Math.min(90, window));
-  const labels = days(n);
-  const since = labels[0]!;
   const today = trafficDay();
+  const labels = days(n, today);
+  const since = labels[0]!;
   const [views, visitors, clicks, paths, referrers, clickTargets] = await Promise.all([
     sql`SELECT day::text AS day, sum(hits)::int AS n FROM traffic_hits WHERE kind='view' AND day>=${since} GROUP BY 1`,
     sql`SELECT day::text AS day, count(*)::int AS n FROM traffic_visitors WHERE day>=${since} GROUP BY 1`,
     sql`SELECT day::text AS day, sum(hits)::int AS n FROM traffic_hits WHERE kind='click' AND day>=${since} GROUP BY 1`,
-    sql`SELECT CASE WHEN path LIKE '/items/%' THEN '/items/* (all item pages)' ELSE path END AS path, sum(hits)::int AS hits FROM traffic_hits WHERE kind='view' AND day>=${since} GROUP BY 1 ORDER BY 2 DESC LIMIT 15`,
+    sql`WITH page_views AS (
+          SELECT path, sum(hits)::int AS views FROM traffic_hits
+          WHERE kind='view' AND day>=${since} GROUP BY path
+        ), page_clicks AS (
+          SELECT split_part(path,'→',1) AS path, sum(hits)::int AS clicks FROM traffic_hits
+          WHERE kind='click' AND day>=${since} GROUP BY 1
+        )
+        SELECT v.path, v.views, coalesce(c.clicks,0)::int AS clicks,
+          CASE WHEN v.views>0 THEN round(coalesce(c.clicks,0)::numeric*100/v.views,2) ELSE 0 END AS click_rate
+        FROM page_views v LEFT JOIN page_clicks c USING(path)
+        ORDER BY v.views DESC LIMIT 30`,
     sql`SELECT host, sum(hits)::int AS hits FROM traffic_referrers WHERE day>=${since} GROUP BY 1 ORDER BY 2 DESC LIMIT 12`,
     sql`SELECT split_part(path,'→',2) AS host, sum(hits)::int AS hits FROM traffic_hits WHERE kind='click' AND day>=${since} GROUP BY 1 ORDER BY 2 DESC LIMIT 12`,
   ]);
@@ -26,7 +44,7 @@ export async function siteStats(window = 30) {
     daily: labels.map((d) => ({ day: d, views: v.get(d) ?? 0, visitors: u.get(d) ?? 0, clicks: c.get(d) ?? 0 })),
     today: { views: v.get(today) ?? 0, visitors: u.get(today) ?? 0, clicks: c.get(today) ?? 0 },
     last7: { views: sumLast(v, 7), visitors: sumLast(u, 7), clicks: sumLast(c, 7) },
-    window: { views: sumLast(v, n), visitors: sumLast(u, n), clicks: sumLast(c, n) },
+    window: { views: sumLast(v, n), dailyVisitors: sumLast(u, n), clicks: sumLast(c, n) },
     paths, referrers, clickTargets,
   };
 

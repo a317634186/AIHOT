@@ -3,9 +3,10 @@
 import type { FastifyInstance } from "fastify";
 import { config } from "@aihot/backend/config";
 import { pushKeys } from "@aihot/backend/notify/push";
-import { confirmWatch, createWatch, stopPushWatches, stopWatch, WatchRejected, watchOptions } from "@aihot/backend/shopping/watch";
+import { confirmWatch, createWatch, hasPushWatch, stopPushWatches, stopWatch, WatchRejected, watchOptions } from "@aihot/backend/shopping/watch";
 import { throttled } from "@aihot/backend/site/traffic";
 import { sendProblem } from "../http/respond.ts";
+import { communityPrincipal } from '@aihot/backend/community/auth';
 
 export function registerWatch(app: FastifyInstance) {
   app.get("/api/site/watch/options", async (_req, reply) => {
@@ -19,7 +20,8 @@ export function registerWatch(app: FastifyInstance) {
     if (throttled(ip + ":watch", Date.now(), 20)) return sendProblem(req, reply, { status: 429, code: "rate_limited", detail: "Too many requests; try again in a minute.", retryAfter: 60 });
     const b = (req.body ?? {}) as Record<string, unknown>;
     try {
-      const result = await createWatch({ articleId: String(b.articleId ?? ""), channel: b.channel === "email" ? "email" : "push", email: typeof b.email === "string" ? b.email : undefined, subscription: b.subscription }, ip);
+      const member=await communityPrincipal(req.headers.cookie);
+      const result = await createWatch({ articleId: String(b.articleId ?? ""), channel: b.channel === "email" ? "email" : "push", email: typeof b.email === "string" ? b.email : undefined, subscription: b.subscription }, ip,member?.id??null);
       return reply.code(201).send(result);
     } catch (error) {
       if (error instanceof WatchRejected) return sendProblem(req, reply, { status: error.status, code: "watch_rejected", detail: error.message });
@@ -32,6 +34,14 @@ export function registerWatch(app: FastifyInstance) {
     const b = (req.body ?? {}) as Record<string, unknown>;
     if (typeof b.endpoint !== "string") return reply.code(400).send({ error: "endpoint required" });
     return { removed: await stopPushWatches(b.endpoint, typeof b.articleId === "string" ? b.articleId : undefined) };
+  });
+  app.post("/api/site/watch/status", async (req, reply) => {
+    reply.header("Cache-Control", "no-store");
+    const ip=String(req.headers["x-real-ip"] ?? req.ip ?? "");
+    if(throttled(ip+":watch-status",Date.now(),60))return reply.code(429).send({error:"Too many requests"});
+    const b=(req.body??{}) as Record<string,unknown>;
+    if(typeof b.endpoint!=="string"||b.endpoint.length>2048||typeof b.articleId!=="string"||!/^[\w-]{1,64}$/.test(b.articleId))return reply.code(400).send({error:"Invalid alert request"});
+    return {active:await hasPushWatch(b.endpoint,b.articleId)};
   });
   for (const action of ["confirm", "stop"] as const) app.get(`/api/site/watch/${action}`, async (req, reply) => {
     reply.header("Cache-Control", "no-store");

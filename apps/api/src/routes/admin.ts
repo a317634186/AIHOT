@@ -4,10 +4,12 @@ import { gatewayOverview,saveGateway,resetGateway } from "@aihot/backend/provide
 import { testGateway } from "@aihot/backend/admin/model-gateway";
 import { readFile } from "node:fs/promises";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
-import { actorOf } from "@aihot/backend/admin/auth";
+import { actorOf, audit } from "@aihot/backend/admin/auth";
+import { submitIndexNow } from "@aihot/backend/operations/indexnow";
 
 import { importSelectBenchRun, listSelectBenchRuns, selectBenchRun } from "@aihot/backend/admin/selectbench";
 import { modelsOverview, switchModel } from "@aihot/backend/admin/models";
+import { dealHunterOverview, requestDealHunterRun, updateDealHunterConfig } from "@aihot/backend/dealhunter/index";
 
 import { contentChain, detachFromFact, mergeStories, overrideFields, rerun, searchContent, setSeoIndexed, setVisibility } from "@aihot/backend/admin/content";
 import { banSource, eraseFeedback, feedbackScreenshot, listFeedback, unbanSource, updateFeedback } from "@aihot/backend/admin/feedback";
@@ -18,6 +20,7 @@ import { createSource, fetchNow, listSources, previewSource, sourceDetail, updat
 import { sql } from "@aihot/backend/db";
 import { siteStats } from "@aihot/backend/admin/stats";
 import { loadContact } from "@aihot/backend/site/contact";
+import { communityModerationQueue, communitySubmissions, listCommunityUsers, reviewCommunityPost, setCommunityUserStatus } from '@aihot/backend/community/admin';
 import { sendProblem } from "../http/respond.ts";
 import { adminHandler } from "./admin-auth.ts";
 
@@ -36,6 +39,14 @@ function decodeImage(dataUrl: unknown): Buffer {
 }
 
 export function registerAdmin(app: FastifyInstance) {
+  app.post("/api/indexnow", adminHandler(async (_req, _reply, admin) => {
+    const result = await submitIndexNow();
+    await audit(actorOf(admin), "indexnow.submit", "indexnow", "Manual IndexNow submission", null, { status: result.status, httpStatus: result.httpStatus, urls: result.urls });
+    return result;
+  }));
+  app.get("/api/admin/deal-hunter", adminHandler(async () => dealHunterOverview()));
+  app.post("/api/admin/deal-hunter/run", adminHandler(async (_req, _reply, admin) => ({ jobId: await requestDealHunterRun(actorOf(admin)) })));
+  app.patch("/api/admin/deal-hunter/config", adminHandler(async (req, _reply, admin) => updateDealHunterConfig(body(req), actorOf(admin))));
   // Sources (F18)
   app.get("/api/admin/sources", adminHandler(async (req) => {
     const f = q(req);
@@ -149,9 +160,23 @@ export function registerAdmin(app: FastifyInstance) {
       SELECT (SELECT count(*)::int FROM feedback WHERE status = 'new') AS feedback,
              (SELECT count(*)::int FROM sources WHERE enabled AND health = 'failing') AS sources,
              (SELECT count(*)::int FROM receipts WHERE status = 'unknown') + (SELECT count(*)::int FROM deliveries WHERE status = 'unknown') AS runs,
+             (SELECT count(*)::int FROM community_posts WHERE status IN ('pending_ai','pending_review')) + (SELECT count(*)::int FROM community_reports WHERE status='pending') AS community,
              (SELECT count(*)::int FROM monitor_posts WHERE (recognition->>'needsReview')::boolean IS TRUE AND (recognition->>'reviewed')::boolean IS NOT TRUE AND processed_at > now() - interval '7 days')
                + (SELECT count(*)::int FROM monitor_posts WHERE processed_at IS NULL AND collected_at < now() - interval '20 minutes') AS monitor`;
     return c;
+  }));
+
+  // Community moderation, user status, and contributor accounts.
+  app.get('/api/admin/community/moderation',adminHandler(async req=>communityModerationQueue(page(req))));
+  app.get('/api/admin/community/submissions',adminHandler(async req=>communitySubmissions(page(req),String((req.query as Record<string,unknown>).status??'all'))));
+  app.post('/api/admin/community/posts/:id/review',adminHandler(async(req,reply,admin)=>{
+    const b=body<{action:'approve'|'reject'|'remove';reason:string}>(req);
+    return orNotFound(req,reply,await reviewCommunityPost(param(req,'id'),b.action,b.reason,actorOf(admin)));
+  }));
+  app.get('/api/admin/community/users',adminHandler(async req=>listCommunityUsers(q(req).q??'',page(req))));
+  app.post('/api/admin/community/users/:id/status',adminHandler(async(req,reply,admin)=>{
+    const b=body<{status:'active'|'suspended';reason:string}>(req);
+    return orNotFound(req,reply,await setCommunityUserStatus(param(req,'id'),b.status,b.reason,actorOf(admin)));
   }));
 
   // Audit trail

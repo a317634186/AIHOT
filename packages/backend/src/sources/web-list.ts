@@ -1,6 +1,6 @@
 // Web list pages: HTML with selectors, Markdown through Jina Reader, and Docusaurus changelogs.
 import * as cheerio from "cheerio";
-import { guardedFetch } from "../lib/http-fetch.ts";
+import { crawlerFetch, crawlerRobotsAllows, RobotsDeniedError } from "../lib/crawler-fetch.ts";
 import { collapseWhitespace, stripTags } from "../lib/text.ts";
 import { readable, type ExtractedBody } from "../content/extract.ts";
 import { sanitizeBody } from "../content/sanitize.ts";
@@ -116,10 +116,11 @@ async function fetchListingText(source: SourceRow): Promise<{ text: string; viaJ
   if (!url) throw new FetchError("url missing");
   if (url.startsWith(JINA_PREFIX)) {
     const target = url.slice(JINA_PREFIX.length);
+    if(!await crawlerRobotsAllows(target))throw new RobotsDeniedError(target);
     const page = await jinaRead(target, { purpose: "source_listing", subject: `source:${source.id}`, cacheToleranceSeconds: source.config.cacheToleranceSeconds, perRead: true });
     return { text: page.markdown, viaJina: true, base: source.config.baseUrl ?? target };
   }
-  const res = await guardedFetch(url, { headers: { accept: "text/html,application/xhtml+xml,application/json;q=0.9,*/*;q=0.8" }, timeoutMs: 25_000 });
+  const res = await crawlerFetch(url, { headers: { accept: "text/html,application/xhtml+xml,application/json;q=0.9,*/*;q=0.8" }, timeoutMs: 25_000 });
   if (res.status !== 200) throw new FetchError(`HTTP ${res.status}`, res.status);
   return { text: res.text(), viaJina: false, base: source.config.baseUrl ?? url };
 }
@@ -233,7 +234,7 @@ function fromDocusaurusChangelog(html: string, base: string, source: SourceRow):
 }
 
 async function fetchScript(url: string): Promise<string> {
-  const res = await guardedFetch(url, { timeoutMs: 25_000 });
+    const res = await crawlerFetch(url, { timeoutMs: 25_000 });
   if (res.status !== 200) throw new FetchError(`HTTP ${res.status} for ${url}`, res.status);
   return res.text();
 }
@@ -337,7 +338,7 @@ export async function fetchDetail(url: string, source: SourceRow, need: DetailNe
   let html: string | null = null;
   let body: ExtractedBody | null = null;
   if ((need.date && !dateInJina) || (need.title && !titleInJina) || need.summary) {
-    const res = await guardedFetch(url, { timeoutMs: 20_000 });
+    const res = await crawlerFetch(url, { timeoutMs: 20_000 });
     if (res.status === 200) {
       html = res.text();
       if (need.body && /html/.test(res.headers.get("content-type") ?? "")) {

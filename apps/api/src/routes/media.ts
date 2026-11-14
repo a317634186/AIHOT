@@ -5,7 +5,7 @@ import { verifyProxyRequest } from "@aihot/backend/media/imgproxy";
 import { looseQuery } from "../http/respond.ts";
 
 export function registerMedia(app: FastifyInstance) {
-  app.get("/api/img-proxy", async (req, reply) => {
+  const handleImgProxy = async (req: any, reply: any) => {
     const q = looseQuery(req);
     const verdict = verifyProxyRequest({ u: q.u, mode: q.mode, exp: q.exp, sig: q.sig });
     // A caching proxy (nginx auth_request) can check every request with this HEAD sub-request before it reads its image cache (keyed
@@ -36,5 +36,7 @@ export function registerMedia(app: FastifyInstance) {
       req.log.warn({ err: String(error), host: new URL(verdict.url).hostname }, "img-proxy upstream failed");
       return reply.code(502).header("Cache-Control", "public, max-age=300").type("text/plain; charset=utf-8").send("Upstream image unavailable");
     }
-  });
+  };
+  app.get("/api/img-proxy", handleImgProxy);
+  app.get("/api/img-proxy.webp", handleImgProxy);
 }

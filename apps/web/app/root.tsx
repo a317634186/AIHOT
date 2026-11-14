@@ -1,15 +1,11 @@
 import { titled } from "./lib/seo";
 import { SITE } from "@aihot/industry/site";
 import {
-  isRouteErrorResponse, Link, Links, Meta, Outlet, Scripts, ScrollRestoration, useLoaderData, useLocation, useNavigation, useRouteError, useRouteLoaderData,
+  isRouteErrorResponse, Link, Links, Meta, Outlet, Scripts, ScrollRestoration, useLocation, useRouteError,
   type ShouldRevalidateFunction,
 } from "react-router";
-import type { ReactNode } from "react";
 import type { Route } from "./+types/root";
 import "./app.css";
-import { Sidebar } from "./components/shell/Sidebar";
-import { MobileTabBar } from "./components/shell/MobileTabBar";
-import { BackToTop, NavigationProgress } from "./components/shell/Chrome";
 import { RingMark } from "./components/Logo";
 import { TrafficBeacon } from "./components/TrafficBeacon";
 import { buttonClass } from "./components/ui/Controls";
@@ -47,14 +43,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
         <meta name="theme-color" media="(prefers-color-scheme: light)" content="#faf9f6" />
         <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#13191c" />
-        <script
-          async
-          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5475520925189241"
-          crossOrigin="anonymous"
-        />
-        <script dangerouslySetInnerHTML={{ __html: THEME_BOOT_SCRIPT }} />
-        <Meta />
         <Links />
+        <Meta />
+        <script dangerouslySetInnerHTML={{ __html: THEME_BOOT_SCRIPT }} />
       </head>
       <body>
         {children}
@@ -72,29 +63,7 @@ export function meta({ error }: Route.MetaArgs) {
   return [{ title: titled(notFound ? "Page not found" : "Temporarily unavailable") }, { name: "robots", content: "noindex" }];
 }
 
-/** Sidebar, main column and phone tab bar around a page (or an error). */
-function SiteShell({ changelogVersion, children }: { changelogVersion: string | null; children: ReactNode }) {
-  const navigation = useNavigation();
-  return (
-    <div className="flex min-h-dvh">
-      <NavigationProgress active={navigation.state === "loading"} />
-      <a href="#main" className="sr-only focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-[70] focus:rounded-control focus:bg-surface focus:px-3 focus:py-2">
-        Skip to content
-      </a>
-      <Sidebar changelogVersion={changelogVersion} />
-      {/* Mobile shell (≤ 960px): one centred column, the tab bar below. Desktop: the page fills the main area
-          up to the list width (--page-max-wide), centred beyond it. */}
-      <main id="main" className="min-w-0 flex-1 pb-[calc(72px+env(safe-area-inset-bottom))] lg:px-7 lg:pb-[72px] lg:pt-6">
-        <div className="mx-auto w-full max-w-[640px] px-4 lg:max-w-[var(--page-max-wide)] lg:px-0">{children}</div>
-      </main>
-      <MobileTabBar changelogVersion={changelogVersion} />
-      <BackToTop />
-    </div>
-  );
-}
-
 export default function App() {
-  const meta = useLoaderData<typeof loader>();
   useHydratedFlag();
   const { pathname } = useLocation();
   // The admin has its own chrome.
@@ -104,7 +73,6 @@ export default function App() {
 
 export function ErrorBoundary() {
   const error = useRouteError();
-  const site = useRouteLoaderData<typeof loader>("root");
   const { pathname } = useLocation();
   const status = isRouteErrorResponse(error) ? error.status : 500;
   const notFound = status === 404;

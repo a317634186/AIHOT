@@ -3,7 +3,7 @@
 // the industry pack (industry/prompts/report-*.md), the sections follow its categories.
 import { SHOPPING } from "@aihot/industry/shopping";
 import { shoppingItems } from "../publication/shopping.ts";
-import { isOffer } from "@aihot/contracts/shopping";
+import { isOffer, truncateAtWord } from "@aihot/contracts/shopping";
 import { z } from "zod";
 import { SITE } from "@aihot/industry/site";
 import { CATEGORIES } from "@aihot/industry/taxonomy";
@@ -112,7 +112,7 @@ const LeadSchema = z.object({
 
 async function writeLead(kind: string, key: string, entries: ReportEntry[], model: string) {
   if (entries.length === 0) return null;
-  const list = entries.slice(0, 30).map((e, i) => `${i + 1}. ${e.title}｜${e.summary.slice(0, 120)}`).join("\n");
+  const list = entries.slice(0, 30).map((e, i) => `${i + 1}. ${e.title}｜${truncateAtWord(e.summary, 120)}`).join("\n");
   const res = await chatJson({
     model, purpose: "report_lead", subject: `report:${kind}:${key}`, promptVersion: REPORT_VERSION,
     system: promptText("report-daily-lead"),
@@ -199,7 +199,7 @@ export const PeriodSchema = z.object({
 
 /** The editor's brief for a week or month: its top entries as a numbered list, each with its section. */
 export function periodPrompt(kind: "weekly" | "monthly", startDate: string, endDateInclusive: string, top: Candidate[]) {
-  const list = top.map((e, i) => `${i + 1}. [${SECTION_OF[e.category ?? ""] ?? DEFAULT_SECTION}] ${e.title}｜${e.summary.slice(0, 140)}`).join("\n");
+  const list = top.map((e, i) => `${i + 1}. [${SECTION_OF[e.category ?? ""] ?? DEFAULT_SECTION}] ${e.title}｜${truncateAtWord(e.summary, 140)}`).join("\n");
   return {
     system: promptText("report-period", { kindName: kind === "weekly" ? "周报" : "月报", overviewLength: kind === "weekly" ? "150–300" : "200–400" }),
     user: `本期：${startDate} 至 ${endDateInclusive}\n${list}`,

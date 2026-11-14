@@ -54,7 +54,7 @@ docker compose up -d --build
 
 ### 备份
 
-在 `.env` 里配置 `DB_BACKUP_STORE_*`（任何 S3 兼容的对象存储），每天 04:10 自动备份到那里。也可以手动导出：
+在 `.env` 里配置 `DB_BACKUP_STORE_*`（任何 S3 兼容的对象存储，如腾讯云 COS），每天 04:10 自动备份到那里。启用后重启 worker，并先验证一次上传和恢复。数据库使用 PostgreSQL custom dump；文件包包含用户上传内容、社区图片和 `/data/credentials/model-settings.key`。`imgcache`、`ogcache` 是可重建缓存，不纳入备份。对象存储应设为私有并启用服务端加密；模型设置解密密钥和数据库备份必须一并保管，但不要把 `.env` 提交到 Git。
 
 ```bash
 docker compose exec -T db pg_dump -U aihot aihot | gzip > myhot-$(date +%F).sql.gz

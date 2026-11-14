@@ -15,7 +15,7 @@ export const SITE = {
   /** 一句话介绍：搜索引擎、分享卡片、RSS、llms.txt 会用。 */
   description: "Discover US shopping deals, coupon codes, retailer offers and shopping news. Compare recorded prices and check buying conditions with Savlume.",
   /** 首页左上角和侧边栏下面的一行小字。 */
-  tagline: "AI Picks. Better Deals.",
+  tagline: "Find Deals. Save Smarter.",
   /** 界面语言（HTML lang、og:locale）。 */
   locale: "en-US",
   /** 默认域名，只在没设置 SITE_URL 时使用。 */
@@ -50,7 +50,7 @@ export const ABOUT = {
     collect: "Public feeds surface leads. Merchant and brand pages provide primary evidence.",
     store: "Different sizes, sellers, conditions, and eligibility remain separate offers.",
     select: "Value, evidence, US availability, reliability, and usefulness guide selection. Commission does not affect ranking.",
-    publish: "Read AI Picks, Best Deals, shopping news and Reviews & Picks, plus an 8 a.m. Eastern briefing. Prices can change; confirm the final total at the merchant.",
+    publish: "Browse deals, shopper questions and product reviews, then check the retailer for current terms. Prices can change; confirm the final total at the merchant.",
   },
   maker: null as null | { name: string; greeting: string[]; avatarSourceId?: string | null; wechat?: {title:string;note:string}; feishu?: {title:string;note:string} },
   copyright: "We publish original summaries and links. Images and original reporting belong to their respective owners. For corrections or removal requests, use our",

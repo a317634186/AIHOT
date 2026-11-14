@@ -1,10 +1,11 @@
 // RSS 2.0 / Atom / RDF feeds.
 import { XMLParser } from "fast-xml-parser";
-import { guardedFetch } from "../lib/http-fetch.ts";
+import { crawlerFetch } from "../lib/crawler-fetch.ts";
 import { collapseWhitespace, stripTags } from "../lib/text.ts";
 import { sanitizeBody } from "../content/sanitize.ts";
 import { identityKeyForUrl } from "../lib/url.ts";
 import { sha256, stableJson } from "../lib/ids.ts";
+import { truncateAtWord } from "@aihot/contracts/shopping";
 import { FetchError, type Candidate, type SourceRow } from "./types.ts";
 
 const parser = new XMLParser({
@@ -95,7 +96,7 @@ export function isTeaser(text: string): boolean {
 function feedText(bodyHtml: string | null, summaryHtml: string, source: SourceRow): Pick<Candidate, "excerpt" | "bodyHtml" | "bodyText" | "bodyStatus"> {
   const bodyText = bodyHtml ? stripTags(bodyHtml) : null;
   const teaser = !!bodyText && source.participation_mode === "editorial" && isTeaser(bodyText);
-  const excerpt = summaryHtml ? collapseWhitespace(stripTags(summaryHtml)).slice(0, 2000) : teaser ? collapseWhitespace(bodyText!) : null;
+  const excerpt = summaryHtml ? truncateAtWord(collapseWhitespace(stripTags(summaryHtml)), 2000) : teaser ? collapseWhitespace(bodyText!) : null;
   return bodyText && bodyText.length > 280 && !teaser
     ? { excerpt, bodyHtml, bodyText, bodyStatus: "ok" }
     : { excerpt, bodyHtml: null, bodyText: null, bodyStatus: "pending" };
@@ -123,10 +124,10 @@ export async function fetchRss(source: SourceRow, opts: { force?: boolean } = {}
   const headers: Record<string, string> = { accept: "application/rss+xml, application/atom+xml, application/xml;q=0.9, */*;q=0.8" };
   if (previous?.etag) headers["if-none-match"] = previous.etag;
   if (previous?.lastModified) headers["if-modified-since"] = previous.lastModified;
-  let res = await guardedFetch(url, { headers, timeoutMs: 25_000 });
+  let res = await crawlerFetch(url, { headers, timeoutMs: 25_000 });
   // A redirect may have changed destinations, whose ETag namespace is unrelated to the old one.
   if (res.status === 304 && previous && res.url !== previous.responseUrl) {
-    res = await guardedFetch(url, { headers: { accept: headers.accept! }, timeoutMs: 25_000 });
+    res = await crawlerFetch(url, { headers: { accept: headers.accept! }, timeoutMs: 25_000 });
   }
   const validator: RssValidator = {
     configHash, responseUrl: res.url,

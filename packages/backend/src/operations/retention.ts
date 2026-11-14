@@ -37,5 +37,21 @@ export async function dailyRetention(now = new Date()) {
   const monthMs = 30 * 86400_000;
   const prunedCache = (await pruneCache(path.join(config.dataDir, "imgcache"), monthMs, now.getTime())) + (await pruneCache(path.join(config.dataDir, "ogcache"), monthMs, now.getTime()));
   const traffic = await pruneTraffic(now);
-  return { deletedLeases: leases.count, deletedJobRuns: runs.count, deletedFiles: files.length, prunedCache, traffic };
+  const reindexedEnded = await sql`
+    UPDATE publications p
+    SET indexable = true
+    FROM shopping_offers d
+    WHERE d.article_id = p.article_id
+      AND p.visibility = 'public'
+      AND (p.eligible OR COALESCE((d.data->>'priceRestored')::boolean, false))
+      AND p.seo_excluded_at IS NULL
+      AND p.indexable = false
+      AND d.data->>'kind' IN ('product_deal', 'coupon_offer', 'cashback_offer', 'freebie')
+      AND (
+        d.data->>'status' IN ('Expired', 'Out of Stock')
+        OR COALESCE((d.data->>'priceRestored')::boolean, false)
+        OR NULLIF(d.data->>'promotionEndedAt', '') IS NOT NULL
+      )
+    RETURNING p.article_id`;
+  return { deletedLeases: leases.count, deletedJobRuns: runs.count, deletedFiles: files.length, prunedCache, traffic, reindexedEnded: reindexedEnded.length };
 }

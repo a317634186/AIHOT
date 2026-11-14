@@ -9,7 +9,7 @@ import type { AdminMe } from "../../features/admin/action";
 import { Toaster } from "../../features/admin/toast";
 import { adminGet } from "../../lib/admin.server";
 
-type Counts = Partial<Record<"feedback" | "sources" | "runs" | "monitor", number>>;
+type Counts = Partial<Record<"feedback" | "sources" | "runs" | "monitor" | "community", number>>;
 
 export async function loader({ request }: Route.LoaderArgs) {
   const [me, counts] = await Promise.all([adminGet<AdminMe>(request, "/api/admin/me"), adminGet<Counts>(request, "/api/admin/nav-counts").catch(() => ({}) as Counts)]);
@@ -30,8 +30,11 @@ const NAV: Array<{ group: string; items: Array<{ to: string; label: string; coun
       { to: "/admin/stats", label: "数据统计" },
       { to: "/admin/content", label: "内容诊断" },
       { to: "/admin/sources", label: "信源", count: "sources", tone: "bad" },
+      { to: "/admin/deal-hunter", label: "AI Deal Hunter" },
       ...(FEATURES.codexResetMonitor ? [{ to: "/admin/monitor", label: "Codex 重置", count: "monitor" as const, tone: "accent" as const }] : []),
       { to: "/admin/feedback", label: "反馈", count: "feedback", tone: "accent" },
+      { to: "/admin/community", label: "社区审核", count: "community", tone: "accent" },
+      { to: "/admin/community/submissions", label: "用户爆料" },
     ],
   },
   {

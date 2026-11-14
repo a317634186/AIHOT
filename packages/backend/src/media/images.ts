@@ -5,22 +5,23 @@ import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
 import path from "node:path";
 import sharp from "sharp";
 import { config } from "../config.ts";
-import { guardedFetch, type GuardedResponse } from "../lib/http-fetch.ts";
+import { crawlerFetch } from "../lib/crawler-fetch.ts";
+import type { GuardedResponse } from "../lib/http-fetch.ts";
 
 import { IMAGE_WIDTHS } from "./renditions.ts";
 
 const CACHE_DIR = path.join(config.dataDir, "imgcache");
-const ORIGINAL_TTL_MS = 60_000;
-const ORIGINAL_MAX_BYTES = 32 * 1024 * 1024;
-const ORIGINAL_MAX_ENTRIES = 32;
+const ORIGINAL_TTL_MS = 10 * 60_000;
+const ORIGINAL_MAX_BYTES = 256 * 1024 * 1024;
+const ORIGINAL_MAX_ENTRIES = 128;
 const recentOriginals = new Map<string, { value: GuardedResponse; until: number }>();
 let originalBytes = 0;
 const inflight = new Map<string, Promise<{ body: Buffer; type: string }>>();
 const originals = new Map<string, Promise<GuardedResponse>>();
 const failures = new Map<string, { until: number; error: unknown }>();
 
-// Responsive candidates and a later lightbox can request the same source in successive turns.
-// Keep at most 32 MiB / 32 originals for one minute as well as sharing in-flight downloads.
+// Responsive candidates and repeat page views can request the same source in different renditions.
+// Keep a bounded 256 MiB / 128-original hot set for ten minutes, as well as sharing in-flight downloads.
 function pruneOriginals(now: number): void {
   for (const [url, entry] of recentOriginals) {
     if (entry.until <= now) {
@@ -70,7 +71,11 @@ function original(url: string): Promise<GuardedResponse> {
 }
 
 async function fetchOriginal(url: string): Promise<GuardedResponse> {
-  const res = await guardedFetch(url, { timeoutMs: 20_000, maxBytes: 15 * 1024 * 1024, headers: { accept: "image/avif,image/webp,image/*,*/*;q=0.8" } });
+  let normalizedUrl = url.replace(/&#038;/g, '&');
+  if (normalizedUrl.includes('platform.theverge.com') && !normalizedUrl.includes('w=')) {
+    normalizedUrl += (normalizedUrl.includes('?') ? '&' : '?') + 'w=1200';
+  }
+  const res = await crawlerFetch(normalizedUrl, { timeoutMs: 25_000, maxBytes: 32 * 1024 * 1024, minIntervalMs: 250, headers: { accept: "image/jpeg,image/png,image/webp,image/*,*/*;q=0.8" } });
   if (res.status !== 200) throw new Error(`upstream ${res.status}`);
   return res;
 }
@@ -203,5 +208,5 @@ export async function resizeImage(body: Buffer, upstreamType: string, mode: stri
     return { body: await image.webp({ quality: 88, alphaQuality: 100, smartSubsample: true, effort: 4 }).toBuffer(), type: "image/webp" };
   }
   if (type === "image/webp") return { body: await image.webp({ quality: 82 }).toBuffer(), type };
-  return { body: await image.jpeg({ quality: 82, mozjpeg: true }).toBuffer(), type: "image/jpeg" };
+  return { body: await image.jpeg({ quality: 76, mozjpeg: true, progressive: true }).toBuffer(), type: "image/jpeg" };
 }

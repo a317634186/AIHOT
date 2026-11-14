@@ -8,6 +8,8 @@
   "dependencies": {
     "@aihot/contracts": "*",
     "@aihot/industry": "*",
+    "@crawlee/cheerio": "^3.18.2",
+    "@crawlee/playwright": "^3.18.2",
     "@mozilla/readability": "0.6.0",
     "@paralleldrive/cuid2": "3.3.0",
     "cheerio": "1.2.0",
@@ -18,6 +20,7 @@
     "marked": "18.0.14",
     "nodemailer": "^10.1.1",
     "pg-boss": "12.34.0",
+    "playwright-core": "^1.65.0",
     "postgres": "3.4.9",
     "sanitize-html": "2.17.7",
     "sharp": "0.35.4",

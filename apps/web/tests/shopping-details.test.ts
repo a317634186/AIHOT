@@ -21,11 +21,17 @@ async function started(child:ChildProcess, pattern:RegExp, stream:'stdout'|'stde
 }
 
 test('detail AI purchase reasons, recorded chart, comparison, share and persistent likes work on mobile', {skip:!chrome,timeout:60000}, async t=>{
- const likes=new Map<string,boolean>();
- const item={id:'detail-fixture',title:'DEMO vacuum',summary:'An AI summary grounded in the source.',reason:'Useful source-supported context.',source:'Test source',sourceUrl:'https://example.invalid/source',publishedAt:'2026-10-11T00:00:00Z',sources:[],offer:{kind:'product_deal',product:'DEMO vacuum',model:'D-1',variant:'1 pack',condition:'new',merchant:'Test retailer',seller:'Test retailer',status:'Unverified',listedPriceCents:10000,checkoutPriceCents:9000,restrictions:[],steps:[],imageUrl:null,buyUrl:'https://example.invalid/buy',aiOverview:{format:'recommendation',priceReason:'The source reports $90 versus its $100 reference price; this does not establish a market low.',summary:'Worth considering for the source-stated household use if cordless cleaning fits your needs.',bestFor:'Source-stated household use.',highlights:['Source-stated cordless design.'],cautions:['Check the stated warranty.']}}};
+ const likes=new Map<string,boolean>();let watchActive=false,reportedExpired=false;
+ const retailerImage='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%222%22 height=%222%22%3E%3Crect width=%222%22 height=%222%22 fill=%22red%22/%3E%3C/svg%3E';
+ const sourceImage='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%222%22 height=%222%22%3E%3Crect width=%222%22 height=%222%22 fill=%22blue%22/%3E%3C/svg%3E';
+ const item={priceDisplay:{state:'current',amountCents:9000,label:'Retailer-verified price',verification:'merchant-verified',verifiedAt:'2026-10-11T00:00:00Z',lastCheckedAt:'2026-10-11T00:00:00Z'},id:'detail-fixture',title:'DEMO vacuum',summary:'An AI summary grounded in the source.',reason:'Useful source-supported context.',source:'Test source',sourceUrl:'https://example.invalid/source',publishedAt:'2026-10-11T00:00:00Z',sources:[],image:{src:retailerImage,srcSet:null,hero:retailerImage,sourceUrl:'https://www.amazon.com/dp/B012345678',fallback:{src:sourceImage,srcSet:null,hero:sourceImage,sourceUrl:'https://example.invalid/source'}},offer:{kind:'product_deal',product:'DEMO vacuum',model:'D-1',variant:'1 pack',condition:'new',merchant:'Amazon',seller:'Example seller',status:'Active',listedPriceCents:10000,checkoutPriceCents:9000,restrictions:['New customers only'],membership:'Prime membership required',shipping:'Shipping extra',coupon:'Apply code SAVE10 at checkout',priceEvidence:'DEMO vacuum at Amazon for $90, down from the $100 regular price.',steps:[],imageUrl:'https://example.invalid/product.jpg',buyUrl:'https://www.amazon.com/dp/B012345678?tag=savlume-20',aiOverview:{format:'recommendation',analysisVersion:'buyer-context-v1',analysisPriceCents:9000,priceReason:'The source reports $90 versus its $100 reference price; this does not establish a market low.',summary:'Worth considering for the source-stated household use if cordless cleaning fits your needs.',bestFor:'Source-stated household use.',highlights:['Source-stated cordless design.'],cautions:['Check the stated warranty.']}}};
  const api=createServer(async(req,res)=>{
   const url=new URL(req.url!,'http://local');res.setHeader('Content-Type','application/json');
   if(url.pathname==='/api/site/meta')return res.end(JSON.stringify({changelogVersion:'test'}));
+  if(url.pathname==='/api/site/watch/options')return res.end(JSON.stringify({email:false,push:true,vapidPublicKey:'dGVzdA'}));
+  if(url.pathname==='/api/site/watch/status')return res.end(JSON.stringify({active:watchActive}));
+  if(url.pathname==='/api/site/watch'&&req.method==='POST'){watchActive=true;return res.end(JSON.stringify({confirmed:true}));}
+  if(url.pathname==='/api/site/watch/stop'&&req.method==='POST'){watchActive=false;return res.end(JSON.stringify({removed:1}));}
   if(url.pathname.endsWith('/likes')){
    let visitor=String(req.headers['x-dealbrief-visitor']??'');
    if(req.method==='POST'){let raw='';for await(const chunk of req)raw+=chunk;const body=JSON.parse(raw);visitor=body.visitorId;likes.set(visitor,body.liked);}
@@ -33,8 +39,10 @@ test('detail AI purchase reasons, recorded chart, comparison, share and persiste
   }
   if(url.pathname!=='/api/shopping'){res.statusCode=404;return res.end('{}');}
   const history=[{at:'2026-10-10T12:00:00Z',listedPriceCents:10000,checkoutPriceCents:10000,currency:'USD',basis:'source-reported',sourceUrl:item.sourceUrl},{at:'2026-10-11T12:00:00Z',listedPriceCents:10000,checkoutPriceCents:9000,currency:'USD',basis:'merchant-verified',sourceUrl:item.offer.buyUrl}];
-  const current=url.searchParams.get('id')==='review-fixture'?{...item,id:'review-fixture',offer:{...item.offer,kind:'buying_guide',review:{format:'video_review',author:'DEMO reviewer',verdict:'The source reports a useful product for the demo task.',bestFor:'Demo use case',strengths:['Source-reported strength'],limitations:['Source-reported limitation'],testingNote:'The source describes its testing conditions.',questions:[{question:'Who is it for?',answer:'The stated demo use case.'}],videoUrl:'https://www.youtube.com/watch?v=abcdefghijk',basis:'source_text'}}}:item;
-  res.end(JSON.stringify({items:[current],total:1,hasMore:false,briefing:null,priceHistory:history,likes:[...likes.values()].filter(Boolean).length,comparisons:[{...item,id:'comparison-fixture',offer:{...item.offer,merchant:'Other retailer',checkoutPriceCents:9500}}]}));
+  const id=url.searchParams.get('id');
+  const current=id==='review-fixture'?{...item,id:'review-fixture',offer:{...item.offer,kind:'buying_guide',review:{format:'video_review',author:'DEMO reviewer',verdict:'The source reports a useful product for the demo task.',bestFor:'Demo use case',strengths:['Source-reported strength'],limitations:['Source-reported limitation'],testingNote:'The source describes its testing conditions.',questions:[{question:'Who is it for?',answer:'The stated demo use case.'}],videoUrl:'https://www.youtube.com/watch?v=abcdefghijk',basis:'source_text'}}}:id==='ended-fixture'?{...item,id,priceDisplay:{...item.priceDisplay,state:'ended',label:'Last reported offer price',verification:'merchant-verified'},offer:{...item.offer,status:'Expired'}}:id==='missing-fixture'?{...item,id,priceDisplay:{...item.priceDisplay,state:'current',amountCents:null,label:'Price not reported',verification:'unavailable'},offer:{...item.offer,status:'Unverified',imageUrl:null,buyUrl:null,listedPriceCents:null,checkoutPriceCents:null}}:id==='reported-fixture'?{...item,id,thirdPartySeller:true,priceDisplay:{...item.priceDisplay,state:reportedExpired?'ended':'current',verification:'source-reported',label:'Source-reported price'},offer:{...item.offer,status:reportedExpired?'Expired':'Unverified',aiOverview:{...item.offer.aiOverview,analysisVersion:'buyer-context-v1'}}}:id==='changed-price-fixture'?{...item,id,priceDisplay:{...item.priceDisplay,amountCents:8500},offer:{...item.offer,checkoutPriceCents:8500}}:id==='empty-fixture'?{...item,id,summary:'',reason:null,offer:{...item.offer,aiOverview:null}}:id==='shipping-quote-fixture'?{...item,id,priceDisplay:{...item.priceDisplay,amountCents:1200,label:'Source-reported price',verification:'source-reported',verifiedAt:null},offer:{...item.offer,checkoutPriceCents:1200,shipping:null,priceEvidence:'2 for $12 $72 $18 shipping'}}:!id?{...item,title:"Men's Christmas Long Sleeve Shirts: 2 for $12 + $18 Shipping at Everly Cheer with Code",priceDisplay:{...item.priceDisplay,amountCents:1200,label:'Source-reported price',verification:'source-reported',verifiedAt:null},offer:{...item.offer,checkoutPriceCents:1200,shipping:null,restrictions:[...item.offer.restrictions,'$18 shipping.'],priceEvidence:'2 for $12 $72 $18 shipping'}}:item;
+  const items=id?[current]:[current,{...current,id:'shipping-field-fixture',title:'LoomBasics cargo shirts: 2 for $17 + $18 Shipping',priceDisplay:{...current.priceDisplay,amountCents:1700},offer:{...current.offer,checkoutPriceCents:1700,shipping:'$18 shipping, as reported by the source.',priceEvidence:'2 for $17 $100 $18 shipping'}},{...current,id:'verified-shipping-fixture',priceDisplay:{...item.priceDisplay,amountCents:1200},offer:{...current.offer,shipping:'$18 shipping, as reported by the source.'}},{...current,id:'last-verified-fixture',priceDisplay:{...current.priceDisplay,verification:'last-verified',verifiedAt:'2026-10-11T00:00:00Z'}},{...current,id:'ended-card-fixture',priceDisplay:undefined,timing:{state:'ended'},offer:{...current.offer,status:'Expired'}}];
+  res.end(JSON.stringify({items,total:items.length,hasMore:false,briefing:null,priceHistory:id==='empty-fixture'?[]:history,likes:[...likes.values()].filter(Boolean).length,comparisons:id==='empty-fixture'?[]:[{...item,id:'comparison-fixture',offer:{...item.offer,merchant:'Other retailer',checkoutPriceCents:9500}}]}));
  });
  api.listen(0,'127.0.0.1');await once(api,'listening');
  t.after(()=>{api.closeAllConnections();api.close();});
@@ -59,14 +67,55 @@ test('detail AI purchase reasons, recorded chart, comparison, share and persiste
  // Do not load the production advertising integration in local browser tests.
  await send('Network.setBlockedURLs',{urls:['*://*.googlesyndication.com/*','*://*.doubleclick.net/*']});
  await send('Page.enable');
+ await send('Page.addScriptToEvaluateOnNewDocument',{source:`(()=>{const sub={endpoint:'https://push.example/test',toJSON:()=>({endpoint:'https://push.example/test',keys:{p256dh:'test',auth:'test'}})};const reg={pushManager:{getSubscription:async()=>sessionStorage.getItem('push-fixture')?sub:null,subscribe:async()=>{sessionStorage.setItem('push-fixture','yes');return sub}}};Object.defineProperty(navigator,'serviceWorker',{configurable:true,value:{getRegistration:async()=>reg,register:async()=>reg,ready:Promise.resolve(reg)}});Object.defineProperty(window,'PushManager',{configurable:true,value:function(){}});Object.defineProperty(window,'Notification',{configurable:true,value:{requestPermission:async()=> 'granted'}})})()`});
  await send('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:1,mobile:true});
  await send('Page.navigate',{url:origin+'/items/detail-fixture'});
  await until("document.querySelector('.db-like:not(:disabled)')!==null");
+ assert.match(await evaluate("document.querySelector('.db-detail-deal').textContent"),/Amazon/);
+ assert.match(await evaluate("document.querySelector('.db-detail-deal').textContent"),/\$90\.00/);
+ assert.equal(await evaluate("document.querySelector('.db-detail-deal .db-off').textContent"),'10% off');
+ assert.equal(await evaluate("document.querySelector('.db-detail-deal .db-was').textContent"),'$100.00');
+ assert.match(await evaluate("document.querySelector('.db-deal-terms').textContent"),/Prime membership required/);
+ assert.match(await evaluate("document.querySelector('.db-deal-terms').textContent"),/New customers only/);
+ assert.match(await evaluate("document.querySelector('.db-deal-terms').textContent"),/Apply code SAVE10 at checkout/);
+ assert.match(await evaluate("document.querySelector('.db-detail-deal').textContent"),/SAVE10/);
+ assert.equal(await evaluate("document.querySelector('.db-detail-deal .db-buy').textContent.trim()"),'View Deal ↗');
+ assert.equal(await evaluate("document.querySelector('.db-detail-deal .db-buy').href"),'https://www.amazon.com/dp/B012345678?tag=savlume-20');
+ assert.equal(await evaluate("document.querySelector('.db-detail-deal .db-buy').rel"),'sponsored nofollow noopener noreferrer');
+ await evaluate("Object.defineProperty(navigator,'clipboard',{configurable:true,value:{writeText:async text=>{window.__couponCopied=text}}});document.querySelector('.db-detail-deal .db-code-copy').click()");
+ await until("document.querySelector('.db-detail-deal .db-code-copy').textContent.includes('Copied')");
+ assert.equal(await evaluate('window.__couponCopied'),'SAVE10');
+ assert.equal(await evaluate("document.querySelector('.db-detail-image img').src"),retailerImage);
+ assert.equal(await evaluate("document.querySelector('.db-detail-image .db-image-credit').href"),'https://www.amazon.com/dp/B012345678');
+ await evaluate("document.querySelector('.db-detail-image img').dispatchEvent(new Event('error'))");await until("document.querySelector('.db-detail-image img').dataset.sourceFallback==='1'");
+ assert.equal(await evaluate("document.querySelector('.db-detail-image img').src"),sourceImage);
+ assert.equal(await evaluate("document.querySelector('.db-image-credit').href"),'https://example.invalid/source');
+ assert.equal(await evaluate("document.querySelector('.db-detail-image img').src"),sourceImage);
+ assert.equal(await evaluate("document.querySelector('.db-detail-image .db-image-credit').href"),'https://example.invalid/source');
+ assert.equal(await evaluate("!!(document.querySelector('.db-deal-terms').compareDocumentPosition(document.querySelector('.db-detail-deal .db-buy')) & Node.DOCUMENT_POSITION_FOLLOWING)"),true);
+ assert.equal(await evaluate("document.querySelector('.db-detail-deal .db-buy').getBoundingClientRect().bottom < innerHeight"),true);
+ assert.equal(await evaluate("!!(document.querySelector('.db-detail-deal .db-buy').compareDocumentPosition(document.querySelector('.db-ai-intro')) & Node.DOCUMENT_POSITION_FOLLOWING)"),true);
+ assert.equal(await evaluate("!!(document.querySelector('.db-ai-intro').compareDocumentPosition(document.querySelector('.db-price-insights')) & Node.DOCUMENT_POSITION_FOLLOWING)"),true);
+ assert.equal(await evaluate("!!(document.querySelector('.db-price-insights').compareDocumentPosition(document.querySelector('.db-source-record')) & Node.DOCUMENT_POSITION_FOLLOWING)"),true);
+ assert.equal(await evaluate("document.querySelector('#buying-answers')===null"),true);
+ assert.equal(await evaluate("document.querySelector('.db-offer-details').open"),false);
+ assert.equal(await evaluate("document.querySelector('.db-price-history').open"),false);
+ assert.equal(await evaluate("document.querySelector('.db-source-record a').href"),'https://example.invalid/source');
+ for(const width of [320,390,620]){
+  await send('Emulation.setDeviceMetricsOverride',{width,height:844,deviceScaleFactor:1,mobile:true});
+  const layout=await evaluate("(()=>{const hero=document.querySelector('.db-detail-deal').getBoundingClientRect(),terms=document.querySelector('.db-deal-purchase').getBoundingClientRect(),action=document.querySelector('.db-action-buy').getBoundingClientRect();return {hero:hero.width,terms:terms.width,actionTop:action.top,actionBottom:action.bottom,overflow:document.documentElement.scrollWidth>innerWidth}})()");
+  assert.ok(layout.terms>layout.hero-40,`offer conditions should span the mobile card at ${width}px`);
+  assert.ok(layout.actionTop>=0&&layout.actionBottom<=844,`sticky retailer action should stay visible at ${width}px`);
+  assert.equal(layout.overflow,false);
+ }
+ await send('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:1,mobile:true});
  assert.match(await evaluate("document.querySelector('.db-ai-intro').textContent"),/cordless design/);
  assert.equal(await evaluate("document.querySelector('.db-ai-intro h2').textContent"),'Why this deal may be worth it');
  assert.match(await evaluate("document.querySelector('.db-ai-price-reason').textContent"),/does not establish a market low/);
  assert.match(await evaluate("document.querySelector('.db-ai-summary').textContent"),/Worth considering/);
+ await evaluate("document.querySelector('.db-price-history summary').click()");
  assert.equal(await evaluate("document.querySelectorAll('.db-price-chart circle').length"),2);
+ assert.equal(await evaluate("document.querySelector('.db-price-history').open"),true);
  assert.match(await evaluate("document.querySelector('.db-retailer-quotes').textContent"),/Other retailer/);
  assert.equal(await evaluate("document.querySelectorAll('.db-status.unverified').length"),0);
  assert.doesNotMatch(await evaluate("document.querySelector('.db-retailer-quotes').textContent"),/Unverified/);
@@ -90,8 +139,86 @@ test('detail AI purchase reasons, recorded chart, comparison, share and persiste
  assert.match(await evaluate("document.querySelector('.db-review-insights').textContent"),/DEMO reviewer/);
  assert.equal(await evaluate("document.querySelector('.db-review-video a').href"),'https://www.youtube.com/watch?v=abcdefghijk');
  assert.match(await evaluate("document.querySelector('.db-review-questions').textContent"),/Who is it for/);
- assert.equal(await evaluate("document.querySelectorAll('.db-mobile-tabs a').length"),3);
+ assert.deepEqual(await evaluate("[...document.querySelectorAll('.db-mobile-tabs a')].map(a=>a.textContent.trim().replace(/^[^A-Za-z]+/,''))"),['Home','Stores','Community','Guides','Saved']);
+ assert.equal(await evaluate("getComputedStyle(document.querySelector('.db-header')).position"),'relative');
+ assert.equal(await evaluate("getComputedStyle(document.querySelector('.db-primary-nav')).display"),'none');
  assert.equal(await evaluate("document.querySelector('.db-price-insights')===null"),true);
  await send('Emulation.setDeviceMetricsOverride',{width:1440,height:1000,deviceScaleFactor:1,mobile:false});
  assert.equal(await evaluate('document.documentElement.scrollWidth>innerWidth'),false);
+ assert.deepEqual(await evaluate("[...document.querySelectorAll('.db-primary-nav a')].map(a=>a.textContent.trim())"),['AI Best Picks','Categories','Stores','Community','Buying Guides']);
+ await send('Page.navigate',{url:origin+'/items/ended-fixture'});await until("document.querySelector('.db-detail-deal')!==null");
+ assert.match(await evaluate("document.querySelector('.db-detail-deal').textContent"),/historical price/);
+ assert.match(await evaluate("document.querySelector('.db-detail-deal .db-buy').textContent"),/View Deal/);
+ assert.match(await evaluate("document.querySelector('.db-action-buy').textContent"),/View Deal/);
+ assert.equal(await evaluate("document.querySelector('.db-deal-terms')===null"),true);
+ await send('Page.navigate',{url:origin+'/items/missing-fixture'});await until("document.querySelector('.db-detail-deal')!==null");
+ assert.match(await evaluate("document.querySelector('.db-detail-deal').textContent"),/Price not reported/);
+ assert.equal(await evaluate("document.querySelector('.db-detail-deal .db-buy').tagName"),'SPAN');
+ assert.match(await evaluate("document.querySelector('.db-detail-deal .db-buy').textContent"),/View Deal unavailable/);
+ await send('Page.navigate',{url:origin+'/items/shipping-quote-fixture'});await until("document.querySelector('.db-detail-deal')!==null");
+ assert.match(await evaluate("document.querySelector('.db-deal-terms').textContent"),/Shipping:\s*\$18 shipping/i);
+ assert.match(await evaluate("document.querySelector('.db-source-record').textContent"),/2 for \$12 \$72 \$18 shipping/i);
+ await send('Page.navigate',{url:origin+'/items/reported-fixture'});await until("document.querySelector('.db-detail-deal')!==null");
+ assert.match(await evaluate("document.querySelector('.db-detail-deal').textContent"),/Source-reported/s);
+ assert.doesNotMatch(await evaluate("document.querySelector('.db-detail-deal').textContent"),/not retailer-verified|has not been confirmed by the retailer/i);
+ assert.match(await evaluate("document.querySelector('.db-detail-deal').textContent"),/Sold by Example seller/);
+ assert.match(await evaluate("document.querySelector('.db-detail-deal .db-buy').textContent"),/View Deal/);
+ assert.match(await evaluate("document.querySelector('.db-ai-intro').textContent"),/AI interpretation of dated source evidence/i);
+ assert.match(await evaluate("document.querySelector('.db-ai-price-reason').textContent"),/does not establish a market low/i);
+ assert.match(await evaluate("document.querySelector('.db-watch').textContent"),/starting price is source-reported/i);
+ assert.match(await evaluate("document.querySelector('.db-watch').textContent"),/only after the retailer confirms a lower price/i);
+ await until("document.querySelector('.db-watch button')&&!document.querySelector('.db-watch button').disabled");
+ await evaluate("document.querySelector('.db-watch button').click()");await until("document.querySelector('.db-watch button')?.textContent.includes('Stop this alert')");assert.equal(watchActive,true);
+ await send('Page.reload');await until("document.querySelector('.db-watch button')?.textContent.includes('Stop this alert')");
+ await evaluate("document.querySelector('.db-watch button').click()");await until("document.querySelector('.db-watch button')?.textContent.includes('Notify me')");assert.equal(watchActive,false);
+ await evaluate("document.querySelector('.db-watch button').click()");await until("document.querySelector('.db-watch button')?.textContent.includes('Stop this alert')");reportedExpired=true;
+ await send('Page.reload');await until("document.querySelector('.db-watch')?.textContent.includes('no longer eligible')");await evaluate("document.querySelector('.db-watch button').click()");await until("document.querySelector('.db-watch')===null");assert.equal(watchActive,false);
+ await send('Page.navigate',{url:origin+'/items/changed-price-fixture'});await until("document.querySelector('.db-ai-intro')!==null");assert.equal(await evaluate("document.querySelector('.db-ai-price-reason')===null"),true);
+ await send('Page.navigate',{url:origin+'/items/empty-fixture'});await until("document.querySelector('.db-detail-deal')!==null");
+ assert.equal(await evaluate("document.querySelector('.db-price-insights')===null"),true);
+ assert.equal(await evaluate("document.querySelector('.db-ai-intro')===null"),true);
+ await send('Page.navigate',{url:origin+'/'});await until("document.querySelector('.db-home .db-card')!==null");
+ for(const [width,minimum] of [[320,110],[390,135],[620,149]]){
+  await send('Emulation.setDeviceMetricsOverride',{width,height:844,deviceScaleFactor:1,mobile:true});
+  const navigation=await evaluate("(()=>{const header=document.querySelector('.db-home .db-header'),logo=header.querySelector('.db-logo').getBoundingClientRect(),search=header.querySelector('.db-mobile-search').getBoundingClientRect(),input=header.querySelector('input').getBoundingClientRect(),saved=header.querySelector('.db-header-saved'),account=header.querySelector('.db-header-account'),savedRect=saved.getBoundingClientRect(),accountRect=account.getBoundingClientRect(),nav=document.querySelector('.db-home .db-primary-nav'),links=[...nav.querySelectorAll('a')];return {headerPosition:getComputedStyle(header).position,navDisplay:getComputedStyle(nav).display,links:links.map(a=>({label:a.textContent.trim(),href:new URL(a.href).pathname,current:a.getAttribute('aria-current'),top:a.getBoundingClientRect().top,height:a.getBoundingClientRect().height})),savedHref:new URL(saved.href).pathname,accountHref:new URL(account.href).pathname,savedWidth:savedRect.width,savedHeight:savedRect.height,accountWidth:accountRect.width,accountHeight:accountRect.height,inputWidth:input.width,controlsOverlap:logo.right>search.left||search.right>savedRect.left||savedRect.right>accountRect.left||accountRect.right>innerWidth}})()");
+  assert.equal(navigation.headerPosition,'sticky');assert.equal(navigation.navDisplay,'flex');
+  assert.deepEqual(navigation.links.map((link:{label:string})=>link.label),['AI Best Picks','Categories','Stores','Community','Buying Guides']);
+  assert.deepEqual(navigation.links.map((link:{href:string})=>link.href),['/','/categories','/stores','/community','/reviews']);
+  assert.equal(navigation.links[0].current,'page');assert.ok(navigation.links.every((link:{height:number})=>link.height>=44));
+  assert.ok(navigation.links.every((link:{top:number})=>link.top===navigation.links[0].top));
+  assert.equal(navigation.savedHref,'/saved');assert.equal(navigation.accountHref,'/community/account');
+  assert.ok(navigation.savedWidth>=44&&navigation.savedHeight>=44&&navigation.accountWidth>=44&&navigation.accountHeight>=44&&navigation.inputWidth>=40);
+  assert.equal(navigation.controlsOverlap,false);
+  const layout=await evaluate("(()=>{const card=document.querySelector('.db-home .db-card'),image=card.querySelector('.db-card-image').getBoundingClientRect(),content=card.querySelector('.db-card-content').getBoundingClientRect(),title=card.querySelector('h2'),titleRect=title.getBoundingClientRect(),button=card.querySelector('.db-card-bottom .db-buy'),buttonRect=button.getBoundingClientRect(),save=card.querySelector('.db-save-compact'),saveRect=save.getBoundingClientRect(),code=card.querySelector('.db-code'),shipping=card.querySelector('.db-card-shipping'),status=card.querySelector('.db-card-evidence-short'),tags=[...card.querySelectorAll('.db-tags span')];return {imageWidth:image.width,imageHeight:image.height,contentWidth:content.width,buttonWidth:buttonRect.width,buttonHeight:buttonRect.height,buttonFont:parseFloat(getComputedStyle(button).fontSize),titleFont:parseFloat(getComputedStyle(title).fontSize),titleLines:getComputedStyle(title).webkitLineClamp,priceFont:parseFloat(getComputedStyle(card.querySelector('.db-price')).fontSize),priceText:card.querySelector('.db-price').textContent,shippingText:shipping.textContent,shippingFont:parseFloat(getComputedStyle(shipping).fontSize),statusText:status?.textContent??'',statusDisplay:status?getComputedStyle(status).display:'none',statusWrap:status?getComputedStyle(status).whiteSpace:'normal',statusFits:!status||status.scrollWidth<=status.clientWidth,fullEvidenceDisplay:getComputedStyle(card.querySelector('.db-card-evidence-full')).display,postedDisplay:getComputedStyle(card.querySelector('.db-card-posted')).display,merchantText:card.querySelector('.db-meta').textContent,codeFont:parseFloat(getComputedStyle(code).fontSize),tagFonts:tags.map(tag=>parseFloat(getComputedStyle(tag).fontSize)),tagText:tags.map(tag=>tag.textContent),saveWidth:saveRect.width,saveHeight:saveRect.height,saveHitTargets:[[saveRect.left+2,saveRect.top+2],[saveRect.right-2,saveRect.top+2],[saveRect.left+2,saveRect.bottom-2],[saveRect.right-2,saveRect.bottom-2]].every(([x,y])=>save.contains(document.elementFromPoint(x,y))),saveOverlapsTitle:saveRect.right>titleRect.left&&saveRect.left<titleRect.right&&saveRect.bottom>titleRect.top&&saveRect.top<titleRect.bottom,overlap:image.right>content.left,overflow:document.documentElement.scrollWidth>innerWidth}})()");
+  assert.ok(layout.imageWidth>=minimum,`thumbnail too small at ${width}px: ${layout.imageWidth}`);
+  assert.ok(Math.abs(layout.imageWidth-layout.imageHeight)<1);
+  assert.ok(layout.contentWidth>100&&layout.buttonWidth>=44&&layout.buttonHeight>=44);
+  assert.ok(layout.titleFont>=15&&layout.titleFont<=16&&layout.titleLines==='3');
+  assert.ok(layout.priceFont>=20&&layout.buttonFont>=13&&layout.buttonFont<=14);
+  assert.equal(layout.codeFont,12);assert.ok(layout.tagFonts.every((size:number)=>size===12));
+  assert.equal(layout.priceText,'$12.00');assert.match(layout.shippingText,/^\$18 shipping$/i);assert.equal(layout.shippingFont,12);
+  assert.equal(layout.statusText,'');assert.equal(layout.statusDisplay,'none');assert.equal(layout.statusFits,true);
+  assert.equal(layout.fullEvidenceDisplay,'none');assert.equal(layout.postedDisplay,'none');assert.match(layout.merchantText,/Amazon/);
+  assert.ok(layout.tagText.includes('New customers only')&&layout.tagText.includes('Prime membership required'));
+  assert.ok(!layout.tagText.some((tag:string)=>/\$18 shipping/i.test(tag)));
+  assert.ok(layout.saveWidth>=44&&layout.saveHeight>=44);assert.equal(layout.saveHitTargets,true);assert.equal(layout.saveOverlapsTitle,false);
+  assert.equal(layout.overlap,false);assert.equal(layout.overflow,false);
+  assert.equal(await evaluate("document.querySelector('.db-home .db-card .db-off')===null"),true);
+  if(width===320){await evaluate("document.querySelector('.db-home .db-card-image img').dispatchEvent(new Event('error'))");await until("document.querySelector('.db-home .db-card-image img').dataset.sourceFallback==='1'");assert.equal(await evaluate("document.querySelector('.db-home .db-card-image img').src"),sourceImage);}
+  const recorded=await evaluate("(()=>{const card=document.querySelectorAll('.db-home .db-card')[1];return {price:card.querySelector('.db-price').textContent,shipping:card.querySelector('.db-card-shipping').textContent}})()");
+  assert.equal(recorded.price,'$17.00');assert.match(recorded.shipping,/^\$18 shipping$/i);
+  const verified=await evaluate("(()=>{const card=document.querySelectorAll('.db-home .db-card')[2];return {status:card.querySelector('.db-card-evidence-short').textContent,shipping:card.querySelector('.db-card-shipping').textContent}})()");
+  assert.equal(verified.status,'Retailer price verified');assert.match(verified.shipping,/\$18 shipping · source-reported/i);
+  const previous=await evaluate("(()=>{const card=document.querySelectorAll('.db-home .db-card')[3];return {status:card.querySelector('.db-card-evidence-short').textContent,shipping:card.querySelector('.db-card-shipping').textContent}})()");
+  assert.equal(previous.status,'Last verified · recheck');assert.match(previous.shipping,/source-reported/i);
+  const ended=await evaluate("(()=>{const card=document.querySelectorAll('.db-home .db-card')[4];return {status:card.querySelector('.db-card-evidence-short').textContent,shipping:!!card.querySelector('.db-card-shipping')}})()");
+  assert.equal(ended.status,'Ended · historical price');assert.equal(ended.shipping,false);
+ }
+ await send('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:1,mobile:true});
+ await evaluate("document.querySelector('.db-home .db-header-saved').click()");await until("location.pathname==='/saved'");
+ await send('Page.navigate',{url:origin+'/'});await until("document.querySelector('.db-home .db-header-account')!==null");
+ await evaluate("document.querySelector('.db-home .db-header-account').click()");await until("location.pathname==='/community/account'");
+ await send('Page.navigate',{url:origin+'/'});await until("document.querySelector('.db-home .db-mobile-search input')!==null");
+ await evaluate("document.querySelector('.db-home .db-mobile-search input').value='vacuum';document.querySelector('.db-home .db-mobile-search').requestSubmit()");
+ await until("location.pathname==='/'&&new URL(location.href).searchParams.get('q')==='vacuum'");
 });

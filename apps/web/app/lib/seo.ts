@@ -19,6 +19,8 @@ export interface PageMetaInput {
   title?: string | null;
   /** Use `title` verbatim as the document title (no " · <site>" suffix). */
   rawTitle?: boolean;
+  /** Separator before the site name; item pages use the locked `|` format. */
+  separator?: "dot" | "pipe";
   description?: string | null;
   path: string;
   image?: string | null;
@@ -47,7 +49,11 @@ export function titled(title: string): string {
 
 export function pageMeta(input: PageMetaInput): MetaDescriptor[] {
   const base = siteUrl();
-  const title = input.title ? (input.rawTitle ? input.title : titled(input.title)) : HOME_TITLE;
+  const title = input.title
+    ? input.rawTitle
+      ? input.title
+      : `${input.title}${input.separator === "pipe" ? " | " : " · "}${SITE.name}`
+    : HOME_TITLE;
   const description = input.description ?? SITE_DESCRIPTION;
   const url = `${base}${input.path}`;
   const image = input.image ? (input.image.startsWith("http") ? input.image : `${base}${input.image}`) : `${base}/og/site.png?brand=${encodeURIComponent(SITE.name+'-'+SITE.tagline)}`;
@@ -70,6 +76,7 @@ export function pageMeta(input: PageMetaInput): MetaDescriptor[] {
     { name: "twitter:image", content: image },
   ];
   if (input.noindex) tags.push({ name: "robots", content: input.nofollow ? "noindex, nofollow" : "noindex, follow" });
+  else tags.push({ name: "robots", content: "index, follow, max-image-preview:large, max-snippet:-1" });
   if (input.image) tags.push({property:"og:image:alt",content:input.title??SITE.name});
   if (input.jsonLd) tags.push({ "script:ld+json": input.jsonLd });
   return tags;

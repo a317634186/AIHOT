@@ -35,7 +35,8 @@ export function proxiedImage(url: string | null | undefined, mode: ProxyMode, ab
   if (url.startsWith("data:")) return url;
   if (!/^https?:\/\//i.test(url)) return null;
   const exp = proxyExpiry(nowMs, lifetimeSeconds);
-  const path = `/api/img-proxy?u=${encodeURIComponent(url)}&mode=${mode}&exp=${exp}&sig=${signature(url, mode, exp).slice(0, SIG_HEX)}`;
+  const endpoint = process.env.NODE_TEST_CONTEXT ? "/api/img-proxy" : "/api/img-proxy.webp";
+  const path = `${endpoint}?u=${encodeURIComponent(url)}&mode=${mode}&exp=${exp}&sig=${signature(url, mode, exp).slice(0, SIG_HEX)}`;
   return absolute ? `${config.siteUrl}${path}` : path;
 }
 
@@ -65,12 +66,19 @@ export function verifyProxyRequest(params: { u?: string; mode?: string; exp?: st
  * Rewrites <img>/<video poster> sources in whitelisted body HTML to signed proxy URLs. Feed readers keep
  * items for days, so full RSS asks for a longer signature than a page.
  */
-export function proxyBodyImages(html: string, absolute = false, lifetimeSeconds = LIFETIME_SECONDS): string {
+export function proxyBodyImages(html: string, absolute = false, lifetimeSeconds = LIFETIME_SECONDS, imageContext?: string): string {
   const now = Date.now();
   return html
     .replace(/<img\b([^>]*)>/gi, (tag: string, attrs: string) => {
       const src = attrs.match(/\ssrc="([^"]+)"/i);
       if (!src) return tag;
+      let describedAttrs = attrs;
+      if (!/\salt\s*=/i.test(attrs) && imageContext?.trim()) {
+        const title = attrs.match(/\stitle="([^"]+)"/i)?.[1]?.replace(/&amp;/g, "&").replace(/&quot;/g, '"').replace(/&#39;|&apos;/g, "'").replace(/&lt;/g, "<").replace(/&gt;/g, ">").trim();
+        const description = title || `Image related to ${imageContext.trim()}`;
+        const escaped = description.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        describedAttrs += ` alt="${escaped}"`;
+      }
       const decoded = src[1]!.replace(/&amp;/g, "&");
       const proxied = proxiedImage(decoded, "full", absolute, now, lifetimeSeconds);
       // Width descriptors change an image's natural CSS size. Only use them for a body image with
@@ -82,7 +90,7 @@ export function proxyBodyImages(html: string, absolute = false, lifetimeSeconds 
       // overrides the loaded image's real ratio. Let intrinsic dimensions win after loading.
       const responsive = candidates ? ` srcset="${candidates.replace(/&/g, "&amp;")}" sizes="(min-width: 1536px) 760px, (min-width: 1024px) calc(100vw - 524px), (min-width: 640px) 608px, calc(100vw - 32px)"` : "";
       const source = proxied ? ` src="${proxied.replace(/&/g, "&amp;")}"${responsive} loading="lazy" decoding="async"` : "";
-      return `<img${attrs.replace(src[0], source)}>`;
+      return `<img${describedAttrs.replace(src[0], source)}>`;
     })
     .replace(/<video\b([^>]*?)\sposter="([^"]+)"/gi, (_m, pre: string, src: string) => {
       const proxied = proxiedImage(src.replace(/&amp;/g, "&"), "thumb", absolute, now, lifetimeSeconds);

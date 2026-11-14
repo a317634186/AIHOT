@@ -2,7 +2,7 @@
 
 Site: <https://savlume.com> · Admin: <https://savlume.com/admin>.
 
-The site name is **Savlume**; tagline **AI Picks. Better Deals.** The configured domain is **savlume.com**; no formal business identity is claimed. Public pages and generated summaries use en-US, USD, and America/New_York. Desktop retains the reviewed card layout. Mobile uses a compact left-image shopping feed, small header search, short filters and bottom navigation, following the supplied shopping-app reference.
+The site name is **Savlume**; the current tagline is **Find Deals. Save Smarter.** The configured domain is **savlume.com**; no formal business identity is claimed. Public pages and generated summaries use en-US, USD, and America/New_York. The dated entries below preserve the branding and layout that applied at the time.
 
 ## Reviews & Picks, videos and new slogan — October 11, 2026
 

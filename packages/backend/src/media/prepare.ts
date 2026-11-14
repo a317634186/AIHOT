@@ -10,7 +10,7 @@ import { toFeedItemSummary } from "../publication/items.ts";
 export function proxiedRenditions(answers: unknown[]): Array<{ url: string; mode: string }> {
   const text = JSON.stringify(answers).replaceAll("&amp;", "&").replaceAll("\\u0026", "&");
   const seen = new Map<string, { url: string; mode: string }>();
-  for (const m of text.matchAll(/\/api\/img-proxy\?u=([^&"\s\\]+)&mode=([a-z0-9-]+)/g)) {
+  for (const m of text.matchAll(/\/api\/img-proxy(?:\.webp)?\?u=([^&"\s\\]+)&mode=([a-z0-9-]+)/g)) {
     const url = decodeURIComponent(m[1]!);
     seen.set(`${m[2]}|${url}`, { url, mode: m[2]! });
   }

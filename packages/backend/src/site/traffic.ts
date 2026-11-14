@@ -4,6 +4,7 @@ import { createHash } from "node:crypto";
 import { credential } from "../config.ts";
 import { sql } from "../db.ts";
 import { SHOPPING } from "@aihot/industry/shopping";
+import { parseItemRouteSegment } from "@aihot/contracts/shopping";
 
 const BOT = /bot|crawl|spider|slurp|fetch|headless|lighthouse|pagespeed|monitor|preview|curl|wget|python-requests|httpclient|go-http|java\/|okhttp|facebookexternalhit|embedly|quora link|pinterest|vkshare|w3c_validator|whatsapp|telegrambot/i;
 const PATH = /^\/[\w\-./%]{0,200}$/;
@@ -27,6 +28,8 @@ export function normaliseHit(raw: unknown, userAgent: string): Hit | null {
   let path = typeof r.p === "string" ? r.p : "";
   try { path = new URL(path, "https://x.invalid").pathname; } catch { return null; }
   if (!PATH.test(path) || path.startsWith("/admin") || path.startsWith("/api/")) return null;
+  const itemSeg = /^\/items\/([\w-]+)$/.exec(path)?.[1];
+  if (itemSeg) path = `/items/${parseItemRouteSegment(itemSeg)}`;
   // Item pages are counted both individually and as one group, so the top list stays readable.
   let referrer: string | null = null;
   if (typeof r.r === "string" && r.r) { try { const u = new URL(r.r); if (/^https?:$/.test(u.protocol)) referrer = u.hostname.replace(/^www\./, "").slice(0, 120); } catch {} }

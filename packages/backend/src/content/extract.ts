@@ -4,7 +4,7 @@ import { load } from "cheerio";
 import { Readability } from "@mozilla/readability";
 import { parseHTML } from "linkedom";
 import { sql } from "../db.ts";
-import { guardedFetch } from "../lib/http-fetch.ts";
+import { crawlerFetch, crawlerRobotsAllows, RobotsDeniedError } from "../lib/crawler-fetch.ts";
 import { collapseWhitespace, stripTags } from "../lib/text.ts";
 import { jinaRead } from "../providers/jina.ts";
 import { BudgetExceededError } from "../providers/receipts.ts";
@@ -54,17 +54,19 @@ export function readable(html: string, url: string): ExtractedBody | null {
 
 export async function extractFromUrl(url: string, opts: { allowJina: boolean; subject: string }): Promise<ExtractedBody | null> {
   try {
-    const res = await guardedFetch(url, { timeoutMs: 20_000, maxBytes: 6 * 1024 * 1024 });
+    const res = await crawlerFetch(url, { timeoutMs: 20_000, maxBytes: 6 * 1024 * 1024 });
     const type = res.headers.get("content-type") ?? "";
     if (res.status === 200 && /html/.test(type)) {
       const got = readable(res.text(), res.url);
       if (got) return got;
     }
-  } catch {
+  } catch (error) {
+    if (error instanceof RobotsDeniedError) return null;
     // fall through to Jina
   }
   if (!opts.allowJina) return null;
   try {
+    if(!await crawlerRobotsAllows(url))return null;
     const page = await jinaRead(url, { purpose: "body_fallback", subject: opts.subject });
     const html = markdownBody(page.markdown, url);
     const text = stripTags(html);

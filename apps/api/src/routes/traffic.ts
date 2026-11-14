@@ -9,7 +9,7 @@ export function registerTraffic(app: FastifyInstance) {
   if (!app.hasContentTypeParser("text/plain")) app.addContentTypeParser("text/plain", { parseAs: "string", bodyLimit: 4096 }, (_req, body, done) => done(null, body));
   app.post("/api/site/hit", { bodyLimit: 4096 }, async (req, reply) => {
     reply.header("Cache-Control", "no-store");
-    const ip = String(req.headers["x-real-ip"] ?? req.ip ?? "");
+    const ip = String(req.headers["cf-connecting-ip"] ?? req.headers["x-real-ip"] ?? req.ip ?? "");
     if (throttled(ip)) return reply.code(204).send();
     let raw: unknown = req.body;
     if (typeof raw === "string") { try { raw = JSON.parse(raw); } catch { return reply.code(204).send(); } }

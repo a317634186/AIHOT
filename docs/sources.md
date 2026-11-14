@@ -15,6 +15,16 @@
 
 每种信源认哪些配置项写在 `packages/backend/src/sources/config-keys.ts`。填了不认识的配置项，保存会被拒绝、抓取会直接失败并在后台显示原因，不会悄悄退回通用解析。
 
+### 官方购物网站
+
+默认信源包含 Amazon Today’s Deals 和 Woot Sellout Daily Deals：从官方聚合页读取商品卡片，清除临时追踪参数后，按同一套 AI 筛选、商品信息抽取和商家验证流程处理；Woot 单品直接使用官方商品页，Amazon 商品链接附加站点配置的 Associate 标签。聚合文章如果是跨品类清仓活动，则作为活动发布；只有来源提供具体单品链接且零售商页面能匹配商品，才会单独形成单品优惠。
+
+官方零售商页面只证明商品和促销信息由商家发布，不能证明它是全网最低价。AI 会根据来源里的商品和价格证据、Savlume 实际记录的价格历史筛选优惠；商品详情也会列出站内已采集到的同型号跨店报价。目前没有覆盖全网的价格数据接口，因此不会把判断表述成“全网最低”或历史最低。Walmart Deals 当前对服务器请求返回机器人验证页，没有绕过验证；接入 Walmart 需要可授权使用的官方或联盟商品数据 feed/API。
+
+已增加 9to5Mac Deals RSS（每 30 分钟检查、每日最多 20 条）和 The Krazy Coupon Lady 的公开优惠列表（同样每 30 分钟、每日最多 20 条）。KCL 的 CJ 联盟跳转会先解析其 URL 参数中的零售商目标；仅能确认到已配置官方商家的具体商品/活动链接才可用于购买，缺少直接目标的商品由现有 AI 补链任务检查，仍未确认的优惠不会展示购买入口。首次导入每个来源最多 5 条。
+
+本轮没有启用 TechBargains（服务器返回 Cloudflare 验证页）、Brad’s Deals（抓取到的优惠详情没有公开可提取的商家链接）或 Dealsea（优惠详情页未暴露静态商品链接）。Keepa、CamelCamelCamel、Google Shopping、PriceGrabber、Shopzilla、Honey 和 Capital One Shopping 属于价格/扩展/API 数据服务，不是可直接接入的公开 RSS；需要相应的授权 API/feed 才能把它们用于可追溯的价格比较。
+
 ### rss
 
 ```json
@@ -38,6 +48,7 @@
 - `parseMode`：`html`（默认，用选择器）、`markdown`（经 Jina 渲染后按 Markdown 读）、`docusaurus_changelog`。
 - `detail`：列表缺日期、标题或摘要时抓详情页补齐（`publishedAtSelector`、`titleSelector`、`summarySelector` 等）。
 - `allowUrlPrefixes` / `denyUrlPrefixes`：只收某些路径下的文章。
+- `stripQueryParams`：从条目链接去除指定的追踪参数，避免同一内容因动态参数反复入库。
 
 ### x_search
 

@@ -2,7 +2,7 @@
 
 English draft · Personal preview · Updated October 11, 2026.
 
-Reading Savlume requires no account. This site includes Google AdSense advertising code.
+Reading Savlume requires no account.
 
 ## Feedback, admin sessions and logs
 

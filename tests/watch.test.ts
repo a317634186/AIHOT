@@ -26,11 +26,26 @@ test('price watches: push is consent, e-mail needs confirmation, nothing is sent
   const sub={endpoint:'https://push.example/'+source,keys:{p256dh:'k',auth:'a'}};
   const made=await createWatch({articleId:id!,channel:'push',subscription:sub},'1.1.1.1');assert.equal(made.confirmed,true);assert.equal(made.baselineCents,10000);
   const [row]=await sql`SELECT token, confirmed_at FROM price_watches WHERE article_id=${id} AND channel='push'`;assert.ok(row!.confirmed_at);
+  const status=await app.inject({method:'POST',url:'/api/site/watch/status',payload:{articleId:id,endpoint:sub.endpoint}});assert.equal(status.statusCode,200);assert.equal(status.json().active,true);assert.match(String(status.headers['cache-control']),/no-store/);
   // No drop yet: nothing is sent and the watch stays.
   await sql`UPDATE shopping_offers SET data=jsonb_set(data,'{checkoutPriceCents}','9900') WHERE article_id=${id}`;
   const quiet=await checkPriceWatches();assert.equal(quiet.sent,0);
+  let deliveries=0;const sent:string[]=[];const fakePush:typeof import('@aihot/backend/notify/push').sendPush=async(_subscription,payload)=>{deliveries++;sent.push(payload.body);return true;};
+  await sql`UPDATE shopping_offers SET data=jsonb_set(data,'{checkoutPriceCents}','8000') WHERE article_id=${id}`;
+  assert.equal((await checkPriceWatches(Date.now(),fakePush)).sent,0);assert.equal(deliveries,0);
+  const verified={...offer,status:'Active',checkoutPriceCents:8000,verifiedAt:new Date().toISOString(),lastCheckedAt:new Date().toISOString()};
+  await sql`UPDATE shopping_offers SET data=${sql.json(verified as never)} WHERE article_id=${id}`;
+  const history=await sql`SELECT basis FROM shopping_price_observations WHERE article_id=${id} AND basis='merchant-verified'`;assert.equal(history.length,1);
+  await sql`UPDATE shopping_offers SET data=jsonb_set(data,'{verifiedAt}',to_jsonb(${new Date(Date.now()+500).toISOString()}::text)) WHERE article_id=${id}`;
+  assert.equal((await sql`SELECT basis FROM shopping_price_observations WHERE article_id=${id} AND basis='merchant-verified'`).length,1);
+  assert.equal((await checkPriceWatches(Date.now(),fakePush)).sent,1);assert.equal(deliveries,1);assert.match(sent[0]!,/Retailer-verified price/);
+  assert.equal((await checkPriceWatches(Date.now(),fakePush)).sent,0);
+  await sql`UPDATE shopping_offers SET data=${sql.json({...verified,status:'Unverified',checkoutPriceCents:7000} as never)} WHERE article_id=${id}`;
+  assert.equal((await checkPriceWatches(Date.now(),fakePush)).sent,0);assert.equal(deliveries,1);
   assert.equal(await confirmWatch('not-a-real-token'),null);
-  assert.equal(await stopWatch(row!.token),true);assert.equal(await stopWatch(row!.token),false);
+  const stop=await app.inject({method:'POST',url:'/api/site/watch/stop',payload:{articleId:id,endpoint:sub.endpoint}});assert.equal(stop.json().removed,1);
+  const stopped=await app.inject({method:'POST',url:'/api/site/watch/status',payload:{articleId:id,endpoint:sub.endpoint}});assert.equal(stopped.json().active,false);
+  assert.equal(await stopWatch(row!.token),false);
   const api=await app.inject({method:'POST',url:'/api/site/watch',payload:{articleId:'missing',channel:'push',subscription:sub}});assert.equal(api.statusCode,404);
  }finally{await sql`DELETE FROM price_watches WHERE article_id=${id}`;await sql`UPDATE publications SET visibility='withdrawn' WHERE article_id=${id}`;}
 });

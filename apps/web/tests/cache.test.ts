@@ -27,6 +27,7 @@ const api = createServer((req, res) => {
     const respond = () => res.end(JSON.stringify({ changelogVersion: "2026-09-28T12:00" }));
     return metaDelayMs ? setTimeout(respond, metaDelayMs) : respond();
   }
+  if (url.pathname === "/api/community/feed") return res.end(JSON.stringify({items:[],hasMore:false}));
   if (url.pathname === "/api/shopping") {
     shoppingRequests.push(url);
     res.setHeader("Cache-Control","no-store");
@@ -106,6 +107,37 @@ test("missing and disabled pages are 404 and cannot be hidden by root-only navig
 test("category and retailer filters are sent to the API",async()=>{
  const r=await fetch(origin+"/all?category=electronics&merchant=target&q=vacuum");assert.equal(r.status,200);const html=await r.text();assert.ok(html.includes("vacuum"));
 });
+test('shared brand text is consistent on home, reviews, news, and utility pages',async()=>{
+ for(const path of ['/','/reviews','/community','/news','/about','/deals/electronics','/stores/amazon']){
+  const response=await fetch(origin+path);assert.equal(response.status,200,path);
+  const cc=response.headers.get('cache-control')??'';assert.match(cc,/max-age=0/);assert.match(cc,path==='/community'?/s-maxage=30/:/s-maxage=60/);
+  const html=await response.text(),page=load(html);
+  assert.equal(page('.db-header .db-tagline').text(),'Find Deals. Save Smarter.',path);
+  assert.equal(page('.db-footer > div:first-child p').text(),'Find Deals. Save Smarter.',path);
+  assert.doesNotMatch(html,/AI Picks\. Better Deals\./);
+  assert.match(page('meta[property="og:image"]').attr('content')??'',/brand=Savlume-Find%20Deals\.%20Save%20Smarter\./);
+ }
+});
+test("primary shopping navigation, directories and secondary resources lead to usable pages",async()=>{
+ const home=load(await (await fetch(origin+'/')).text());
+ assert.deepEqual(home('.db-primary-nav a').map((_,a)=>home(a).text()).get(),['AI Best Picks','Categories','Stores','Community','Buying Guides']);
+ assert.equal(home('.db-secondary-nav').length,0);
+ assert.deepEqual(home('.db-mobile-tabs a').map((_,a)=>home(a).text().replace(/^[^A-Za-z]+/,'')).get(),['Home','Stores','Community','Guides','Saved']);
+ assert.equal(home('.db-mobile-search').attr('action'),'/');
+ assert.equal(home('.db-header-saved').attr('href'),'/saved');assert.equal(home('.db-header-account').attr('href'),'/community/account');
+ assert.ok(shoppingRequests.some(u=>u.searchParams.get('view')==='deals'));
+ const categories=load(await (await fetch(origin+'/categories')).text());
+ assert.equal(categories('h1').first().text(),'Shop by category');assert.equal(categories('.db-directory a[href="/deals/electronics"]').length,1);
+ const stores=load(await (await fetch(origin+'/stores')).text());
+ assert.equal(stores('h1').first().text(),'Shop by store');assert.equal(stores('.db-directory a[href="/stores/amazon"]').length,1);
+ const more=load(await (await fetch(origin+'/more')).text());
+ for(const link of ['/reviews','/saved','/community/account'])assert.ok(more('.db-directory a[href="'+link+'"]').length,link);
+ assert.equal(more('.db-directory a[href="/news"]').length,0);
+ for(const path of ['/deals/electronics','/stores/amazon']){const response=await fetch(origin+path);assert.equal(response.status,200);}
+ assert.ok(shoppingRequests.some(u=>u.searchParams.get('view')==='deals'&&u.searchParams.get('category')==='electronics'));
+ assert.ok(shoppingRequests.some(u=>u.searchParams.get('view')==='deals'&&u.searchParams.get('merchant')==='amazon'));
+ for(const path of ['/best','/reviews','/news']){const guide=load(await (await fetch(origin+path)).text());assert.equal(guide('.db-primary-nav [aria-current=page]').text(),'Buying Guides');assert.deepEqual(guide('.db-secondary-nav a').map((_,a)=>guide(a).attr('href')).get(),['/reviews','/news']);assert.equal(guide('.db-secondary-nav [aria-current=page]').attr('href'),path);}
+});
 test("Picks requests the full feed, News keeps its original news view, and the middle tab opens flash deals",async()=>{
  for(const [path,view,label] of [["/","recommended","Recommended"],["/flash","flash","Best Deals"],["/news","news","News"]]){
   const r=await fetch(origin+path+"?category=electronics&merchant=target&q=vacuum");
@@ -139,7 +171,7 @@ test('SEO metadata is specific, canonical, safe and crawlable without JavaScript
  assert.ok(JSON.parse(home('script[type="application/ld+json"]').text()).some((x:any)=>x['@type']==='WebSite'));
  const item=await fetchPage('/items/seo-item?utm_source=test');
  assert.match(item('title').text(),/DEMO vacuum/);assert.doesNotMatch(item('meta[name=description]').attr('content')!,/^Unverified:/);assert.equal(item('.db-status').length,0);
- const expired=await fetchPage('/items/seo-expired');assert.equal(expired('.db-status').text(),'Expired');assert.match(expired('meta[name=description]').attr('content')!,/^Expired:/);
+ const expired=await fetchPage('/items/seo-expired');assert.match(expired('.db-timing.ended').text(),/^Ended/);assert.match(expired('meta[name=description]').attr('content')!,/^Expired:/);
  assert.ok(item('link[rel=canonical]').attr('href')!.endsWith('/items/seo-item'));
  assert.ok(item('meta[property="og:image"]').attr('content')!.endsWith('/og/items/seo-item.png'));
  assert.equal(item('script').toArray().filter(el=>item(el).text()==='alert(1)').length,0);
@@ -148,16 +180,17 @@ test('SEO metadata is specific, canonical, safe and crawlable without JavaScript
  assert.ok(ld.some((x:any)=>x['@id']?.endsWith('/#organization')));
  assert.ok(ld.some((x:any)=>x['@type']==='WebSite'));
  assert.ok(item('link[rel=alternate][type="text/markdown"]').attr('href')!.endsWith('/items/seo-item/markdown'));
- assert.ok(item('#buying-answers').text().includes('Is this offer verified?'));
+ assert.ok(item('.db-source-record').text().includes('Sources & checks'));
+ assert.equal(item('#buying-answers').length,0);
  assert.ok(item('body').text().includes('Content updated:'));assert.ok(!('offers' in article)&&!('aggregateRating' in article));
  assert.ok(ld.some((x:any)=>x['@type']==='BreadcrumbList'));
  assert.equal(item('h1').length,1);
  const tracked=await fetchPage('/items/seo-item?offset=24&category=invalid');assert.ok(tracked('link[rel=canonical]').attr('href')!.endsWith('/items/seo-item'));
- const search=await fetchPage('/all?q=seo-fixture&utm_source=test');assert.match(search('meta[name=robots]').attr('content')!,/noindex/);assert.equal(search('.db-status').length,0);
+ const search=await fetchPage('/all?q=seo-fixture&utm_source=test');assert.doesNotMatch(search('meta[name=robots]').attr('content')??'',/noindex/i);assert.equal(search('.db-status').length,0);
  assert.ok(search('a[href="/all?q=seo-fixture&offset=24"]').length>0);
  const next=await fetchPage('/all?q=seo-fixture&offset=24');assert.ok(next('link[rel=canonical]').attr('href')!.includes('offset=24'));
  assert.ok(next('a[href="/all?q=seo-fixture"]').length>0);
- const category=await fetchPage('/deals/electronics');assert.match(category('title').text(),/Electronics/);assert.equal(category('h1').length,1);assert.match(category('meta[name=robots]').attr('content')!,/noindex/);
+ const category=await fetchPage('/deals/electronics');assert.match(category('title').text(),/Electronics/);assert.equal(category('h1').length,1);assert.doesNotMatch(category('meta[name=robots]').attr('content')??'',/noindex/i);
  const merchant=await fetchPage('/stores/target');assert.match(merchant('title').text(),/Target Deals/);
  const redirect=await fetch(origin+'/all?category=electronics',{redirect:'manual'});assert.equal(redirect.status,301);assert.equal(redirect.headers.get('location'),'/deals/electronics');
  for(const path of ['/deals/not-real','/stores/not-real','/?offset=-1','/?offset=foo','/?offset=23','/all?q=seo-fixture&offset=48'])assert.equal((await fetch(origin+path)).status,404,path);
