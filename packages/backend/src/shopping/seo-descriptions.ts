@@ -10,6 +10,12 @@ import { shoppingItems, type ShoppingItem } from '../publication/shopping.ts';
 import { keywordBankMatches } from './keyword-grounding.ts';
 import { supportedItemSeoTitle } from '@aihot/contracts/shopping';
 
+/**
+ * How far back the scheduled SEO backfill looks. New offers are titled during ingestion and here;
+ * anything older is left with its deterministic fallback so the job stays a small, steady drip.
+ */
+const SEO_BACKFILL_WINDOW_DAYS = Number(process.env.SEO_BACKFILL_WINDOW_DAYS || 1);
+
 const BatchSchema = z.object({
   items: z.array(z.object({
     id: z.string().trim().min(1).max(80),
@@ -63,6 +69,9 @@ export async function refreshMissingShoppingSeoDescriptions(limit = 30) {
     WHERE p.visibility = 'public' AND p.eligible AND a.processing_state <> 'blocked'
       AND s.participation_mode = 'editorial' AND p.seo_excluded_at IS NULL
       AND p.timeline_at <= now() + interval '5 minutes'
+      -- Only recent offers are backfilled. Older records keep their deterministic, price-free
+      -- fallback title instead of being rewritten, so a backlog cannot grow into days of work.
+      AND p.timeline_at > now() - (${SEO_BACKFILL_WINDOW_DAYS}::int * interval '1 day')
       AND COALESCE(d.data->>'status', 'Unverified') NOT IN ('Expired', 'Out of Stock')
       AND NOT (
         NULLIF(d.data->>'promotionEndedAt', '') IS NOT NULL
