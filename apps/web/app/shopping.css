@@ -1007,3 +1007,19 @@
  .db-mobile-tabs a{font-size:0!important}
  .db-mobile-tabs a>span:not(.sr-only){display:none!important}
 }
+
+/* Price rows: price + struck original on line one; discount badge and coupon on line two. */
+.db-price-row .db-price-line{display:inline-flex;align-items:baseline;flex-wrap:wrap;gap:2px 8px}
+.db-price-row .db-badge-line{display:inline-flex;align-items:center;flex-wrap:wrap;gap:6px;margin-left:8px}
+.db-home .db-card .db-price-row{display:flex;flex-direction:column;align-items:flex-start;gap:6px}
+.db-home .db-card .db-price-row .db-price-line{gap:8px}
+.db-home .db-card .db-price-row .db-badge-line{margin-left:0;gap:8px}
+.db-home .db-card .db-price-row .db-off-badge{margin:0;width:auto;flex:0 0 auto}
+.db-home .db-card .db-price-row .db-code{margin:0;flex:0 0 auto}
+.db-home .db-card .db-home-notice{margin:8px 0 0;color:#647267;font-size:13px;line-height:1.5}
+.db-home .db-card .db-home-notice span{display:block;color:#7b8781;font-size:12px;margin-top:2px}
+/* The quote keeps its own separator so plain-text output (RSS, API) does not run it into the label. */
+@media(max-width:620px){
+ .db-home .db-card .db-price-row{gap:4px}
+ .db-home .db-card .db-home-notice{font-size:12px;margin-top:4px}
+}
