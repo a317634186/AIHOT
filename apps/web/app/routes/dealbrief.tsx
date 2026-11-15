@@ -715,7 +715,6 @@ function LandingFaq({items}:{items:LandingFaq[]}){if(!items.length)return null;r
 function BestTopicIndex({topics,comparisons=[]}:{topics:BestTopicSummary[];comparisons?:NonNullable<Data['comparisonIndex']>}){
  const groups=new Map<string,BestTopicSummary[]>();
  for(const topic of topics){const label=topic.categoryDisplay;groups.set(label,[...(groups.get(label)??[]),topic]);}
- const launchComparisons=comparisons.filter(item=>item.guideSlugs.some(slug=>NEW_LONG_TAIL_GUIDES.has(slug)));
  const [activeCategory,setActiveCategory]=useState<string>('all');
  const categoryOrder=['TVs, Computers & Gaming','Audio & Headphones','Smart Home, Cleaning & Charging','Kitchen, Coffee & Household','Tools, Auto & Outdoors','Style, Health & Personal Care','Holiday Gifts, Toys & Pets','Brand Deal Hubs'];
  const orderedGroups=[...groups.entries()].sort((a,b)=>{const ai=categoryOrder.indexOf(a[0]),bi=categoryOrder.indexOf(b[0]);return (ai<0?99:ai)-(bi<0?99:bi);});
@@ -730,11 +729,13 @@ function BestTopicIndex({topics,comparisons=[]}:{topics:BestTopicSummary[];compa
    <button type="button" className={activeCategory==='all'?'is-active':undefined} onClick={()=>setActiveCategory('all')}>All Categories</button>
    {orderedGroups.map(([category,items])=><button key={category} type="button" className={activeCategory===category?'is-active':undefined} onClick={()=>setActiveCategory(category)}>{category}<span>{items.length}</span></button>)}
   </nav>
-  <section id="shopping-playbooks" className="db-blog-playbooks"><div className="db-blog-playbooks-head"><div><p className="db-eyebrow">EDITORIAL PLAYBOOKS</p><h2>In-Depth Shopping Playbooks &amp; Guides</h2><p>Consumer guides for checking price history, timing seasonal purchases, comparing retailer memberships, and understanding checkout rules.</p></div><Link to="/blog" prefetch="intent">All shopping playbooks →</Link></div><div className="db-blog-grid">{BLOG_POSTS_META.map(post=><article key={post.slug} className="db-blog-card"><div className="db-blog-card-top"><span className="db-blog-badge">{post.category}</span><span>{post.readTimeMinutes} min read</span></div><h3><Link to={'/blog/'+post.slug} prefetch="intent">{post.title}</Link></h3><p>{post.excerpt}</p><div className="db-blog-card-meta"><time dateTime={post.published}>{shortDay(post.published)}</time><Link to={'/blog/'+post.slug} prefetch="intent">Read guide →</Link></div></article>)}</div></section>
+  
   <div id="product-picks" className="db-best-picks-anchor" />
   {topics.length?shown.map(([category,items])=><section key={category} id={category==='Brand Deal Hubs'?'brand-hubs':undefined} className="db-best-topic-group"><h2>{category}</h2><div className="db-best-topic-links">{items.map(topic=><Link key={topic.slug} to={'/best/'+topic.slug} prefetch="intent"><strong>{topic.shortTitle}</strong><span>{topic.productCount} tracked {topic.productCount===1?'offer':'offers'} · Updated {shortDay(topic.lastGeneratedAt)}</span></Link>)}</div></section>):<div className="db-empty"><h2>Guides are being prepared</h2><p>Guides are published only when current retailer offers and coverage from multiple cited sources are available.</p><Link to="/" prefetch="intent">Browse today’s deals →</Link></div>}
   {/* Unfinished guides stay out of the public hub; their URLs keep the in-preparation state. */}
-  {launchComparisons.length>0&&<section className="db-best-topic-group"><h2>Head-to-Head Model Comparisons</h2><p className="db-best-intro">Compare current prices, listed references, retailer conditions and trade-offs for models in our seasonal and long-tail guides.</p><div className="db-best-topic-links">{launchComparisons.slice(0,6).map(item=><Link key={item.slug} to={'/compare/'+item.slug} prefetch="intent"><strong>{item.title}</strong><span>{item.guideSlugs.map(slug=>BEST_TOPICS.find(topic=>topic.slug===slug)?.shortTitle??slug).join(', ')}</span></Link>)}</div><p className="db-best-more"><Link to="/compare" prefetch="intent">View All Model Comparisons →</Link></p></section>}
+  {/* Head-to-head matchups live on /compare and inside each guide, not on the hub. */}
+  
+  <section id="shopping-playbooks" className="db-blog-playbooks"><div className="db-blog-playbooks-head"><div><p className="db-eyebrow">EDITORIAL PLAYBOOKS</p><h2>In-Depth Shopping Playbooks &amp; Guides</h2><p>Consumer guides for checking price history, timing seasonal purchases, comparing retailer memberships, and understanding checkout rules.</p></div><Link to="/blog" prefetch="intent">All shopping playbooks →</Link></div><div className="db-blog-grid">{BLOG_POSTS_META.map(post=><article key={post.slug} className="db-blog-card"><div className="db-blog-card-top"><span className="db-blog-badge">{post.category}</span><span>{post.readTimeMinutes} min read</span></div><h3><Link to={'/blog/'+post.slug} prefetch="intent">{post.title}</Link></h3><p>{post.excerpt}</p><div className="db-blog-card-meta"><time dateTime={post.published}>{shortDay(post.published)}</time><Link to={'/blog/'+post.slug} prefetch="intent">Read guide →</Link></div></article>)}</div></section>
  </section>;
 }
 function amazonSelfSoldOffer(item:Item){const seller=(item.offer.seller??'').toLowerCase().replace(/[.,]/g,'').replace(/\s+/g,' ').trim();return item.offer.merchantId==='amazon'&&!item.thirdPartySeller&&['amazon','amazon com','amazon com services llc','amazon com services inc'].includes(seller)&&!!item.offer.buyUrl&&isDirectRetailerUrl(item.offer.buyUrl);}
@@ -786,17 +787,21 @@ function BestTopicGuide({topic,items,topics,comparisonLinks=[],now}:{topic:Gener
     <thead><tr><th scope="col" className="sticky left-0 z-20 bg-white dark:bg-neutral-900">Product / Model</th><th scope="col">Deal Price</th><th scope="col">Original Price</th><th scope="col">Best For (Why Buy)</th><th scope="col">Trade-off / Condition</th><th scope="col">Retailer Link</th></tr></thead>
     <tbody>{items.map(item=>{
      const verdict=topic.productVerdicts[item.id],saving=isCalibratedRegularPrice(item.offer)?null:offerSavings(item.offer);
-     // The deal column only carries a live promotional price; a plain listing belongs in the list column.
+     // A live markdown is the deal price. When the promo has ended, the recorded deal price is shown
+     // with a "Recent deal" tag and the current listing becomes the reference, so the row never claims
+     // a regular price is the deal or contradicts the guide's budget.
+     const livePrice=item.priceDisplay?.state==='current'&&item.priceDisplay.amountCents!==null?item.priceDisplay.amountCents:null;
+     const recorded=item.recordedDealPriceCents??item.offer.recordedDealPriceCents??null;
      const activePrice=!isCalibratedRegularPrice(item.offer)&&item.priceDisplay?.state==='current'&&!!saving;
-     const cents=activePrice?(item.priceDisplay?.amountCents??item.offer.checkoutPriceCents??null):null;
-     const listCents=saving?.wasCents??(item.offer.listedPriceCents!==null&&item.offer.listedPriceCents>(cents??0)?item.offer.listedPriceCents:null);
-     const shownPrice=activePrice?cents:(item.priceDisplay?.state==='current'?item.priceDisplay.amountCents??null:null);
+     const recentDeal=!activePrice&&recorded!==null&&livePrice!==null&&recorded<livePrice;
+     const shownPrice=activePrice?livePrice:recentDeal?recorded:livePrice;
+     const listCents=activePrice?(saving?.wasCents??null):recentDeal?livePrice:(saving?.wasCents??(item.offer.listedPriceCents!==null&&item.offer.listedPriceCents>(shownPrice??0)?item.offer.listedPriceCents:null));
      const direct=item.offer.buyUrl&&isDirectRetailerUrl(item.offer.buyUrl);
      const href=direct?(item.offer.merchantId==='amazon'?(affiliateLink(item.offer.buyUrl!)||item.offer.buyUrl!):item.offer.buyUrl!):('https://www.amazon.com/s?k='+encodeURIComponent([item.offer.brand,item.offer.product,item.offer.model].filter(Boolean).join(' '))+'&tag='+(process.env.NEXT_PUBLIC_AMAZON_AFFILIATE_TAG||'savlume-20'));
      const retailer=direct?(item.offer.merchant||'Amazon'):'Amazon';
      return <tr key={item.id}>
       <td className="sticky left-0 z-10 bg-white dark:bg-neutral-900"><div className="db-best-compare-product">{item.offer.imageUrl&&<img className="db-best-compare-thumb" src={item.image?.src??item.offer.imageUrl} alt={productImageAlt(item.offer,item.title,item.priceDisplay?.state==='current'?item.priceDisplay.amountCents:null)} width={48} height={48} loading="lazy" decoding="async" referrerPolicy="no-referrer" onError={event=>handleImageFallback(event,item.image,'card')}/>}<Link to={itemPath(item)}>{tableProductName(item)}</Link></div></td>
-      <td className={activePrice?'db-price-active':'db-price-neutral'}>{shownPrice!==null?money(shownPrice):'See retailer'}{!activePrice&&shownPrice!==null&&<small className="db-best-regular">regular</small>}</td>
+      <td className={activePrice||recentDeal?'db-price-active':'db-price-neutral'}>{shownPrice!==null?money(shownPrice):'See retailer'}{recentDeal&&<small className="db-best-recent">Recent deal</small>}{!activePrice&&!recentDeal&&shownPrice!==null&&<small className="db-best-regular">regular</small>}</td>
       <td>{listCents!==null&&listCents!==shownPrice?<s className="db-was">{money(listCents)}</s>:'—'}</td>
       <td>{verdict?.whyBuy??'—'}</td>
       <td>{verdict?.tradeOff??'Price and stock can change.'}</td>
