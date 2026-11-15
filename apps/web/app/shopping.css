@@ -1044,3 +1044,30 @@
 
 /* Compare index: give the subtitle room before the grid. */
 .db-compare-page .db-compare-updated,.db-compare-index>p{margin-bottom:24px}
+
+/* /best hub: category filter pill bar and guide cards. */
+.db-best-filter{position:sticky;top:64px;z-index:30;display:flex;gap:8px;overflow-x:auto;padding:10px 0;margin:6px 0 22px;background:#F8FAFC;border-bottom:1px solid #E2E8F0;scrollbar-width:none}
+.db-best-filter::-webkit-scrollbar{display:none}
+.db-best-filter button{flex:0 0 auto;display:inline-flex;align-items:center;gap:6px;height:34px;padding:0 13px;border:1px solid #E2E8F0;border-radius:999px;background:#fff;color:#334155;font-size:13px;font-weight:500;cursor:pointer;white-space:nowrap}
+.db-best-filter button:hover{border-color:#047857;color:#047857}
+.db-best-filter button.is-active{background:#047857;border-color:#047857;color:#fff}
+.db-best-filter button span{font-size:11px;opacity:.72}
+.db-best-more{margin:14px 0 0}
+.db-best-more a{font-size:13px;font-weight:600;color:#047857}
+.db-best-regular{display:block;font-size:10px;font-weight:500;color:#94A3B8;letter-spacing:.02em}
+.db-best-h2h-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:12px}
+.db-best-h2h-pill{display:block;padding:9px 14px;border:1px solid #E2E8F0;border-radius:6px;background:#fff;font-size:12px;font-weight:500;color:#0F172A!important;text-decoration:none!important;line-height:1.4}
+.db-best-h2h-pill:hover{border-color:#047857;color:#047857!important}
+@media(max-width:620px){.db-best-h2h-grid{grid-template-columns:1fr}.db-best-filter{top:0}}
+/* Guide pages: single aligned product grid, no repeated verdict box. */
+.db-best-products .db-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:18px;align-items:stretch}
+@media(max-width:1000px){.db-best-products .db-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:620px){.db-best-products .db-grid{grid-template-columns:1fr}}
+/* Blog: sticky TOC clears the 64px header, bullets and the merged summary box render properly. */
+.db-blog-toc{top:80px}
+.db-blog-takeaways-verdict{margin:10px 0 12px;font-weight:600;color:#183b32;line-height:1.65}
+.db-blog-takeaways-list{margin:0;padding-left:20px;list-style:disc}
+.db-blog-takeaways-list li{margin:6px 0}
+.db-blog-list{margin:14px 0;padding-left:20px;list-style:disc}
+.db-blog-list li{margin:8px 0;line-height:1.75}
+@media(max-width:900px){.db-blog-toc{position:static;top:auto}}

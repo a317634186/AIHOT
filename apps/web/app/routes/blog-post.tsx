@@ -145,7 +145,7 @@ function Block({ block }: { block: BlogBlock }) {
   if (block.type === 'h2') return <h2 id={block.id}>{block.text}</h2>;
   if (block.type === 'h3') return <h3>{block.text}</h3>;
   if (block.type === 'p') return <p><Inline text={block.text} /></p>;
-  if (block.type === 'ul') return <ul>{block.items.map((item, index) => <li key={index}><Inline text={item} /></li>)}</ul>;
+  if (block.type === 'ul') return <ul className="db-blog-list">{block.items.map((item, index) => <li key={index}><Inline text={item} /></li>)}</ul>;
   if (block.type === 'ol') return <ol>{block.items.map((item, index) => <li key={index}><Inline text={item} /></li>)}</ol>;
   if (block.type === 'callout') return <aside className="db-blog-callout"><strong>{block.title}</strong><p><Inline text={block.text} /></p></aside>;
   if (block.type === 'table') return <div className="db-blog-table-wrap"><table><caption>{block.caption}</caption><thead><tr>{block.headers.map(header => <th key={header} scope="col">{header}</th>)}</tr></thead><tbody>{block.rows.map((row, rowIndex) => <tr key={rowIndex}>{row.map((cell, cellIndex) => <td key={cellIndex} data-label={block.headers[cellIndex]}><Inline text={cell} /></td>)}</tr>)}</tbody></table></div>;
@@ -163,10 +163,14 @@ export default function BlogPost() {
         <span className="db-blog-badge">{post.category}</span>
         <h1>{post.title}</h1>
         <p className="db-blog-deck">{post.description}</p>
-        <div className="db-blog-byline"><span>By Savlume Editorial Team</span><time dateTime={post.published}>Published {dateLabel(post.published)}</time><span>{post.readTimeMinutes} min read</span><span>{wordCount.toLocaleString('en-US')} words</span></div>
+        <div className="db-blog-byline"><span>By Savlume Editorial Team</span><time dateTime={post.published}>Published {dateLabel(post.published)}</time><span>{Math.max(3,Math.round(wordCount/220))} min read</span><span>{wordCount.toLocaleString('en-US')} words</span></div>
       </header>
-      <section className="db-blog-verdict" aria-label="Editorial verdict"><span>OUR VERDICT</span><p>{article.editorialVerdict}</p></section>
-      <section className="db-blog-takeaways" aria-labelledby="db-blog-takeaways-title"><h2 id="db-blog-takeaways-title">What you need to know</h2><ul>{article.keyTakeaways.map(item => <li key={item}>{item}</li>)}</ul></section>
+      {/* One summary box: the verdict reads as its lead, the takeaways follow as a list. */}
+      <section className="db-blog-takeaways" aria-labelledby="db-blog-takeaways-title">
+        <h2 id="db-blog-takeaways-title">Key Takeaways</h2>
+        <p className="db-blog-takeaways-verdict">{article.editorialVerdict}</p>
+        <ul className="db-blog-takeaways-list">{article.keyTakeaways.map(item => <li key={item}>{item}</li>)}</ul>
+      </section>
       <div className="db-blog-layout">
         {headings.length > 0 && <aside className="db-blog-toc" aria-label="Table of contents"><strong>In this guide</strong><ol>{headings.map(heading => <li key={heading.id}><a href={`#${heading.id}`}>{heading.text}</a></li>)}</ol></aside>}
         <div className="db-blog-reading">
