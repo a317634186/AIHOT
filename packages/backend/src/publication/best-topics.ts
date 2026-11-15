@@ -182,7 +182,9 @@ export async function publicBestTopics(): Promise<BestTopicSummary[]> {
     categoryDisplay: page.topic.categoryDisplay,
     productCount: page.items.length,
     verifiedCount: page.items.filter(item => item.priceDisplay.verification === 'merchant-verified').length,
-    lastGeneratedAt: row.generated_at.toISOString()
+    lastGeneratedAt: row.generated_at.toISOString(),
+    // Real products from the guide, so a cover is never a stock photo or a placeholder.
+    coverImages: page.items.map(item => item.image?.src).filter((src): src is string => typeof src === 'string' && src.length > 0).slice(0, 3)
   }));
 }
 

@@ -49,4 +49,6 @@ export interface BestTopicSummary {
   productCount: number;
   verifiedCount: number;
   lastGeneratedAt: string;
+  /** Up to three product thumbnails from the guide, used as its cover collage. */
+  coverImages?: string[];
 }

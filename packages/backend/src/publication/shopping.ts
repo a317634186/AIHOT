@@ -81,6 +81,88 @@ function sameOfferWindow(a:ShoppingItem,b:ShoppingItem){
 }
 export const sameRetailerDeal=sameRetailerProductDeal;
 interface OfferGroup {canonical:ShoppingItem;latest:ShoppingItem;ids:string[];sources:Array<{name:string;url:string}>;updatedAt:string}
+/**
+ * The same product reported by several publishers is one entity for a reader, whatever retailer or
+ * listing wording it came in with. Keys are built from brand plus model, then the product name's
+ * distinctive words, with condition and packaging noise removed.
+ */
+const ENTITY_STOP=new Set(['the','and','for','with','from','new','open','box','used','refurbished','renewed','latest','model','version','edition','pack','set','bundle','count','piece','pieces','inch','inches','in','mm','cm','gb','tb','oz','lb','lbs','ml','free','shipping','prime','membership','required','amazon','walmart','target','woot','best','buy','costco','deal','deals','sale','offer','savings','percent','off']);
+/** Brand plus the distinctive words of a product name, used to bucket candidates before comparing. */
+function entityBucket(item:ShoppingItem):string|null{
+ const d=item.offer;
+ // A storewide sale or multi-product event is one entity when the source names the campaign.
+ if(['event','storewide','multi_product'].includes(d.activityScope??'')){
+  return `campaign:${eventCampaignKey(item.title,d)??d.activityScope}`;
+ }
+ // A review or guide about one product is also one entity; a roundup is not.
+ if(!['product_deal','coupon_offer','cashback_offer','freebie','buying_guide','shopping_news','recall'].includes(d.kind))return null;
+ const clean=(v:string|null|undefined)=>String(v??'').normalize('NFKD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
+ const brand=clean(d.brand);
+ const words=(value:string)=>clean(value).split(' ').filter(w=>w.length>2&&!ENTITY_STOP.has(w)&&!/^\d+$/.test(w));
+ const model=clean(d.model);
+ // The bucket must not hinge on one word: publishers lead with different nouns ("Ferris Wheel" vs
+ // "Iconic Ferris Wheel"). Intermediate comparisons happen inside the brand bucket instead.
+ // A sale announcement has no brand or product, so its headline is the only identity it has; two
+ // publishers covering the same sale usually post near-identical headlines.
+ if(!brand&&!d.product&&!d.model){
+  // Publishers punctuate the same announcement differently ("Sale:" / "gear:"), so the bucket uses
+  // the sorted set of meaningful headline words rather than the raw string.
+  const tokens=[...new Set(clean(item.title).split(' ').filter(w=>w.length>1&&!ENTITY_STOP.has(w)&&!/^\d+$/.test(w)))].sort();
+  return tokens.length>=3?`headline:${tokens.join('')}`:null;
+ }
+ return brand||null;
+}
+/** Words that identify the product, ignoring packaging and marketing wording publishers add. */
+function entityTokens(item:ShoppingItem):Set<string>{
+ const clean=(v:string|null|undefined)=>String(v??'').normalize('NFKD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
+ const all=`${clean(item.offer.brand)} ${clean(item.offer.model)} ${clean(item.offer.product||item.title)}`.split(' ');
+ return new Set(all.filter(w=>w.length>1&&!ENTITY_STOP.has(w)&&!/^\d+$/.test(w)));
+}
+/** Two listings describe one product when their identifying words mostly coincide. */
+function sameEntity(a:ShoppingItem,b:ShoppingItem):boolean{
+ const left=entityTokens(a),right=entityTokens(b);
+ if(!left.size||!right.size)return false;
+ // Publishers pad one name with extra marketing words, so the shorter name should be contained in
+ // the longer one. Requiring three shared words keeps "AirPods Pro 3" apart from "AirPods Max".
+ const shared=[...left].filter(word=>right.has(word)).length;
+ const smaller=Math.min(left.size,right.size);
+ return shared>=3&&shared/smaller>=0.8;
+}
+
+/** Which of two listings of one product a reader should see: a live price, a real markdown, freshest. */
+function entityRank(item:ShoppingItem):number{
+ const d=item.offer;
+ const live=item.priceDisplay?.state==='current'&&item.priceDisplay.amountCents!==null;
+ const saving=offerSavings(d);
+ return (live?1000:0)+(saving?saving.percent*2:0)+(item.priceDisplay?.verification==='merchant-verified'?120:0)+(d.buyUrl?60:0)+(item.image?30:0);
+}
+function preferEntity(a:ShoppingItem,b:ShoppingItem):ShoppingItem{
+ const ra=entityRank(a),rb=entityRank(b);
+ if(ra!==rb)return ra>rb?a:b;
+ return Date.parse(a.publishedAt)>=Date.parse(b.publishedAt)?a:b;
+}
+function dedupeProductEntities(items:ShoppingItem[]):{items:ShoppingItem[];aliases:Map<string,ShoppingItem>}{
+ const winners:Array<{bucket:string;item:ShoppingItem}>=[];
+ const aliases=new Map<string,ShoppingItem>();
+ const out:ShoppingItem[]=[];
+ for(const item of items){
+  const bucket=entityBucket(item);
+  if(!bucket){out.push(item);continue;}
+  // A headline bucket is already an exact identity, so no token comparison is needed.
+  const match=winners.find(entry=>entry.bucket===bucket&&(bucket.startsWith('headline:')||sameEntity(entry.item,item)));
+  if(!match){winners.push({bucket,item});out.push(item);aliases.set(item.id,item);continue;}
+  // Keep the single best listing for the product; the rest stay resolvable by id.
+  const best=preferEntity(match.item,item);
+  if(best!==match.item){
+   const index=out.indexOf(match.item);
+   if(index>=0)out[index]=best;
+   match.item=best;
+  }
+  aliases.set(item.id,match.item);
+ }
+ return {items:out,aliases};
+}
+
 function consolidateOffers(items:ShoppingItem[]){
  const groups:OfferGroup[]=[];const buckets=new Map<string,OfferGroup[]>();
  for(const item of items){
@@ -442,6 +524,10 @@ async function computeShoppingItems(opts:{view?:string;category?:string;merchant
   else items=items.filter(x=>isOffer(x.offer)&&!['Expired','Out of Stock'].includes(x.offer.status)&&(x.offer.kind!=='product_deal'||x.offer.checkoutPriceCents!==null||x.offer.listedPriceCents!==null));
  }
  const consolidated=consolidateOffers(items);items=consolidated.items;
+ // The same product reported by several publishers is one card for the reader.
+ const entities=dedupeProductEntities(items);
+ items=entities.items;
+ for(const [id,item] of entities.aliases)if(!consolidated.aliases.has(id))consolidated.aliases.set(id,item);
  if(opts.id){
   const canonical=consolidated.aliases.get(opts.id);
   if(canonical)items=[canonical];

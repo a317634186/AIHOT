@@ -138,6 +138,31 @@ export function comparisonLinksForItem(pairs: PublicComparisonPair[], itemId: st
     .map(({ slug, title }) => ({ slug, title }));
 }
 
+/** A single side of a matchup as the index card needs it: thumbnail, short label and deal price. */
+function indexSide(item: ShoppingItem) {
+  return {
+    id: item.id,
+    name: comparisonIndexLabel(item),
+    image: item.image?.src ?? null,
+    imageSet: item.image?.srcSet ?? null,
+    priceCents: item.priceDisplay?.state === 'current' ? item.priceDisplay.amountCents : null,
+    listPriceCents: item.offer.listedPriceCents,
+    merchant: item.offer.merchant ?? null,
+  };
+}
+/** Brand plus the product name, without the retailer noise a card has no room for. */
+function comparisonIndexLabel(item: ShoppingItem): string {
+  const d = item.offer;
+  const product = (d.product ?? item.title).trim();
+  const brand = d.brand?.trim();
+  return brand && !product.toLowerCase().startsWith(brand.toLowerCase()) ? `${brand} ${product}` : product;
+}
 export function comparisonIndexItems(pairs: PublicComparisonPair[]) {
-  return pairs.map(({ slug, title, guideSlugs }) => ({ slug, title, guideSlugs }));
+  return pairs.map(({ slug, title, guideSlugs, itemA, itemB }) => ({
+    slug,
+    title,
+    guideSlugs,
+    left: indexSide(itemA),
+    right: indexSide(itemB),
+  }));
 }
