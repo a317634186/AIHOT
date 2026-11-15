@@ -12,6 +12,12 @@ function decodeTopic(raw: unknown): GeneratedBestTopic | null {
   return topic as GeneratedBestTopic;
 }
 
+/**
+ * A published guide must stand on its own: below this many current products the page has no
+ * comparison value, so it stays out of the index and its URL falls back to the pending state.
+ */
+const BEST_TOPIC_MIN_PRODUCTS = 3;
+
 export interface PublicBestTopic {
   topic: GeneratedBestTopic;
   items: ShoppingItem[];
@@ -132,7 +138,9 @@ async function currentPages(rows: BestTopicRow[]): Promise<Array<{ row: BestTopi
       tryMatch(true);
       if (!strictCategories && ordered.length < 3 && maxCents !== null) tryMatch(false);
     }
+    // A guide with fewer products than this is not worth an index slot or a search landing page.
     if (ordered.length < (strictCategories ? 3 : 1)) continue;
+    if (ordered.length < BEST_TOPIC_MIN_PRODUCTS) continue;
     const idsForTopic = new Set(ordered.map(item => item.id));
     const productVerdicts: Record<string, { whyBuy: string; tradeOff: string; mediaConsensus?: string }> = {};
     for (const item of ordered) {

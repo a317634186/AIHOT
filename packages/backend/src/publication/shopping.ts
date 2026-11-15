@@ -32,6 +32,8 @@ export interface ShoppingItem {priceDisplay:PriceDisplay;recordedDealPriceCents?
 /** Sold by a retailer in the registry: the link resolves there, or the source names it as the seller (DealNews-style redirects). */
 const retailerName=(v:string|null|undefined)=>(v??'').toLowerCase().replace(/[’']/g,'').replace(/\s+/g,' ').trim().replace(/^the /,'').replace(/[.,]?\s*(?:inc|llc|ltd|co|corp|corporation|company)\.?$/,'').trim();
 const knownRetailer=(d:Offer)=>!!d.merchantId||!!d.seller&&MERCHANTS.some(m=>{const a=retailerName(m.name),b=retailerName(d.seller);return a===b||b.startsWith(a+' ')||a.startsWith(b+' ');});
+/** Reviews: at most this many results from one publisher before the remaining sources get their turn. */
+const REVIEW_SOURCE_CAP=6;
 const normalized=(value:string|null|undefined)=>String(value??'').normalize('NFKD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
 const normalizedList=(values:string[]|null|undefined)=>(values??[]).map(normalized).filter(Boolean).sort().join('|');
 function dedupBucketKey(item:ShoppingItem){
@@ -368,7 +370,19 @@ async function computeShoppingItems(opts:{view?:string;category?:string;merchant
     return seasonal&&hasOffer;
    });
   }
-  else if(view==='reviews')items=items.filter(x=>isReviewContent(x.offer,x.title));
+  else if(view==='reviews'){
+   items=items.filter(x=>isReviewContent(x.offer,x.title));
+   // A complete review is worth more than a bare verdict: readers expect strengths and trade-offs.
+   const depth=(x:ShoppingItem)=>{const r=x.offer.review;if(!r)return 0;return (r.verdict?.trim()?1:0)+(r.strengths.length?2:0)+(r.limitations.length?2:0)+(r.bestFor?.trim()?1:0)+(r.questions.length?1:0);};
+   const sortMode=opts.sort??'latest';
+   if(sortMode==='discount')items.sort((a,b)=>depth(b)-depth(a)||(offerSavings(b.offer)?.percent??0)-(offerSavings(a.offer)?.percent??0)||Date.parse(b.publishedAt)-Date.parse(a.publishedAt));
+   else if(sortMode==='popular')items.sort((a,b)=>depth(b)-depth(a)||Date.parse(b.publishedAt)-Date.parse(a.publishedAt));
+   else items.sort((a,b)=>depth(b)-depth(a)||Date.parse(b.publishedAt)-Date.parse(a.publishedAt));
+   // One prolific publisher must not fill the results: cap each source, then interleave the rest.
+   const perSource=new Map<string,number>(),primary:ShoppingItem[]=[],overflow:ShoppingItem[]=[];
+   for(const item of items){const key=item.source.trim().toLowerCase();const n=perSource.get(key)??0;if(n>=REVIEW_SOURCE_CAP){overflow.push(item);continue;}perSource.set(key,n+1);primary.push(item);}
+   items=[...primary,...overflow];
+  }
   else if(view==='news')items=items.filter(x=>!isOffer(x.offer)&&!isReviewContent(x.offer,x.title));
   else if(view==='coupons')items=items.filter(x=>isOffer(x.offer)&&['Active','Unverified'].includes(x.offer.status)&&(['coupon_offer','cashback_offer','freebie'].includes(x.offer.kind)||x.offer.coupon||x.offer.cashback)&&live(x)&&sourceDealBenefitEvidence(originalTitles.get(x)??x.title,x.offer,originalEvidence.get(x)??''));
   else if(view==='ending'){
