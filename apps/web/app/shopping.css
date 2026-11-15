@@ -758,10 +758,10 @@
 .db-blog-header h1{font-family:Georgia,'Times New Roman',serif;font-size:clamp(34px,5vw,54px);font-weight:500;line-height:1.08;letter-spacing:-1.1px;color:#183b32;margin:14px 0 16px}
 .db-blog-deck{max-width:760px;font-size:18px;line-height:1.7;color:#5d7167;margin:0}
 .db-blog-byline{display:flex;flex-wrap:wrap;gap:8px 18px;margin-top:17px;color:#82918b;font-size:11px}
-.db-blog-verdict{max-width:820px;margin:26px 0 18px;padding:20px 22px;border-radius:12px;background:#183b32;color:#fff}
+.db-blog-verdict{max-width:none;margin:26px 0 18px;padding:20px 22px;border-radius:12px;background:#183b32;color:#fff}
 .db-blog-verdict span{display:block;color:#a8d8c5;font-size:10px;font-weight:800;letter-spacing:.12em;margin-bottom:7px}
 .db-blog-verdict p{margin:0;font-family:Georgia,'Times New Roman',serif;font-size:20px;line-height:1.5;color:#f7fbf8}
-.db-blog-takeaways{max-width:820px;margin:0 0 30px;padding:18px 21px;border:1px solid #dce8e2;border-radius:12px;background:#fff}
+.db-blog-takeaways{max-width:none;margin:0 0 30px;padding:18px 21px;border:1px solid #dce8e2;border-radius:12px;background:#fff}
 .db-blog-takeaways h2{font-size:15px;color:#183b32;margin:0 0 10px}
 .db-blog-takeaways ul{margin:0;padding-left:19px;color:#4e665c;font-size:13px;line-height:1.7}
 .db-blog-takeaways li{margin:5px 0}
@@ -1022,4 +1022,22 @@
 @media(max-width:620px){
  .db-home .db-card .db-price-row{gap:4px}
  .db-home .db-card .db-home-notice{font-size:12px;margin-top:4px}
+}
+
+/* Store directory: initials badge fills the square when a logo is missing. */
+.db-merchant-icon .db-merchant-initials{font-size:13px;font-weight:700;letter-spacing:.02em;color:#047857;background:#ECFDF5;width:100%;height:100%;display:grid;place-items:center;line-height:1}
+.db-merchant-icon .db-merchant-initials[data-hidden]{display:none}
+
+/* Filter selects: match the search field instead of the browser's native control. */
+.db-filters select{
+ appearance:none;-webkit-appearance:none;-moz-appearance:none;
+ height:38px;min-height:38px;border-radius:6px;border:1px solid #E2E8F0;
+ background-color:#fff;padding:0 30px 0 12px;
+ font-size:13.5px;font-weight:500;color:#0F172A;line-height:36px;cursor:pointer;
+ background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2364748B' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+ background-repeat:no-repeat;background-position:right 10px center;
+}
+.db-filters select:focus{outline:none;border-color:#047857;box-shadow:0 0 0 2px #04785722}
+@media(max-width:620px){
+ .db-filters select{height:40px;min-height:40px;line-height:38px;font-size:14px}
 }

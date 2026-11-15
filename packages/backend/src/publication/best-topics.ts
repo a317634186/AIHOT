@@ -17,6 +17,10 @@ function decodeTopic(raw: unknown): GeneratedBestTopic | null {
  * comparison value, so it stays out of the index and its URL falls back to the pending state.
  */
 const BEST_TOPIC_MIN_PRODUCTS = 3;
+/** Accessory and consumable wording: paired against a main device these produce nonsense matchups. */
+/** A guide about the accessory itself, so its products are not filtered out. */
+const ACCESSORY_SUBJECT=/\b(?:chargers?|cables?|cases?|covers?|straps?|bands?|filters?|refills?|accessor(?:y|ies))\b/i;
+const ACCESSORY_TITLE=/\b(?:charger|adapter|cable|case|cover|sleeve|skin|strap|band|mount|holster|screen protector|replacement (?:head|heads|filter|filters|blade|blades|brush)|refill|compatible with|for (?:apple|samsung|galaxy|iphone|ipad|airpods))\b/i;
 
 export interface PublicBestTopic {
   topic: GeneratedBestTopic;
@@ -112,6 +116,9 @@ async function currentPages(rows: BestTopicRow[]): Promise<Array<{ row: BestTopi
     const maxCents = topic.priceFilter?.max ? topic.priceFilter.max * 100 : null;
     const acceptable = (candidate: ShoppingItem, enforcePrice: boolean) => {
       if (strictCategories && (!candidate.category || !strictCategories.has(candidate.category))) return false;
+      // A charger, case or replacement head is not an alternative to the device it plugs into. Guides
+      // whose own subject is the accessory (chargers, cases) keep their products.
+      if (!ACCESSORY_SUBJECT.test(`${topic.h1} ${topic.shortTitle}`)&&ACCESSORY_TITLE.test(`${candidate.offer.product ?? ''} ${candidate.title}`)) return false;
       const price = candidate.priceDisplay.amountCents;
       if (strictCategories && (price === null || price <= 0)) return false;
       if (price !== null && (price < minCents || (enforcePrice && maxCents !== null && price > maxCents))) return false;

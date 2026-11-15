@@ -67,7 +67,7 @@ function publicFeedCacheKey(req:FastifyRequest,q:Record<string,string>):string|n
  if([...params.keys()].some(key=>!allowed.has(key))||params.has('id')||params.has('ids')||params.has('briefing')||q.q)return null;
  if(q.slim&&q.slim!=='1')return null;
  if(q.maxPrice&&!['25','50','100'].includes(q.maxPrice)||q.minDiscount&&q.minDiscount!=='50')return null;
- if(!['recommended','deals','flash','new','latest','any','picks','reviews','news','coupons','archive','ending','top','black-friday','cyber-monday',undefined].includes(q.view)||q.sort&&!['popular','discount','latest','ending'].includes(q.sort))return null;
+ if(!['recommended','deals','flash','new','latest','any','picks','reviews','guides','news','coupons','archive','ending','top','black-friday','cyber-monday',undefined].includes(q.view)||q.sort&&!['popular','discount','latest','ending'].includes(q.sort))return null;
  params.sort();
  return params.toString()||'default';
 }

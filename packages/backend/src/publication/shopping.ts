@@ -1,5 +1,5 @@
 // The single shopping read layer used by pages, feeds, API, MCP and briefings.
-import { isReviewContent,isReviewHeadline } from '@aihot/contracts/reviews';
+import { isReviewContent,isGuideArticle,isReviewHeadline } from '@aihot/contracts/reviews';
 import { SHOPPING, MERCHANTS, isDirectRetailerEventUrl, isDirectRetailerProductUrl, merchantFor } from '@aihot/industry/shopping';
 import { brandSlug, cents, effectiveStatus, flashDealEvidence, sourceDealPick, isProductActivity, isOffer, isCalibratedRegularPrice, safeCopy, plainTitle, offerTiming, flashSavings, offerSavings, affiliateLink, cleanMerchantLink, unitPrice, type Offer, type OfferTiming, type PriceObservation, type FlashDealEvidence, type DealPick } from '@aihot/contracts/shopping';
 import { canonicalProductTargetKey, eventCampaignKey, normalizedCouponKey, sameRetailerProductDeal } from '@aihot/contracts/shopping-dedup';
@@ -34,6 +34,11 @@ const retailerName=(v:string|null|undefined)=>(v??'').toLowerCase().replace(/[â€
 const knownRetailer=(d:Offer)=>!!d.merchantId||!!d.seller&&MERCHANTS.some(m=>{const a=retailerName(m.name),b=retailerName(d.seller);return a===b||b.startsWith(a+' ')||a.startsWith(b+' ');});
 /** Reviews: at most this many results from one publisher before the remaining sources get their turn. */
 const REVIEW_SOURCE_CAP=6;
+/**
+ * A headline that weighs options against each other or ranks a shortlist: review reading, even when
+ * extraction shelved the article as news. Price-drop and sale headlines are excluded.
+ */
+const COMPARISON_HEADLINE=/\bvs\.?\b|\bcomparison\b|\bwhich\b[^.?]{0,60}\b(?:better|should|suits?)\b|\b(?:\d+\s+)?best\b(?!\s+(?:deals?|offers?|prices?|discounts?|sales?|buy))|\bpicks?\b.*\b20\d\d\b/i;
 const normalized=(value:string|null|undefined)=>String(value??'').normalize('NFKD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
 const normalizedList=(values:string[]|null|undefined)=>(values??[]).map(normalized).filter(Boolean).sort().join('|');
 function dedupBucketKey(item:ShoppingItem){
@@ -371,7 +376,9 @@ async function computeShoppingItems(opts:{view?:string;category?:string;merchant
    });
   }
   else if(view==='reviews'){
-   items=items.filter(x=>isReviewContent(x.offer,x.title));
+   // A comparison or "which should you buy" headline evaluates even when extraction shelved the
+   // article as news; it belongs on the review shelf rather than beside price-drop alerts.
+   items=items.filter(x=>isReviewContent(x.offer,x.title)||(x.offer.kind==='shopping_news'&&COMPARISON_HEADLINE.test(x.title)));
    // A complete review is worth more than a bare verdict: readers expect strengths and trade-offs.
    const depth=(x:ShoppingItem)=>{const r=x.offer.review;if(!r)return 0;return (r.verdict?.trim()?1:0)+(r.strengths.length?2:0)+(r.limitations.length?2:0)+(r.bestFor?.trim()?1:0)+(r.questions.length?1:0);};
    const sortMode=opts.sort??'latest';
@@ -383,7 +390,15 @@ async function computeShoppingItems(opts:{view?:string;category?:string;merchant
    for(const item of items){const key=item.source.trim().toLowerCase();const n=perSource.get(key)??0;if(n>=REVIEW_SOURCE_CAP){overflow.push(item);continue;}perSource.set(key,n+1);primary.push(item);}
    items=[...primary,...overflow];
   }
-  else if(view==='news')items=items.filter(x=>!isOffer(x.offer)&&!isReviewContent(x.offer,x.title));
+  else if(view==='guides')items=items.filter(x=>isGuideArticle(x.offer,x.title));
+  else if(view==='news')items=items.filter(x=>{
+   // A guide that does not evaluate is still a guide: without this it falls through the
+   // !isOffer test and lands in the news feed.
+   if(x.offer.kind==='buying_guide')return false;
+   // Comparison coverage is shown with the reviews, so it is not repeated here.
+   if(x.offer.kind==='shopping_news'&&COMPARISON_HEADLINE.test(x.title))return false;
+   return !isOffer(x.offer)&&!isReviewContent(x.offer,x.title);
+  });
   else if(view==='coupons')items=items.filter(x=>isOffer(x.offer)&&['Active','Unverified'].includes(x.offer.status)&&(['coupon_offer','cashback_offer','freebie'].includes(x.offer.kind)||x.offer.coupon||x.offer.cashback)&&live(x)&&sourceDealBenefitEvidence(originalTitles.get(x)??x.title,x.offer,originalEvidence.get(x)??''));
   else if(view==='ending'){
    // The limited-time strip: a stated deadline, a single product with a purchase link, and a real

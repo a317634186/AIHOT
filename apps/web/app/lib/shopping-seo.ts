@@ -90,6 +90,7 @@ export function landingFaqs(path:string,catalog:LandingCatalog|undefined,total:n
 }
 const fixed:Record<string,{title:string;description:string}>={
  '/reviews':{title:'Product Reviews, Buying Picks & Deal Comparisons (2026)',description:'Compare product reviews, buying picks and current deals with clear pros, cons, source attribution and price evidence.'},
+ '/guides':{title:'Product Guides & Explainers: How Products Compare (2026)',description:'Product guides that explain a model, category or use case, with cited source detail and no review verdict attached.'},
  '/':SHOPPING_SEO.home,'/all':{title:'Live US Deal Feed: Hourly Price Drops & Promo Codes (2026)',description:'Browse recent deals, shopping news, reviews and past offers reported by Savlume sources.'},'/flash':SHOPPING_SEO.flash,'/news':{title:'US Shopping News, Sale Alerts & Price Drop Reports',description:'Follow US retailer sale alerts, price-drop reports, policy changes and product recall coverage.'},'/coupons':SHOPPING_SEO.coupons,
  '/categories':{title:'US Shopping Deal Categories, Promo Codes & Sales',description:'Browse US shopping offers by product category, including electronics, home, grocery, fashion and more.'},
  '/stores':{title:'All US Retailer Promo Codes, Coupons & Store Deals',description:'Explore offers by retailer, including Amazon, Walmart, Target and other stores.'},
@@ -299,7 +300,7 @@ export function shoppingMeta(input:{path:string;itemId?:string;search:string;cat
     contentUrl:item.offer.review!.videoUrl,
    });
   }
- }else if(input.data.items.length&&(['/', '/all','/flash','/news','/reviews','/coupons','/archive'].includes(input.path)||landing)){
+ }else if(input.data.items.length&&(['/', '/all','/flash','/news','/reviews','/guides','/coupons','/archive'].includes(input.path)||landing)){
   const listed=richHub?input.data.items.filter(x=>isOffer(x.offer)&&['Active','Unverified'].includes(x.offer.status)&&x.priceDisplay?.state==='current'&&x.timing?.state!=='ended'&&x.timing?.state!=='likely-ended').slice(0,10):input.path==='/'&&input.offset===0?input.data.items.slice(0,8):input.data.items.slice(0,12);
   const itemListElement=listed.map((x,i)=>{
    const entry:Record<string,unknown>={'@type':'ListItem',position:input.offset+i+1,name:x.title,url:base+itemPath(x)};

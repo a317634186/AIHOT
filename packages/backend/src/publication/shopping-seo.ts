@@ -180,6 +180,7 @@ export function shoppingPagesSitemapEntries(catalog:SeoCatalog,bestPages:Array<{
  add('/coupons',catalog.sections.coupons??catalog.latest);
  add('/reviews',catalog.sections.reviews??catalog.latest);
  add('/news',catalog.sections.news??catalog.latest);
+ add('/guides',catalog.sections.reviews??catalog.latest);
  if(catalog.sections.community)add('/community',catalog.sections.community);
  add('/about',catalog.staticLastmods.about);
  add('/privacy',catalog.staticLastmods.privacy);

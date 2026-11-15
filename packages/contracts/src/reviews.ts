@@ -11,8 +11,13 @@ const ANNOUNCEMENT=/\b(?:reports?|announces?|unveils?|launches?|introduces?|debu
 /** Strong headline cues for an evaluation; useful even if extraction mislabeled the item as a deal. */
 export function isReviewHeadline(title:string):boolean{
  const text=title.replace(/\bBest Buy\b/gi,'retailer');
- return /\b(?:reviews?|reviewed|hands[ -]on|tested|buying guide|product comparison|worth (?:it|buying)|should you buy)\b/i.test(text);
+ return /\b(?:reviews?|reviewed|hands[ -]on|tested|buying guide|product comparison|worth (?:it|buying)|should you buy|after (?:a|one|two|three|\d+) (?:week|weeks|month|months|year|years))\b/i.test(text);
 }
+/**
+ * A review earns its place by evaluating: a headline that compares or tests, or a stored review that
+ * actually states strengths or trade-offs. A bare verdict on a single product is a product
+ * introduction, not a review, and it belongs with the guides rather than the review shelf.
+ */
 export function isReviewContent(d:Pick<Offer,'kind'|'review'>,title=''){
  if(d.kind!=='buying_guide')return false;
  if(/\bhow to (?:watch|stream)\b|\blive[- ]?stream\b|\bsecurity settings\b/i.test(title))return false;
@@ -20,7 +25,15 @@ export function isReviewContent(d:Pick<Offer,'kind'|'review'>,title=''){
  // An announcement headline ("X reports/launches/highlights Y") is news unless the headline itself
  // evaluates, whatever review format the extractor attached to it.
  if(ANNOUNCEMENT.test(title)&&!evaluative)return false;
- return !!d.review||evaluative;
+ if(evaluative)return true;
+ const review=d.review;
+ if(!review)return false;
+ return review.strengths.length>0||review.limitations.length>0||review.questions.length>0;
+}
+
+/** A guide that evaluates nothing but is still a real article rather than a news item or a bare listing. */
+export function isGuideArticle(d:Pick<Offer,'kind'|'review'>,title=''):boolean{
+ return d.kind==='buying_guide'&&!isReviewContent(d,title);
 }
 export function publicVideoUrl(raw:string):string|null {
  try{const u=new URL(raw);if(u.protocol!=='https:')return null;
