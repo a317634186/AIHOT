@@ -164,17 +164,40 @@ async function currentPages(rows: BestTopicRow[]): Promise<Array<{ row: BestTopi
   return result;
 }
 
+let topicSnapshot: { at: number; value: Array<{ row: BestTopicRow; page: PublicBestTopic }> } | null = null;
+let topicSnapshotPending: Promise<Array<{ row: BestTopicRow; page: PublicBestTopic }>> | null = null;
+/**
+ * `currentPages` builds one shared 8k-item pool and ranks every guide against it, so computing one
+ * guide costs the same as computing all of them. Reuse a single pass across page, index and sitemap
+ * requests instead of repeating that scan per slug.
+ */
+async function sharedTopicSnapshot() {
+  if (topicSnapshot && Date.now() - topicSnapshot.at < 60_000) return topicSnapshot.value;
+  if (!topicSnapshotPending) {
+    topicSnapshotPending = (async () => {
+      const rows = await sql<BestTopicRow[]>`SELECT slug, topic, generated_at FROM generated_best_topics ORDER BY generated_at DESC`;
+      return rows.length ? await currentPages(rows) : [];
+    })().finally(() => { topicSnapshotPending = null; });
+  }
+  const value = await topicSnapshotPending;
+  topicSnapshot = { at: Date.now(), value };
+  return value;
+}
+
 export async function publicBestTopic(slug: string): Promise<PublicBestTopic | null> {
   const def = bestTopicDefinition(slug);
   if (!def) return null;
-  const rows = await sql<BestTopicRow[]>`SELECT slug, topic, generated_at FROM generated_best_topics WHERE slug = ${slug}`;
-  const effectiveRows = rows.length ? rows : [{ slug: def.slug, topic: synthesizeTopicShell(def, new Date().toISOString()), generated_at: new Date() }];
-  return (await currentPages(effectiveRows))[0]?.page ?? null;
+  const pages = await sharedTopicSnapshot();
+  const page = pages.find(entry => entry.page.topic.slug === slug)?.page;
+  if (page) return page;
+  // A guide with no stored row still deserves its shell so the page can render as "in preparation".
+  const synthesised = synthesizeTopicShell(def, new Date().toISOString());
+  const [fallback] = await currentPages([{ slug: def.slug, topic: synthesised, generated_at: new Date() }]);
+  return fallback?.page ?? null;
 }
 
 export async function publicBestTopics(): Promise<BestTopicSummary[]> {
-  const rows = await sql<BestTopicRow[]>`SELECT slug, topic, generated_at FROM generated_best_topics ORDER BY generated_at DESC`;
-  return (await currentPages(rows)).map(({ page, row }) => ({
+  return (await sharedTopicSnapshot()).map(({ page, row }) => ({
     slug: page.topic.slug,
     h1: page.topic.h1,
     shortTitle: page.topic.shortTitle,
@@ -189,8 +212,7 @@ export async function publicBestTopics(): Promise<BestTopicSummary[]> {
 }
 
 export async function publicBestTopicSnapshot(): Promise<{ pages: PublicBestTopic[]; sitemap: Array<{ slug: string; lastmod: string }> }> {
-  const rows = await sql<BestTopicRow[]>`SELECT slug, topic, generated_at FROM generated_best_topics ORDER BY generated_at DESC`;
-  const current = await currentPages(rows);
+  const current = await sharedTopicSnapshot();
   return {
     pages: current.map(({ page }) => page),
     sitemap: current.map(({ page, row }) => ({ slug: page.topic.slug, lastmod: row.generated_at.toISOString() })),

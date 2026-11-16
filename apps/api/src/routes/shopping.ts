@@ -91,6 +91,9 @@ function scheduleNavigationFeedWarmup(){
   try{await staleWhileRevalidate({cache:savlumeCache.seoCatalogs,pending:savlumeCache.seoCatalogPending,key:'shopping-seo-catalog',load:shoppingSeoCatalog,freshMs:180_000,staleMs:600_000,maxEntries:8});}catch{}
   for(const query of NAVIGATION_FEED_QUERIES){const params=new URLSearchParams(query);params.sort();try{await cachedPublicFeed(params.toString(),()=>shoppingFeedPayload(query));}catch{}}
   try{await cachedBestPage('best-topics:index',publicBestTopics);}catch{}
+  // Warm one guide page too: it shares the same 8k-item ranking pass as the index, so a crawler
+  // hitting a guide first no longer waits for that scan.
+  try{const index=await cachedBestPage('best-topics:index',publicBestTopics);const slug=index[0]?.slug;if(slug)await cachedBestPage('best-topic:'+slug,()=>publicBestTopic(slug));}catch{}
   try{
    const [home,ending]=await Promise.all([shoppingItems({view:'deals',sort:'popular',limit:8}),shoppingItems({view:'ending',limit:6})]);
    for(const item of [...ending.items,...home.items]){

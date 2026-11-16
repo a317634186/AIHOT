@@ -162,6 +162,17 @@ export function plainTitle(title:string):string {
   .replace(/\b(?:is |are )?reported\s+(?=\d)/gi,'')
   .replace(/\s{2,}/g,' ').trim();
 }
+/**
+ * Retailer navigation, country-picker and department pages get ingested as if they were products.
+ * They carry no product to price, so they should not be indexed or listed as offers.
+ */
+const NAVIGATION_TITLE=/\b(?:select your country|choose your (?:country|region)|flash deals? & rollbacks?|daily sellout & clearance|deal of the day & flash sale|site ?map|page not found|shopping cart|view your cart)\b/i;
+/** Bare account/cart titles are navigation; a sentence that merely mentions signing in is an article. */
+const ACCOUNT_OR_CART_PAGE=/^\s*(?:sign in|log in|login|create an account|your cart|shopping cart)\b[^.]*$/i;
+export function isNavigationTitle(title:string|null|undefined):boolean {
+ const value=(title??'').trim();
+ return !!value&&(NAVIGATION_TITLE.test(value)||ACCOUNT_OR_CART_PAGE.test(value));
+}
 export function unitPrice(price:number|null, quantity:number|null):number|null { return price===null||quantity===null||!Number.isFinite(quantity)||quantity<=0?null:Math.round(price/quantity); }
 /** The stored link with the site's own affiliate tag, for merchants the site is enrolled with; other links pass through unchanged. */
 export function affiliateLink(raw:string|null):string|null {
