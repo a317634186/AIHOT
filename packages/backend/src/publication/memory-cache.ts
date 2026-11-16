@@ -13,6 +13,8 @@ interface SavlumeMemoryCache {
   bestPagePending: Map<string, Promise<unknown>>;
   seoCatalogs: Map<string, MemoryCacheEntry<unknown>>;
   seoCatalogPending: Map<string, Promise<unknown>>;
+  sitemaps: Map<string, MemoryCacheEntry<unknown>>;
+  sitemapPending: Map<string, Promise<unknown>>;
 }
 
 const root = globalThis as typeof globalThis & { __savlumeCache?: SavlumeMemoryCache };
@@ -21,6 +23,7 @@ export const savlumeCache = root.__savlumeCache ??= {
   publicApiFeeds: new Map(), publicApiFeedPending: new Map(),
   bestPages: new Map(), bestPagePending: new Map(),
   seoCatalogs: new Map(), seoCatalogPending: new Map(),
+  sitemaps: new Map(), sitemapPending: new Map(),
 };
 
 /** Serve fresh entries immediately and stale entries while a single background refresh runs. */

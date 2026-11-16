@@ -2,6 +2,7 @@ import type { BestTopicSummary, GeneratedBestTopic } from '@aihot/contracts/best
 import { BEST_TOPICS, bestTopicDefinition } from '@aihot/industry/best-topics';
 import { isDirectRetailerProductUrl } from '@aihot/industry/shopping';
 import { sql } from '../db.ts';
+import { savlumeCache, staleWhileRevalidate } from './memory-cache.ts';
 import { shoppingItems, type ShoppingItem } from './shopping.ts';
 
 function decodeTopic(raw: unknown): GeneratedBestTopic | null {
@@ -164,24 +165,23 @@ async function currentPages(rows: BestTopicRow[]): Promise<Array<{ row: BestTopi
   return result;
 }
 
-let topicSnapshot: { at: number; value: Array<{ row: BestTopicRow; page: PublicBestTopic }> } | null = null;
-let topicSnapshotPending: Promise<Array<{ row: BestTopicRow; page: PublicBestTopic }>> | null = null;
 /**
  * `currentPages` builds one shared 8k-item pool and ranks every guide against it, so computing one
  * guide costs the same as computing all of them. Reuse a single pass across page, index and sitemap
- * requests instead of repeating that scan per slug.
+ * requests, and serve the previous pass while the next one builds so no request waits on the scan.
  */
 async function sharedTopicSnapshot() {
-  if (topicSnapshot && Date.now() - topicSnapshot.at < 60_000) return topicSnapshot.value;
-  if (!topicSnapshotPending) {
-    topicSnapshotPending = (async () => {
+  return staleWhileRevalidate<Array<{ row: BestTopicRow; page: PublicBestTopic }>>({
+    cache: savlumeCache.bestPages,
+    pending: savlumeCache.bestPagePending,
+    key: 'best-topics:shared-snapshot',
+    load: async () => {
       const rows = await sql<BestTopicRow[]>`SELECT slug, topic, generated_at FROM generated_best_topics ORDER BY generated_at DESC`;
       return rows.length ? await currentPages(rows) : [];
-    })().finally(() => { topicSnapshotPending = null; });
-  }
-  const value = await topicSnapshotPending;
-  topicSnapshot = { at: Date.now(), value };
-  return value;
+    },
+    freshMs: 300_000,
+    staleMs: 900_000,
+  });
 }
 
 export async function publicBestTopic(slug: string): Promise<PublicBestTopic | null> {

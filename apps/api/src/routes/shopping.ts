@@ -29,6 +29,33 @@ import { savlumeCache, staleWhileRevalidate } from '@aihot/backend/publication/m
 const xml=(v:unknown)=>String(v??'').replace(/[<>&"']/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;',"'":'&apos;'}[c]!));
 /** Crawl discovery changes slowly and is cheap to rebuild; a shared cache may hold it briefly. */
 const SITEMAP_CACHE='public, max-age=0, s-maxage=300, must-revalidate';
+/** A rendered sitemap index plus the moment its per-child timestamps were resolved. */
+type SitemapIndex={body:string;lastmod:string};
+async function sitemapIndex():Promise<SitemapIndex>{
+ // Each child sitemap carries the freshest timestamp it can prove, so a crawler knows which one to
+ // re-read first instead of treating the whole index as equally stale. Resolving those timestamps
+ // reads every paged entry, so the result is shared rather than recomputed per request.
+ return staleWhileRevalidate<SitemapIndex>({
+  cache:savlumeCache.sitemaps,pending:savlumeCache.sitemapPending,key:'sitemap-index',
+  load:async()=>{
+   const catalog=await shoppingSeoCatalog();
+   const itemPageCount=Math.max(2,Math.ceil(catalog.total/SHOPPING_SITEMAP_SIZE));
+   const stamp=(value:string|null|undefined)=>{const t=value?Date.parse(value):NaN;return Number.isFinite(t)?new Date(t).toISOString():null;};
+   const pagesLastmod=stamp(catalog.latest);
+   const itemSitemaps=await Promise.all(Array.from({length:itemPageCount},async(_,i)=>{
+    const page=i+1;
+    let lastmod:string|null=null;
+    try{
+     const entries=await shoppingSitemapEntries(page);
+     lastmod=entries.reduce<string|null>((best,entry)=>{const value=stamp(entry.modified);return !value?best:!best||value>best?value:best;},null);
+    }catch{lastmod=null;}
+    return `<sitemap><loc>${xml(config.siteUrl)}/sitemaps/items-${page}.xml</loc>${lastmod?`<lastmod>${xml(lastmod)}</lastmod>`:''}</sitemap>`;
+   }));
+   return {body:`<?xml version="1.0" encoding="UTF-8"?><sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"><sitemap><loc>${xml(config.siteUrl)}/sitemaps/pages.xml</loc>${pagesLastmod?`<lastmod>${xml(pagesLastmod)}</lastmod>`:''}</sitemap>${itemSitemaps.join('')}</sitemapindex>`,lastmod:new Date().toISOString()};
+  },
+  freshMs:300_000,staleMs:900_000,maxEntries:4,
+ });
+}
 /** Share cards are addressed by the renderer's own content hash, so a long shared lifetime is safe. */
 const OG_CACHE='public, max-age=600, s-maxage=86400, stale-while-revalidate=604800';
 /** Public read APIs: a short shared lifetime, matching the non-shopping v1 contract. */
@@ -94,6 +121,7 @@ function scheduleNavigationFeedWarmup(){
   // Warm one guide page too: it shares the same 8k-item ranking pass as the index, so a crawler
   // hitting a guide first no longer waits for that scan.
   try{const index=await cachedBestPage('best-topics:index',publicBestTopics);const slug=index[0]?.slug;if(slug)await cachedBestPage('best-topic:'+slug,()=>publicBestTopic(slug));}catch{}
+  try{await sitemapIndex();}catch{}
   try{
    const [home,ending]=await Promise.all([shoppingItems({view:'deals',sort:'popular',limit:8}),shoppingItems({view:'ending',limit:6})]);
    for(const item of [...ending.items,...home.items]){
@@ -302,26 +330,13 @@ export function registerShopping(app:FastifyInstance){
  app.get('/robots.txt',async(req,reply)=>sendTextWithEtag(req,reply,['Googlebot','Bingbot','GPTBot','OAI-SearchBot','ChatGPT-User','PerplexityBot','ClaudeBot','anthropic-ai','Google-Extended'].map(bot=>`User-agent: ${bot}\nAllow: /\nDisallow: /admin\nDisallow: /api/auth\nDisallow: /api/admin\n`).join('\n')+`\nUser-agent: *\nAllow: /\nDisallow: /admin\nDisallow: /api/auth\nDisallow: /api/admin\n\nSitemap: ${config.siteUrl}/sitemap.xml\n`,{etagPrefix:'shopping-robots',cacheControl:'public, max-age=3600',contentType:'text/plain; charset=utf-8'}));
  if(config.indexNowKey)app.get(`/${config.indexNowKey}.txt`,async(req,reply)=>sendTextWithEtag(req,reply,config.indexNowKey!,{etagPrefix:'indexnow',cacheControl:'public, max-age=3600',contentType:'text/plain; charset=utf-8'}));
  app.get('/sitemap.xml',async(_req,reply)=>{
-  // Each child sitemap carries the freshest timestamp it can prove, so a crawler knows which one to
-  // re-read first instead of treating the whole index as equally stale.
-  const catalog=await shoppingSeoCatalog();
-  const itemPageCount=Math.max(2,Math.ceil(catalog.total/SHOPPING_SITEMAP_SIZE));
-  const stamp=(value:string|null|undefined)=>{const t=value?Date.parse(value):NaN;return Number.isFinite(t)?new Date(t).toISOString():null;};
-  const pagesLastmod=stamp(catalog.latest);
-  const itemSitemaps=await Promise.all(Array.from({length:itemPageCount},async(_,i)=>{
-   const page=i+1;
-   let lastmod:string|null=null;
-   try{
-    const entries=await shoppingSitemapEntries(page);
-    lastmod=entries.reduce<string|null>((best,entry)=>{const value=stamp(entry.modified);return !value?best:!best||value>best?value:best;},null);
-   }catch{lastmod=null;}
-   return `<sitemap><loc>${xml(config.siteUrl)}/sitemaps/items-${page}.xml</loc>${lastmod?`<lastmod>${xml(lastmod)}</lastmod>`:''}</sitemap>`;
-  }));
+  const { body, lastmod }=await sitemapIndex();
   return reply
    .header('Cache-Control','public, max-age=3600')
+   .header('Last-Modified',new Date(lastmod).toUTCString())
    .header('Content-Disposition','inline')
    .type('application/xml; charset=utf-8')
-   .send(`<?xml version="1.0" encoding="UTF-8"?><sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"><sitemap><loc>${xml(config.siteUrl)}/sitemaps/pages.xml</loc>${pagesLastmod?`<lastmod>${xml(pagesLastmod)}</lastmod>`:''}</sitemap>${itemSitemaps.join('')}</sitemapindex>`);
+   .send(body);
  });
  app.get('/sitemaps/pages.xml',async(req,reply)=>{
   const [catalog,compareSnapshot]=await Promise.all([shoppingSeoCatalog(),cachedComparisonSnapshot()]);
