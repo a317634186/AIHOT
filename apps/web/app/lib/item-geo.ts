@@ -15,9 +15,35 @@ export function sentenceCase(text: string) {
   return text.charAt(0).toUpperCase() + text.slice(1);
 }
 
+/**
+ * Deal blogs and aggregators tell us where an offer was reported, not who sells it. Naming them in
+ * reader-facing prose makes Savlume read like a secondary scraper, so they are collapsed to a neutral
+ * "the source".
+ */
+const AGGREGATOR_SOURCE = /(?:ben['’]?s bargains|hip2save|dealnews|9to5toys|9to5mac|money saving mom|slickdeals)/i;
+const AGGREGATOR_SOURCE_ALL = new RegExp(AGGREGATOR_SOURCE.source, 'gi');
+
+export function isAggregatorSource(name?: string | null) {
+  return !!name && AGGREGATOR_SOURCE.test(name);
+}
+
+export function neutralSourceMentions(text: string) {
+  return text.replace(AGGREGATOR_SOURCE_ALL, 'the source');
+}
+
+/** A store badge or sale label must name a seller, never the blog we read the offer from. */
+export function publicRetailer(merchant?: string | null, source?: string | null, fallback = 'Deal source'): string {
+  const seller = (merchant ?? '').trim();
+  if (seller) return seller;
+  const name = (source ?? '').trim();
+  return !name || isAggregatorSource(name) ? fallback : name;
+}
+
 export function attributeSource(text: string, source?: string) {
-  const name = source?.trim();
-  if (!name) return text;
+  const raw = source?.trim();
+  // A neutral label is already correct when the underlying source is an aggregator.
+  const name = raw && !isAggregatorSource(raw) ? raw : '';
+  if (!name) return neutralSourceMentions(text);
   return text
     .replace(/(^|[.!?]\s+)[Tt]he source (?:says|states|reports|notes|lists|mentions)(?:\s+that)?,?\s*/g, (_m, lead: string) => `${lead}According to ${name}, `)
     .replace(/\b[Tt]he source (?:says|states|reports|notes|lists|mentions)(?:\s+that)?\b/g, `${name} reports that`)

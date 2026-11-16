@@ -28,7 +28,8 @@ export function isReviewContent(d:Pick<Offer,'kind'|'review'>,title=''){
  if(evaluative)return true;
  const review=d.review;
  if(!review)return false;
- return review.strengths.length>0||review.limitations.length>0||review.questions.length>0;
+ // Older stored reviews may omit one of these arrays; a missing list is simply empty.
+ return (review.strengths?.length??0)>0||(review.limitations?.length??0)>0||(review.questions?.length??0)>0;
 }
 
 /** A guide that evaluates nothing but is still a real article rather than a news item or a bare listing. */

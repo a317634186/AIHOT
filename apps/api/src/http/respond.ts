@@ -90,9 +90,11 @@ export function sendJsonWithEtag(req: FastifyRequest, reply: FastifyReply, body:
   return reply.header("Content-Type", opts.contentType ?? "application/json; charset=utf-8").send(text ?? JSON.stringify(body));
 }
 
-export function sendTextWithEtag(req: FastifyRequest, reply: FastifyReply, text: string, opts: { etagPrefix: string; cacheControl: string; contentType: string }) {
+export function sendTextWithEtag(req: FastifyRequest, reply: FastifyReply, text: string, opts: { etagPrefix: string; cacheControl: string; contentType: string; contentDisposition?: string }) {
   const etag = weakEtag(opts.etagPrefix, text);
   reply.header("ETag", etag).header("Cache-Control", opts.cacheControl).header("Vary", "Accept-Encoding");
+  // Without an inline disposition a browser may download plain text and XML instead of rendering it.
+  if (opts.contentDisposition) reply.header("Content-Disposition", opts.contentDisposition);
   if (etagMatches(req.headers["if-none-match"], etag)) return reply.code(304).send();
   return reply.header("Content-Type", opts.contentType).send(text);
 }

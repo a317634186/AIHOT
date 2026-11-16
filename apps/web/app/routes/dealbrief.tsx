@@ -3,6 +3,7 @@ import { lazy, Suspense, useCallback, useEffect, useRef, useState, type Componen
 import { Form, Link, data as routeData, redirect, useLoaderData, useLocation, useNavigation, useNavigate } from 'react-router';
 import { buildValidProductJsonLd, landingFaqs, landingSubtitle, shoppingLanding, shoppingMeta, type LandingFaq } from '../lib/shopping-seo';
 import { breadcrumbLd, pageMeta,siteUrl } from '../lib/seo';
+import { neutralSourceMentions, publicRetailer, isAggregatorSource } from '../lib/item-geo';
 import { SHOPPING_SEO } from '@aihot/industry/seo';
 import { SITE } from '@aihot/industry/site';
 import { CATEGORIES } from '@aihot/industry/taxonomy';
@@ -223,6 +224,23 @@ function Timing({offer:d,timing:t,now}:{offer:Offer;timing?:OfferTiming|null;now
  return null;
 }
 function priceEvidenceLabel(display:Item['priceDisplay'],asOf?:string|null){if(!display)return '';if(display.verification==='merchant-verified')return 'Retailer verified'+(display.verifiedAt?' · '+shortTime(display.verifiedAt):'');if(display.verification==='last-verified'){const retried=!!display.lastCheckedAt&&!!display.verifiedAt&&Date.parse(display.lastCheckedAt)>Date.parse(display.verifiedAt);return 'Last retailer verification'+(display.verifiedAt?' · '+shortTime(display.verifiedAt):'')+(retried&&display.lastCheckedAt?' · latest check '+shortTime(display.lastCheckedAt)+' did not confirm':'');}if(display.verification==='source-reported')return 'Source-reported'+(asOf?' · '+shortTime(asOf):'');return '';}
+/**
+ * Aggregator and deal-blog names describe where we read the offer, not who sells it. Readers should see
+ * the merchant, so these names are replaced by the retailer everywhere the UI cites a source.
+ */
+function displaySource(name:string|null|undefined,merchant:string|null|undefined):string{
+ const source=(name??'').trim();
+ if(!source)return (merchant??'').trim()||'the deal source';
+ if(!isAggregatorSource(source))return source;
+ return (merchant??'').trim()||'the deal source';
+}
+/** Cards without a product price show what kind of activity this is instead of a dollar amount. */
+function offerActivityLabel(d:Offer,seller:string){
+ const kind=d.kind==='shopping_news'?'Shopping news':d.kind==='recall'?'Recall notice':d.kind==='buying_guide'?'Buying guide':'Offer details';
+ if(d.activityScope==='storewide'||d.activityScope==='event')return seller?`Sale at ${seller}`:'Storewide sale';
+ if(d.activityScope==='multi_product')return seller?`Multiple products at ${seller}`:'Multiple products on sale';
+ return seller?`${kind} from ${seller}`:kind;
+}
 function cleanDisplayTitle(title: string): string {
  if (!title) return "";
  let t = title.trim();
@@ -235,8 +253,8 @@ function cleanDisplayTitle(title: string): string {
  t = t.replace(/\s*\+\s*delivered by email.*$/i, "");
  return t.trim() || title.trim();
 }
-function retailerPriceNote(item:Item){if(item.priceDisplay?.label==='Checking retailer price')return item.sourceReportedPriceCents!==null&&item.sourceReportedPriceCents!==undefined?'Source-reported price.':'Live price not reported.';if(item.priceDisplay?.verification==='merchant-verified')return `Retailer price checked ${shortTime(item.priceDisplay.verifiedAt??item.publishedAt)}.`;return `Price reported at publication by ${item.source}.`;}
-function priceStatusSentence(item:Item){const p=item.priceDisplay,d=item.offer;if(p?.label==='Checking retailer price')return item.sourceReportedPriceCents!==null&&item.sourceReportedPriceCents!==undefined?'Retailer price verification is pending. Confirm the current price before checkout.':null;if(p?.state==='ended'||d.status==='Expired')return 'The last reported deal price is historical. Check the retailer for current pricing.';if(p?.state==='unavailable'||d.status==='Out of Stock')return 'This item was reported out of stock. Check the retailer for current availability.';if(p?.state==='stale')return `The price may have changed. ${priceEvidenceLabel(p,item.sourcePublishedAt??item.publishedAt)}. Check the retailer for current availability and price.`;if(p?.verification==='merchant-verified')return `Retailer price matched ${p.verifiedAt?shortTime(p.verifiedAt):'on the last check'}. Confirm the final total, shipping and tax at checkout.`;if(p?.verification==='last-verified')return `The last retailer-confirmed price was ${p.verifiedAt?shortTime(p.verifiedAt):'recorded previously'}; a newer check did not confirm it. Treat the amount as historical.`;if(p?.label==='Price needs review')return 'The source price or coupon terms could not be reconciled. Check the retailer for the current price.';if(p?.verification==='unavailable')return 'The source did not report a price. Check the retailer for current pricing.';return `This price was reported by ${item.source}${item.sourcePublishedAt?' on '+shortTime(item.sourcePublishedAt):''}. Check the retailer for today’s price.`;}
+function retailerPriceNote(item:Item){if(item.priceDisplay?.label==='Checking retailer price')return item.sourceReportedPriceCents!==null&&item.sourceReportedPriceCents!==undefined?'Source-reported price.':'Live price not reported.';if(item.priceDisplay?.verification==='merchant-verified')return `Retailer price checked ${shortTime(item.priceDisplay.verifiedAt??item.publishedAt)}.`;return `Price reported at publication by ${displaySource(item.source,item.offer.merchant)}.`;}
+function priceStatusSentence(item:Item){const p=item.priceDisplay,d=item.offer;if(p?.label==='Checking retailer price')return item.sourceReportedPriceCents!==null&&item.sourceReportedPriceCents!==undefined?'Retailer price verification is pending. Confirm the current price before checkout.':null;if(p?.state==='ended'||d.status==='Expired')return 'The last reported deal price is historical. Check the retailer for current pricing.';if(p?.state==='unavailable'||d.status==='Out of Stock')return 'This item was reported out of stock. Check the retailer for current availability.';if(p?.state==='stale')return `The price may have changed. ${priceEvidenceLabel(p,item.sourcePublishedAt??item.publishedAt)}. Check the retailer for current availability and price.`;if(p?.verification==='merchant-verified')return `Retailer price matched ${p.verifiedAt?shortTime(p.verifiedAt):'on the last check'}. Confirm the final total, shipping and tax at checkout.`;if(p?.verification==='last-verified')return `The last retailer-confirmed price was ${p.verifiedAt?shortTime(p.verifiedAt):'recorded previously'}; a newer check did not confirm it. Treat the amount as historical.`;if(p?.label==='Price needs review')return 'The source price or coupon terms could not be reconciled. Check the retailer for the current price.';if(p?.verification==='unavailable')return 'The source did not report a price. Check the retailer for current pricing.';return `This price was reported by ${displaySource(item.source,item.offer.merchant)}${item.sourcePublishedAt?' on '+shortTime(item.sourcePublishedAt):''}. Check the retailer for today’s price.`;}
 function reliableOfferSavings(offer:Offer){
  const saving=offerSavings(offer);const quote=offer.priceEvidence??'';
  if(!saving||!quote)return null;
@@ -275,7 +293,7 @@ function productImageAlt(offer:Offer,title:string,amountCents:number|null=null){
  return truncateAtWord(product,55);
 }
 function formatCardSummary(summary:string):string|null{
- let clean=summary.replace(/\s+/g,' ').trim();
+ let clean=neutralSourceMentions(summary).replace(/\s+/g,' ').trim();
  const brokenEnding=/(?:\s+It may [a-z]{1,3}|\s+[b-hj-z]{1,2})(?:\.{3}|…)$/i.exec(clean);
  if(brokenEnding){
   const prefix=clean.slice(0,brokenEnding.index).trimEnd(),previousPeriod=prefix.lastIndexOf('.');
@@ -335,6 +353,14 @@ function cleanConditionTag(raw:string|null|undefined):string|null{
 function conditionIdentity(value:string){return value.toLowerCase().replace(/\bis\b/g,'').replace(/[.,;]+$/,'').replace(/\s+/g,' ').trim();}
 function dedupeConditionLabels(values:string[]){const seen=new Set<string>();return values.filter(value=>{const key=conditionIdentity(value);if(seen.has(key))return false;seen.add(key);return true;});}
 function primaryComparisonConditions(values:string[],hasPromoCode:boolean){const conditions=dedupeConditionLabels(values);if(hasPromoCode||conditions.length<2)return conditions;return [conditions.reduce((shortest,value)=>value.length<shortest.length?value:shortest,conditions[0]!)];}
+/**
+ * Server-rendered images can fail before React hydrates, so `onError` never fires. Once the ref is
+ * attached, a completed image with no intrinsic width is known-broken and can be swapped or hidden.
+ */
+function checkHeroImageAfterHydration(img:HTMLImageElement|null,image:Item['image']){
+ if(!img||!img.complete||img.naturalWidth>0)return;
+ handleImageFallback({currentTarget:img} as unknown as SyntheticEvent<HTMLImageElement>,image,'hero');
+}
 function handleImageFallback(event:SyntheticEvent<HTMLImageElement>,image:Item['image'],size:'card'|'hero'){
  const img=event.currentTarget,fallback=image?.fallback;
  if(fallback&&img.dataset.sourceFallback!=='1'){
@@ -348,11 +374,17 @@ function handleImageFallback(event:SyntheticEvent<HTMLImageElement>,image:Item['
   img.dataset.rawFallback='1';img.removeAttribute('srcset');img.src=raw;return;
  }
  img.style.display='none';
+ // Some feed styles force `display:block!important`, which beats the inline style, so mark it too.
+ img.classList.add('db-image-failed');
  const parent=img.parentElement;
- if(parent&&!parent.querySelector('.db-noimage')){
+ // The detail hero ships its own static brand fallback, so appending initials would double up.
+ if(parent&&!parent.querySelector('.db-noimage')&&!parent.querySelector('.db-detail-fallback')){
+  // Never leave an empty frame: the placeholder carries the product's own initials.
   const fallbackSpan=document.createElement('span');
   fallbackSpan.className='db-noimage';
-  fallbackSpan.textContent='Savlume';
+  const label=(img.getAttribute('alt')??'').trim()||SITE.name;
+  fallbackSpan.textContent=label.split(/\s+/).filter(Boolean).slice(0,2).map(word=>word.charAt(0).toUpperCase()).join('')||SITE.name.charAt(0);
+  fallbackSpan.title=label;
   parent.appendChild(fallbackSpan);
  }
 }
@@ -421,7 +453,9 @@ function Card({item:x,priority=false,fetchPriority=false,home=false,now}:{item:I
  const d=x.offer,review=isReviewContent(d,x.title),ended=x.timing?.state==='ended'||d.status==='Expired'||d.status==='Out of Stock';
  const current=x.priceDisplay?x.priceDisplay.state==='current':!ended&&x.timing?.state!=='likely-ended';
  const cardSummary=formatCardSummary(x.summary);
- const shippingText=current&&isOffer(d)?reportedShipping(d):null,retailer=d.merchant??(isOffer(d)?'Retailer not stated':x.source);
+ const shippingText=current&&isOffer(d)?reportedShipping(d):null,retailer=d.merchant??(isOffer(d)?'Retailer not stated':publicRetailer(d.merchant,x.source));
+ // A seller name for sale labels; empty when the only recorded source is a deal blog.
+ const seller=publicRetailer(d.merchant,x.source,'');
  const sourceReportedPrice=x.sourceReportedPriceCents??null;
  const sourceReportedListPrice=x.sourceReportedListPriceCents??null;
  const recordedDealPrice=d.recordedDealPriceCents??x.recordedDealPriceCents??null;
@@ -442,13 +476,13 @@ function Card({item:x,priority=false,fetchPriority=false,home=false,now}:{item:I
    {review&&<span className="db-review-badge">{d.review?REVIEW_LABELS[d.review.format]:'Buying guide'}{d.review?.videoUrl?' · Video':''}</span>}
    <h2><Link to={itemPath(x)} prefetch="intent">{cleanDisplayTitle(x.title)}</Link></h2>
    {home?<>
-    {isOffer(d)&&!(cardPriceDisplay?.label==='Checking retailer price'&&cardPriceDisplay.amountCents===null)?<PriceRow d={cardPriceOffer} asOf={x.sourcePublishedAt??x.publishedAt} display={cardPriceDisplay} showEvidence={false} savingsStyle="amount"/>:<p className="db-home-notice">{d.activityScope==='storewide'||d.activityScope==='event'?`Sale at ${d.merchant??x.source}`:d.activityScope==='multi_product'?`Multiple products at ${d.merchant??x.source}`:`${d.kind==='shopping_news'?'Shopping news':d.kind==='recall'?'Recall notice':d.kind==='buying_guide'?'Buying guide':'Offer details'} from ${d.merchant??x.source}`}{d.promotion?.quote?<span className="db-home-notice-quote">{'· '}{d.promotion.quote}</span>:null}</p>}
+    {isOffer(d)&&!(cardPriceDisplay?.label==='Checking retailer price'&&cardPriceDisplay.amountCents===null)?<PriceRow d={cardPriceOffer} asOf={x.sourcePublishedAt??x.publishedAt} display={cardPriceDisplay} showEvidence={false} savingsStyle="amount"/>:<p className="db-home-notice">{offerActivityLabel(d,seller)}{d.promotion?.quote?<span className="db-home-notice-quote">{'· '}{d.promotion.quote}</span>:null}</p>}
     {cardSummary&&<p className="db-home-summary">{cardSummary}</p>}
    </>:<>
     {cardSummary&&<p className="db-summary">{cardSummary}</p>}
     {x.flashDeal&&<div className="db-flash-evidence"><strong>↓ {money(x.flashDeal.previousPriceCents-x.flashDeal.currentPriceCents)} below the price we recorded {shortDay(x.flashDeal.previousObservedAt)}</strong><Link to={itemPath(x)}>Price history →</Link></div>}
-    {!isOffer(d)&&d.activityScope==='storewide'&&<div className="db-deal-pick"><strong>Storewide sale at {d.merchant??x.source}</strong>{d.promotion?.quote&&<span>{d.promotion.quote}</span>}</div>}
-    {!x.flashDeal&&x.dealPick&&['popular','platform_sale'].includes(x.dealPick.kind)&&<div className="db-deal-pick"><strong>{x.dealPick.kind==='popular'?'Popular at '+x.source:'Sale at '+(d.merchant??x.source)}</strong><span>{x.dealPick.reason}</span></div>}
+    {!isOffer(d)&&d.activityScope==='storewide'&&<div className="db-deal-pick"><strong>{seller?`Storewide sale at ${seller}`:'Storewide sale'}</strong>{d.promotion?.quote&&<span>{d.promotion.quote}</span>}</div>}
+    {!x.flashDeal&&x.dealPick&&['popular','platform_sale'].includes(x.dealPick.kind)&&<div className="db-deal-pick"><strong>{x.dealPick.kind==='popular'?(seller?`Popular at ${seller}`:'Popular deal'):(seller?`Sale at ${seller}`:'Sale')}</strong><span>{x.dealPick.reason}</span></div>}
     {x.productActivity&&!x.flashDeal&&!(x.dealPick&&['popular','platform_sale'].includes(x.dealPick.kind))&&<div className="db-deal-pick"><strong>{d.kind==='coupon_offer'?'Product coupon':d.kind==='cashback_offer'?'Product cashback':d.kind==='freebie'?'Free product offer':'Product offer'}</strong></div>}
     {visibleShipping&&<p className="db-card-shipping">{/\b(?:shipping|delivery|postage)\b/i.test(visibleShipping)?visibleShipping:'Shipping: '+visibleShipping}{x.priceDisplay&&['merchant-verified','last-verified'].includes(x.priceDisplay.verification)&&<span> · source-reported</span>}</p>}
     {(conditions.length>0||primeLabel||d.giftCard||x.thirdPartySeller)&&<div className="db-tags">{isOffer(d)&&d.giftCard&&<span>Gift card: {d.giftCard}</span>}{x.thirdPartySeller&&<span className="db-tag-seller" title={'Sold by '+d.seller+' on '+d.merchant}>Sold by {d.seller}</span>}{primeLabel&&<span>{primeLabel}</span>}{conditions.map(t=><span key={t}>{t}</span>)}</div>}
@@ -573,7 +607,7 @@ function InfiniteFeed({initial,path,view,search,category,merchant,brand,sort,off
 }
 function DetailCta({item:x}:{item:Item}){const d=x.offer;
  if(['event','storewide'].includes(d.activityScope??'')&&d.buyUrl&&isDirectRetailerEventUrl(d.buyUrl))return <Buy d={d} item={x}/>;
- if(!isOffer(d)||isReviewContent(d,x.title)&&!d.buyUrl)return <a className="db-buy db-buy-secondary" href={x.sourceUrl} target="_blank" rel="nofollow noopener noreferrer">Read the original at {x.source} <span aria-hidden>↗</span></a>;
+ if(!isOffer(d)||isReviewContent(d,x.title)&&!d.buyUrl)return <a className="db-buy db-buy-secondary" href={x.sourceUrl} target="_blank" rel="nofollow noopener noreferrer">Read the original at {displaySource(x.source,d.merchant)} <span aria-hidden>↗</span></a>;
  return <Buy d={d} item={x}/>;
 }
 function DealHero({item:x,now}:{item:Item;now:number}){const d=x.offer;
@@ -590,7 +624,7 @@ function DealHero({item:x,now}:{item:Item;now:number}){const d=x.offer;
  const terms:[string,string|null|undefined][]=[['Coupon',d.coupon&&d.coupon.length>22?d.coupon:null],['Condition',d.condition&&d.condition.toLowerCase()!=='new'?d.condition:null],['Membership',d.membership],['Subscription',d.subscription],['Renewal',d.renewal],['Cancellation',d.cancellation],['Minimum spend',d.minimumSpend],['Shipping',shipping&&x.priceDisplay&&['merchant-verified','last-verified'].includes(x.priceDisplay.verification)?shipping+' (source-reported)':shipping],['Availability',d.region&&!/^(?:us|usa|united states)$/i.test(d.region.trim())?d.region:null],['Gift card after purchase',d.giftCard],['Cashback after purchase',d.cashback],['Points after purchase',d.points],...(Array.isArray(d.restrictions)?d.restrictions:[]).map(value=>['Eligibility',value] as [string,string])];
  const explainStatus=!x.priceDisplay||x.priceDisplay.state!=='current'||x.priceDisplay.amountCents===null||x.priceDisplay.verification==='last-verified';
  return <section className="db-detail db-detail-deal" aria-label="Offer details">
-  <div className="db-detail-image">{d.imageUrl?<><img src={x.image?.hero??d.imageUrl} data-raw-src={d.imageUrl} alt={productImageAlt(d,x.title,x.priceDisplay?.state==='current'?x.priceDisplay.amountCents:null)} width={600} height={600} loading="eager" fetchPriority="high" decoding="async" referrerPolicy="no-referrer" onError={e=>handleImageFallback(e,x.image,'hero')}/></>:<div className="db-detail-noimage" aria-label="Product image unavailable">Image unavailable</div>}</div>
+  <div className="db-detail-image" data-brand={d.brand??d.merchant??SITE.name}>{d.imageUrl?<><img src={x.image?.hero??d.imageUrl} data-raw-src={d.imageUrl} alt={productImageAlt(d,x.title,x.priceDisplay?.state==='current'?x.priceDisplay.amountCents:null)} width={600} height={600} loading="eager" fetchPriority="high" decoding="async" referrerPolicy="no-referrer" ref={img=>checkHeroImageAfterHydration(img,x.image)} onError={e=>handleImageFallback(e,x.image,'hero')}/><span className="db-detail-fallback" aria-hidden="true">{d.brand??d.merchant??SITE.name}</span></>:<div className="db-detail-noimage" aria-label="Product image unavailable">{d.brand??d.merchant??'Image unavailable'}</div>}</div>
   <div className="db-deal-content"><div className="db-deal-retailer"><span>Retailer</span><StoreBadge as="strong" merchant={d.merchant}/>{x.thirdPartySeller&&d.seller&&<span className="db-deal-seller">Sold by {d.seller}</span>}</div>
    <h1>{itemHeading(x)}</h1>{promoCode&&current&&!isCalibratedRegularPrice(d)&&<h2 className="db-promo-instructions">How to Apply {d.merchant??'Retailer'} Promo Code {promoCode} for {promoModel}</h2>}<Timing offer={d} timing={x.timing} now={now}/>
    {!(checkPending&&reportedAmount===null)&&<div className="db-deal-price-label">{d.priceRestored?(x.priceDisplay?.verification==='merchant-verified'?'Current Store Price':'Latest Reported Store Price'):visiblePriceDisplay?.label??(ended?'Last reported offer price':'Reported offer price')}</div>}
@@ -614,12 +648,12 @@ function Details({item:x,comparisons=[],history=[],likes=0,related=[],merchantRe
  const facts:[string,string|null|undefined][]=[['Brand',d.brand],['Model / variant',[d.model,d.variant].filter(Boolean).join(' · ')||null],['Retailer rating',d.retailerRating?`${d.retailerRating.value.toFixed(1)} / 5 from ${d.retailerRating.count.toLocaleString('en-US')} retailer reviews · checked ${shortTime(d.retailerRating.checkedAt)}`:null],['Condition',d.condition&&(!isOffer(d)||ended||d.condition.toLowerCase()==='new')?d.condition:null],['Sold by',x.thirdPartySeller?null:d.seller],['Fulfilled by',d.fulfillment],['Regular price',!ended&&isOffer(d)&&d.listedPriceCents!==null&&d.listedPriceCents!==d.checkoutPriceCents?money(d.listedPriceCents):null],['Source price comparison',ended?null:d.comparison],['Unit price',d.unitPriceCents!=null?money(d.unitPriceCents)+' per '+(d.unitLabel??'unit'):null],['Warranty',d.warranty],['Returns',d.returns],['Deadline (as stated)',d.deadlineOriginal],['Deadline in Eastern time',d.expiresAt?date(d.expiresAt):null]];
  const rows=(list:[string,string|null|undefined][])=>list.filter((row):row is [string,string]=>!!row[1]);
  return <>
- <button type="button" className="db-detail-back" onClick={()=>window.history.length>1?navigate(-1):navigate('/')}>‹ Back</button><nav className="db-breadcrumbs" aria-label="Breadcrumb"><Link to="/">Home</Link>{x.category&&<><span> / </span><Link to={'/deals/'+x.category}>{CATEGORIES.find(c=>c.key===x.category)?.label??'Shopping'}</Link></>}{d.merchantId&&<><span> / </span><Link to={'/stores/'+d.merchantId}>{d.merchant} deals</Link></>}</nav>{isOffer(d)?<DealHero item={x} now={now}/>:<div className="db-detail"><div className="db-detail-image">{d.imageUrl&&<><img src={x.image?.hero??d.imageUrl} data-raw-src={d.imageUrl} alt={productImageAlt(d,x.title,x.priceDisplay?.state==='current'?x.priceDisplay.amountCents:null)} width={600} height={600} fetchPriority="high" referrerPolicy="no-referrer" onError={event=>handleImageFallback(event,x.image,'hero')}/></>}</div><div><div className="db-meta"><span><StoreBadge merchant={d.merchant??x.source}/></span><span>Posted <time dateTime={x.publishedAt}>{ago(x.publishedAt,now)}</time></span></div><h1>{x.title}</h1><p className="db-lead">{x.summary}</p><DetailCta item={x}/><div className="db-detail-save"><SaveButton id={x.id}/></div></div></div>}
+ <button type="button" className="db-detail-back" onClick={()=>window.history.length>1?navigate(-1):navigate('/')}>‹ Back</button><nav className="db-breadcrumbs" aria-label="Breadcrumb"><Link to="/">Home</Link>{x.category&&<><span> / </span><Link to={'/deals/'+x.category}>{CATEGORIES.find(c=>c.key===x.category)?.label??'Shopping'}</Link></>}{d.merchantId&&<><span> / </span><Link to={'/stores/'+d.merchantId}>{d.merchant} deals</Link></>}</nav>{isOffer(d)?<DealHero item={x} now={now}/>:<div className="db-detail"><div className="db-detail-image">{d.imageUrl&&<><img src={x.image?.hero??d.imageUrl} data-raw-src={d.imageUrl} alt={productImageAlt(d,x.title,x.priceDisplay?.state==='current'?x.priceDisplay.amountCents:null)} width={600} height={600} fetchPriority="high" referrerPolicy="no-referrer" ref={img=>checkHeroImageAfterHydration(img,x.image)} onError={event=>handleImageFallback(event,x.image,'hero')}/></>}</div><div><div className="db-meta"><span><StoreBadge merchant={publicRetailer(d.merchant,x.source)}/></span><span>Posted <time dateTime={x.publishedAt}>{ago(x.publishedAt,now)}</time></span></div><h1>{x.title}</h1><p className="db-lead">{neutralSourceMentions(x.summary)}</p><DetailCta item={x}/><div className="db-detail-save"><SaveButton id={x.id}/></div></div></div>}
  {d.priceRestored&&<section className="db-related db-expired-recommendations" aria-labelledby="db-calibrated-title"><div><h2 id="db-calibrated-title">Active Similar Deals on Sale Now</h2><p>This retailer listing is shown at its current price. Compare these active offers for current discounts.</p></div>{related.length>0?<div className="db-grid">{related.map(item=><Card key={item.id} item={item} now={now}/>)}</div>:<p className="db-expired-browse">Browse <Link to="/flash">Top Picks</Link>{x.category&&<> or <Link to={'/deals/'+x.category}>{CATEGORIES.find(c=>c.key===x.category)?.label??'this category'}</Link></>} for current offers.</p>}</section>}
  {d.status==='Expired'&&<section className="db-related db-expired-recommendations" aria-labelledby="db-expired-title"><div><h2 id="db-expired-title">This offer has ended</h2><p>The price above is kept as a historical reference. Here are current offers with direct retailer links; confirm price and availability at checkout.</p></div>{related.length>0?<div className="db-grid">{related.map(item=><Card key={item.id} item={item} now={now}/>)}</div>:<p className="db-expired-browse">Browse <Link to="/flash">Top Picks</Link>{x.category&&<> or <Link to={'/deals/'+x.category}>{CATEGORIES.find(c=>c.key===x.category)?.label??'this category'}</Link></>} for current offers.</p>}</section>}
  <Suspense fallback={null}><AiIntroduction item={x}/><ReviewInsights offer={d} source={x.source} sourceUrl={x.sourceUrl}/><PriceInsights item={x} history={history} comparisons={comparisons} searchComparisons={x.searchComparisons??[]}/></Suspense>
  {rows(facts).length>0&&<details className="db-panel db-offer-details"><summary>{isOffer(d)?'More product & offer details':'More details'}</summary><dl>{rows(facts).map(([k,v])=><div key={k}><dt>{k}</dt><dd>{v}</dd></div>)}</dl></details>}
- <details className="db-panel db-source-record db-offer-details"><summary id="evidence">Sources & checks</summary><p className="db-evidence-time">Published on Savlume: <time dateTime={x.publishedAt}>{date(x.publishedAt)}</time>{x.updatedAt&&<> · Content updated: <time dateTime={x.updatedAt}>{date(x.updatedAt)}</time></>}{x.sourcePublishedAt&&<> · Source published: <time dateTime={x.sourcePublishedAt}>{date(x.sourcePublishedAt)}</time></>}</p><ul>{(Array.isArray(x.sources)&&x.sources.length?x.sources:[{name:x.source,url:x.sourceUrl}]).map(s=><li key={s.url}><a href={s.url} target="_blank" rel="nofollow noopener noreferrer">{s.name} — original report ↗</a></li>)}</ul>{isOffer(d)&&<>{x.priceDisplay?(priceEvidenceLabel(x.priceDisplay,x.sourcePublishedAt??x.publishedAt)?<p>{priceEvidenceLabel(x.priceDisplay,x.sourcePublishedAt??x.publishedAt)}</p>:null):<p>Price verification details unavailable.</p>}{d.lastCheckedAt&&<p>Most recent check: {date(d.lastCheckedAt)}.</p>}{d.verificationNote&&<p className="db-note">{d.verificationNote}</p>}{d.imageUrl&&<p className="db-note">Image from <a href={d.imageSource??x.sourceUrl} target="_blank" rel="nofollow noopener noreferrer">the original source ↗</a></p>}</>}{d.priceEvidence&&<p className="db-note">Price wording in the source: “{d.priceEvidence}”</p>}<p><Link to="/about#methodology">How we check offers</Link> · <a href={itemPath(x)+'/markdown'}>Text version</a></p></details>
+ <details className="db-panel db-source-record db-offer-details"><summary id="evidence">Sources & checks</summary><p className="db-evidence-time">Published on Savlume: <time dateTime={x.publishedAt}>{date(x.publishedAt)}</time>{x.updatedAt&&<> · Content updated: <time dateTime={x.updatedAt}>{date(x.updatedAt)}</time></>}{x.sourcePublishedAt&&<> · Source published: <time dateTime={x.sourcePublishedAt}>{date(x.sourcePublishedAt)}</time></>}</p><ul>{(Array.isArray(x.sources)&&x.sources.length?x.sources:[{name:x.source,url:x.sourceUrl}]).map(s=><li key={s.url}><a href={s.url} target="_blank" rel="nofollow noopener noreferrer">{displaySource(s.name,d.merchant)} — original report ↗</a></li>)}</ul>{isOffer(d)&&<>{x.priceDisplay?(priceEvidenceLabel(x.priceDisplay,x.sourcePublishedAt??x.publishedAt)?<p>{priceEvidenceLabel(x.priceDisplay,x.sourcePublishedAt??x.publishedAt)}</p>:null):<p>Price verification details unavailable.</p>}{d.lastCheckedAt&&<p>Most recent check: {date(d.lastCheckedAt)}.</p>}{d.verificationNote&&<p className="db-note">{d.verificationNote}</p>}{d.imageUrl&&<p className="db-note">Image from <a href={d.imageSource??x.sourceUrl} target="_blank" rel="nofollow noopener noreferrer">the original source ↗</a></p>}</>}{d.priceEvidence&&<p className="db-note">Price wording in the source: “{d.priceEvidence}”</p>}<p><Link to="/about#methodology">How we check offers</Link> · <a href={itemPath(x)+'/markdown'}>Text version</a></p></details>
  {isOffer(d)&&<Suspense fallback={null}><><ProductWorthVote articleId={x.id}/><WatchPrice key={x.id} articleId={x.id} price={x.priceDisplay?.amountCents??null} sourceReported={x.priceDisplay?.verification==='source-reported'} available={x.priceDisplay?.state==='current'&&['Active','Unverified'].includes(d.status)&&!!d.buyUrl&&['merchant-verified','source-reported'].includes(x.priceDisplay.verification)}/></></Suspense>}<Suspense fallback={null}><DetailActions key={x.id} item={x} initialLikes={likes}/></Suspense>
  <div id="comments"><CommunityArea articleId={x.id} initialPosts={x.communityComments}/></div>
  <nav className="db-related db-internal-hubs" aria-labelledby="db-internal-hubs-title"><h2 id="db-internal-hubs-title">Related Buying Guides, Brand &amp; Store Hubs</h2><ul>{guides.map(topic=><li key={topic.slug}><Link to={'/best/'+topic.slug}>{topic.h1}</Link></li>)}{brandUrl&&<li><Link to={brandUrl}>All {d.brand} Deals &amp; Promo Codes</Link></li>}{storeUrl&&<li><Link to={storeUrl}>All {d.merchant} Promo Codes &amp; Daily Deals</Link></li>}{categoryUrl&&<li><Link to={categoryUrl}>All {categoryLabel} Deals &amp; Promo Codes</Link></li>}</ul></nav>

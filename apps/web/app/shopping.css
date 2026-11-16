@@ -1103,3 +1103,11 @@
 .db-blog-cover img.db-blog-cover-main{flex:1.4 1 0}
 .db-blog-cover-text{display:grid;place-items:center;background:linear-gradient(135deg,#ECFDF5,#F8FAFC)}
 .db-blog-cover-text span{font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#047857}
+
+/* Detail hero: a failed image reveals the brand mark underneath instead of an empty frame. */
+.db-detail-image{position:relative}
+.db-detail-image .db-detail-fallback{position:absolute;inset:0;display:grid;place-items:center;padding:24px;text-align:center;font-size:15px;font-weight:700;letter-spacing:.02em;color:#047857;background:#ECFDF5;border-radius:12px;z-index:0}
+.db-detail-image img{position:relative;z-index:1;background:#fff}
+.db-detail-image img[style*="display: none"]+.db-detail-fallback{z-index:2}
+/* Feed styles pin images with display:block!important, so the failure state needs its own class. */
+img.db-image-failed{display:none!important}

@@ -251,7 +251,7 @@ export function registerShopping(app:FastifyInstance){
   lines.splice(lines.indexOf('## Brand collections'),0,'','## Top brand hubs',...topBrands.map(([slug,name])=>`- [${name} deals and promo codes](${base}/brands/${slug})`));
   lines.splice(lines.indexOf('## Buying guides'),0,'','## Head-to-head model comparisons',`- [All model comparisons](${base}/compare): Current prices, listed-price references, offer conditions and retailer links.`,...comparePairs.map(pair=>`- [${pair.title}](${base}/compare/${pair.slug})`));
   lines.splice(lines.indexOf('## Buying guides'),0,'','## Editorial shopping playbooks',`- [All shopping playbooks](${base}/blog): Long-form consumer guides for price checks, membership decisions, seasonal timing and checkout rules.`,...BLOG_POSTS_META.map(post=>`- [${post.title}](${base}/blog/${post.slug}): ${post.description}`));
-  return sendTextWithEtag(req,reply,lines.join('\n')+'\n',{etagPrefix:'shopping-llms',cacheControl:'public, s-maxage=3600, stale-while-revalidate=86400',contentType:'text/plain; charset=utf-8'});
+  return sendTextWithEtag(req,reply,lines.join('\n')+'\n',{etagPrefix:'shopping-llms',cacheControl:'public, s-maxage=3600, stale-while-revalidate=86400',contentType:'text/plain; charset=utf-8',contentDisposition:'inline'});
  });
  app.get('/llms-full.txt',async(req,reply)=>{
   const now=Date.now();
@@ -292,30 +292,43 @@ export function registerShopping(app:FastifyInstance){
    try{body=await llmsFullPending;llmsFullCache={body,expiresAt:Date.now()+30*60_000};}
    finally{llmsFullPending=null;}
   }
-  return sendTextWithEtag(req,reply,body,{etagPrefix:'shopping-llms-full',cacheControl:'public, s-maxage=1800, stale-while-revalidate=86400',contentType:'text/plain; charset=utf-8'});
+  return sendTextWithEtag(req,reply,body,{etagPrefix:'shopping-llms-full',cacheControl:'public, s-maxage=1800, stale-while-revalidate=86400',contentType:'text/plain; charset=utf-8',contentDisposition:'inline'});
  });
  app.get('/robots.txt',async(req,reply)=>sendTextWithEtag(req,reply,['Googlebot','Bingbot','GPTBot','OAI-SearchBot','ChatGPT-User','PerplexityBot','ClaudeBot','anthropic-ai','Google-Extended'].map(bot=>`User-agent: ${bot}\nAllow: /\nDisallow: /admin\nDisallow: /api/auth\nDisallow: /api/admin\n`).join('\n')+`\nUser-agent: *\nAllow: /\nDisallow: /admin\nDisallow: /api/auth\nDisallow: /api/admin\n\nSitemap: ${config.siteUrl}/sitemap.xml\n`,{etagPrefix:'shopping-robots',cacheControl:'public, max-age=3600',contentType:'text/plain; charset=utf-8'}));
  if(config.indexNowKey)app.get(`/${config.indexNowKey}.txt`,async(req,reply)=>sendTextWithEtag(req,reply,config.indexNowKey!,{etagPrefix:'indexnow',cacheControl:'public, max-age=3600',contentType:'text/plain; charset=utf-8'}));
  app.get('/sitemap.xml',async(_req,reply)=>{
-  const cachedCatalog=savlumeCache.seoCatalogs.get('shopping-seo-catalog')?.value;
-  const itemPageCount=Math.max(2,Math.ceil((cachedCatalog?.total??5235)/SHOPPING_SITEMAP_SIZE));
-  const itemSitemaps=Array.from({length:itemPageCount},(_,i)=>`<sitemap><loc>${xml(config.siteUrl)}/sitemaps/items-${i+1}.xml</loc></sitemap>`).join('');
+  // Each child sitemap carries the freshest timestamp it can prove, so a crawler knows which one to
+  // re-read first instead of treating the whole index as equally stale.
+  const catalog=await shoppingSeoCatalog();
+  const itemPageCount=Math.max(2,Math.ceil(catalog.total/SHOPPING_SITEMAP_SIZE));
+  const stamp=(value:string|null|undefined)=>{const t=value?Date.parse(value):NaN;return Number.isFinite(t)?new Date(t).toISOString():null;};
+  const pagesLastmod=stamp(catalog.latest);
+  const itemSitemaps=await Promise.all(Array.from({length:itemPageCount},async(_,i)=>{
+   const page=i+1;
+   let lastmod:string|null=null;
+   try{
+    const entries=await shoppingSitemapEntries(page);
+    lastmod=entries.reduce<string|null>((best,entry)=>{const value=stamp(entry.modified);return !value?best:!best||value>best?value:best;},null);
+   }catch{lastmod=null;}
+   return `<sitemap><loc>${xml(config.siteUrl)}/sitemaps/items-${page}.xml</loc>${lastmod?`<lastmod>${xml(lastmod)}</lastmod>`:''}</sitemap>`;
+  }));
   return reply
    .header('Cache-Control','public, max-age=3600')
+   .header('Content-Disposition','inline')
    .type('application/xml; charset=utf-8')
-   .send(`<?xml version="1.0" encoding="UTF-8"?><sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"><sitemap><loc>${xml(config.siteUrl)}/sitemaps/pages.xml</loc></sitemap>${itemSitemaps}</sitemapindex>`);
+   .send(`<?xml version="1.0" encoding="UTF-8"?><sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"><sitemap><loc>${xml(config.siteUrl)}/sitemaps/pages.xml</loc>${pagesLastmod?`<lastmod>${xml(pagesLastmod)}</lastmod>`:''}</sitemap>${itemSitemaps.join('')}</sitemapindex>`);
  });
  app.get('/sitemaps/pages.xml',async(req,reply)=>{
   const [catalog,compareSnapshot]=await Promise.all([shoppingSeoCatalog(),cachedComparisonSnapshot()]);
   const body=shoppingPagesSitemapEntries(catalog,compareSnapshot.bestPages,compareSnapshot.pairs.map(({slug,updatedAt})=>({slug,lastmod:updatedAt}))).map(entry=>`<url><loc>${xml(config.siteUrl+entry.path)}</loc>${entry.lastmod?`<lastmod>${xml(entry.lastmod)}</lastmod>`:''}<changefreq>${entry.changefreq}</changefreq><priority>${entry.priority}</priority></url>`).join('');
-  return sendTextWithEtag(req,reply,`<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${body}</urlset>`,{etagPrefix:'shopping-sitemap-pages',cacheControl:SITEMAP_CACHE,contentType:'application/xml'});
+  return sendTextWithEtag(req,reply,`<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${body}</urlset>`,{etagPrefix:'shopping-sitemap-pages',cacheControl:SITEMAP_CACHE,contentType:'application/xml; charset=utf-8',contentDisposition:'inline'});
  });
  app.get('/sitemaps/:file',async(req,reply)=>{
   const m=/^items-([1-9]\d*)\.xml$/.exec((req.params as {file:string}).file);const page=Number(m?.[1]);
   if(!m||!Number.isSafeInteger(page))return reply.code(404).send('Not found');
   const catalog=await shoppingSeoCatalog();if(page>Math.ceil(catalog.total/SHOPPING_SITEMAP_SIZE))return reply.code(404).send('Not found');
   const entries=await shoppingSitemapEntries(page);
-  return sendTextWithEtag(req,reply,`<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${entries.map(x=>`<url><loc>${xml(config.siteUrl+x.path)}</loc><lastmod>${xml(x.modified)}</lastmod><changefreq>daily</changefreq><priority>0.7</priority></url>`).join('')}</urlset>`,{etagPrefix:'shopping-sitemap-items-'+page,cacheControl:SITEMAP_CACHE,contentType:'application/xml'});
+  return sendTextWithEtag(req,reply,`<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${entries.map(x=>`<url><loc>${xml(config.siteUrl+x.path)}</loc><lastmod>${xml(x.modified)}</lastmod><changefreq>daily</changefreq><priority>0.7</priority></url>`).join('')}</urlset>`,{etagPrefix:'shopping-sitemap-items-'+page,cacheControl:SITEMAP_CACHE,contentType:'application/xml; charset=utf-8',contentDisposition:'inline'});
  });
  app.get('/manifest.webmanifest',async(_req,reply)=>reply.header('Cache-Control','public, max-age=86400').type('application/manifest+json').send({name:SITE.name,short_name:SITE.name,lang:'en-US',start_url:'/',display:'standalone',theme_color:'#14655d',background_color:'#f6f5ef',icons:[{src:'/icon.png',sizes:'512x512',type:'image/png'}]}));
  app.get('/openapi-v1.json',async(req,reply)=>sendTextWithEtag(req,reply,await shoppingOpenApiJson(),{etagPrefix:'shopping-openapi',cacheControl:'public, max-age=300, stale-while-revalidate=3600',contentType:'application/json; charset=utf-8'}));
