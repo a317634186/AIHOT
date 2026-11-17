@@ -8,6 +8,7 @@ import { load } from 'cheerio';
 import { createHash } from 'node:crypto';
 import { guideFor, isDirectRetailerEventUrl, isDirectRetailerProductUrl, merchantFor, redirectorFor, SHOPPING } from '@aihot/industry/shopping';
 import { cleanMerchantLink, unitPrice, cents, effectiveStatus, offerTiming, isOffer, isCalibratedRegularPrice, offerIdentity, safeCopy, supportedItemSeoTitle, supportedPromotion, type Offer } from '@aihot/contracts/shopping';
+import { referencePriceFromSource } from '@aihot/contracts/price-reference';
 import { canonicalProductTargetKey, eventCampaignKey, inferredEventMerchantId, sameRetailerProductDeal } from '@aihot/contracts/shopping-dedup';
 import {consistentOfferTitle,expectedRetailers,needsLinkRepair,sourceOfferPrice,isSaleAnnouncement,isNonPromotionalAnnouncement,saleAnnouncementAsNews,reviewAsGuide,sourceProductOfferEvidence,validateCouponPrice} from '@aihot/contracts/shopping-integrity';
 import {isReviewHeadline} from '@aihot/contracts/reviews';
@@ -248,6 +249,11 @@ export async function extractShopping(articleId:string,opts:{refreshReview?:bool
  const quote=d.priceEvidence&&material.includes(d.priceEvidence.replace(/\s+/g,' '))?d.priceEvidence:null;
  const quotedAmount=(value:string|null)=>{const amount=cents(value);if(amount===null||!quote)return null;const matches=[...quote.matchAll(/\$\s*(\d[\d,]*(?:\.\d{1,2})?)(?!\d|\.\d)/g)];return matches.some(m=>cents(m[1])===amount)?amount:null;};
  const listedPriceCents=quotedAmount(d.listedPrice),checkoutPriceCents=quotedAmount(d.checkoutPrice),initialPriceCents=checkoutPriceCents??listedPriceCents;
+ // A source often states the was price outside the short evidence quote the model returned
+ // ("$67 $160 free shipping" in the header, "regularly $299" in the next sentence). Recover it from
+ // the article text under the same rules, so a stated discount is never dropped.
+ const recoveredReference=listedPriceCents===null&&checkoutPriceCents!==null?referencePriceFromSource(material,checkoutPriceCents):null;
+ const effectiveListedCents=listedPriceCents??recoveredReference?.wasCents??null;
  const expiresAt=d.expiresAt&&d.deadlineOriginal&&body.includes(d.deadlineOriginal)&&d.deadlineOriginal.includes(d.expiresAt)&&/T\d\d:\d\d.*(?:Z|[+-]\d\d:\d\d)$/.test(d.expiresAt)&&Number.isFinite(Date.parse(d.expiresAt))?d.expiresAt:null;
  // A review that states a verdict but lists no strengths or trade-offs reads as an empty card, so fill
  // the gap from the same model output's purchase rationale (grounded in the same source text).
@@ -258,9 +264,9 @@ export async function extractShopping(articleId:string,opts:{refreshReview?:bool
  const retailerImage=storewideEvent?null:sourceImage;
  const fallbackImage=storewideEvent?sourceImage:!retailerOwnImage?retailerImage:null;
  const brand=d.brand&&d.brandEvidence&&material.toLowerCase().includes(d.brandEvidence.toLowerCase())&&d.brandEvidence.toLowerCase().includes(d.brand.toLowerCase())?d.brand.trim():null;
- const seoDesc=supportedSeoDescription(d.seoDescription,initialPriceCents,listedPriceCents);
+ const seoDesc=supportedSeoDescription(d.seoDescription,initialPriceCents,effectiveListedCents);
  const {brandEvidence:_brandEvidence,seoDescription:_rawSeoDescription,seoTitle:_rawSeoTitle,...extracted}=d;
- const data:Offer={...extracted,brand,review,promotion:supportedPromotion(d.promotion,material),aiOverview:d.aiOverview?cleanRecommendation(d.aiOverview,isOffer(d)):null,seoDescription:seoDesc,seoDescriptionPriceCents:seoDesc?initialPriceCents:null,seoTitle:null,searchKeywords:[...new Set(d.searchKeywords.map(value=>safeCopy(value).trim()).filter(Boolean))].slice(0,8),merchant:merchant?.name??null,merchantId:merchant?.id??null,buyUrl,imageUrl:retailerOwnImage&&!storewideEvent?retailerImage:null,imageSource:retailerOwnImage&&!storewideEvent&&retailerImage?a.url:null,imageFallbackUrl:fallbackImage,imageFallbackSource:fallbackImage?a.url:null,listedPriceCents,checkoutPriceCents,currency:'USD',unitPriceCents:unitPrice(checkoutPriceCents,d.unitQuantity),priceEvidence:quote,comparison:d.comparison?safeCopy(d.comparison):null,expiresAt,status:'Unverified',verifiedAt:null,lastCheckedAt:null,verificationNote:'Source report only. Merchant price, availability, seller, and conditions have not been independently confirmed.',identity:null};
+ const data:Offer={...extracted,brand,review,promotion:supportedPromotion(d.promotion,material),aiOverview:d.aiOverview?cleanRecommendation(d.aiOverview,isOffer(d)):null,seoDescription:seoDesc,seoDescriptionPriceCents:seoDesc?initialPriceCents:null,seoTitle:null,searchKeywords:[...new Set(d.searchKeywords.map(value=>safeCopy(value).trim()).filter(Boolean))].slice(0,8),merchant:merchant?.name??null,merchantId:merchant?.id??null,buyUrl,imageUrl:retailerOwnImage&&!storewideEvent?retailerImage:null,imageSource:retailerOwnImage&&!storewideEvent&&retailerImage?a.url:null,imageFallbackUrl:fallbackImage,imageFallbackSource:fallbackImage?a.url:null,listedPriceCents:effectiveListedCents,checkoutPriceCents,currency:'USD',unitPriceCents:unitPrice(checkoutPriceCents,d.unitQuantity),priceEvidence:quote,comparison:d.comparison?safeCopy(d.comparison):null,expiresAt,status:'Unverified',verifiedAt:null,lastCheckedAt:null,verificationNote:'Source report only. Merchant price, availability, seller, and conditions have not been independently confirmed.',identity:null};
  data.seoTitle=old?.seo_title?.trim()||supportedItemSeoTitle(d.seoTitle,{title:a.title,summary:body,offer:data,priceDisplay:{state:'current',amountCents:initialPriceCents,label:'',verification:'source-reported',verifiedAt:null,lastCheckedAt:null}});
  if(old?.seo_title?.trim()&&Array.isArray(old.search_keywords))data.searchKeywords=old.search_keywords.filter((value):value is string=>typeof value==='string').slice(0,8);
  data.priceIssue=validateCouponPrice({title:a.title,sourceBody:body,offer:data}).issue;
@@ -453,7 +459,7 @@ export async function resolveMissingShoppingLinks(limit=12){
   ORDER BY p.timeline_at DESC LIMIT ${Math.max(1,Math.min(limit,24))}`;
  if(!rows.length)return {scanned:0,resolved:0};
  const gateway=await runtimeGateway();if(!gateway.apiKey||!gateway.baseUrl)return {scanned:rows.length,resolved:0,skipped:'model gateway not configured'};
- const models=[...new Set([gatewayModelId(gateway,gateway.searchSlot),gatewayModelId(gateway,gateway.reviewFallbackSlot)])].filter(Boolean);let resolved=0,errors=0;
+ const models=[...new Set([gatewayModelId(gateway,gateway.searchSlot),gatewayModelId(gateway,gateway.searchFallbackSlot)])].filter(Boolean);let resolved=0,errors=0;
  for(let start=0;start<rows.length;start+=6){
   const batch=rows.slice(start,start+6),ids=batch.map(row=>row.article_id),attempt=Math.floor(Date.now()/(24*60*60*1000));
   const items=batch.map(row=>({id:row.article_id,title:row.title,product:row.data.product,model:row.data.model,variant:row.data.variant,retailer:row.data.merchant??row.data.seller,price:row.data.checkoutPriceCents??row.data.listedPriceCents,sourceUrl:row.source_url,sourceText:String(row.body_text??'').replace(/\s+/g,' ').slice(0,600)}));
@@ -886,7 +892,7 @@ export async function recoverPendingEndedPrices(limit=6){
  if(!rows.length)return {scanned:0,restored:0,expired:0};
  const gateway=await runtimeGateway();
  if(!gateway.apiKey||!gateway.baseUrl)return {scanned:rows.length,restored:0,expired:0};
- const models=[...new Set([gatewayModelId(gateway,gateway.searchSlot),gatewayModelId(gateway,gateway.reviewFallbackSlot)])].filter(Boolean);
+ const models=[...new Set([gatewayModelId(gateway,gateway.searchSlot),gatewayModelId(gateway,gateway.searchFallbackSlot)])].filter(Boolean);
  let restored=0,expired=0;
  for(let start=0;start<rows.length;start+=3){
   const batch=rows.slice(start,start+3),ids=batch.map(r=>r.article_id),bucket=Math.floor(Date.now()/(6*3600_000));
