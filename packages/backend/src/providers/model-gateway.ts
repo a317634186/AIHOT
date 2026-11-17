@@ -11,7 +11,7 @@ import type {GatewayFields,GatewayInput,GatewayOverview,GatewaySlot} from '@aiho
 const SETTING='ai.gateway';
 const slot=z.enum(['default','primary','secondary']);
 const modelId=z.string().trim().min(1).max(200).regex(/^[A-Za-z0-9][A-Za-z0-9._:/+-]*$/);
-const fields=z.object({baseUrl:z.string().trim().min(1).max(1000),defaultModelId:modelId,primaryModelId:modelId,secondaryModelId:modelId,searchSlot:slot,reviewSearchSlot:slot,reviewFallbackSlot:slot,jsonMode:z.boolean()});
+const fields=z.object({baseUrl:z.string().trim().min(1).max(1000),defaultModelId:modelId,primaryModelId:modelId,secondaryModelId:modelId,searchSlot:slot,searchFallbackSlot:slot,reviewSearchSlot:slot,reviewFallbackSlot:slot,jsonMode:z.boolean()});
 const inputSchema=fields.extend({apiKey:z.string().max(4096).optional().default(''),revision:z.number().int().nonnegative(),reason:z.string().trim().min(1).max(500)}).strict();
 interface EncryptedKey {iv:string;tag:string;ciphertext:string}
 interface EnvironmentGateway {useEnvironment:true;revision:number}
@@ -34,13 +34,16 @@ function decrypt(value:EncryptedKey):string{
  try{const decipher=createDecipheriv('aes-256-gcm',encryptionKey(),Buffer.from(value.iv,'base64'));decipher.setAAD(Buffer.from(SETTING));decipher.setAuthTag(Buffer.from(value.tag,'base64'));return Buffer.concat([decipher.update(Buffer.from(value.ciphertext,'base64')),decipher.final()]).toString('utf8');}
  catch{throw Error('Cannot decrypt saved model credentials. Check the server encryption-key backup.');}
 }
-function defaults():GatewayFields{return {baseUrl:credential('models','LLM_BASE_URL')??'',defaultModelId:process.env.LLM_MODEL??'',primaryModelId:'gemini-3.8-flash-high',secondaryModelId:'gpt-6-luna',searchSlot:'primary',reviewSearchSlot:'primary',reviewFallbackSlot:'secondary',jsonMode:process.env.LLM_JSON_MODE!=='false'};}
+function defaults():GatewayFields{return {baseUrl:credential('models','LLM_BASE_URL')??'',defaultModelId:process.env.LLM_MODEL??'',primaryModelId:'gemini-3.8-flash-high',secondaryModelId:'gpt-6-luna',searchSlot:'primary',searchFallbackSlot:'secondary',reviewSearchSlot:'primary',reviewFallbackSlot:'secondary',jsonMode:process.env.LLM_JSON_MODE!=='false'};}
 export async function runtimeGateway():Promise<RuntimeGateway>{
  const [row]=await sql<{value:StoredGateway|EnvironmentGateway;updated_at:Date}[]>`SELECT value,updated_at FROM settings WHERE key=${SETTING}`;
  if(!row||'useEnvironment' in row.value){const apiKey=credential('models','LLM_API_KEY');if(apiKey)registerSecret(apiKey);return {...defaults(),source:'environment',apiKeyConfigured:!!apiKey,apiKey,revision:row?.value.revision??0,updatedAt:row?.updated_at.toISOString()??null,identity:'environment'};}
  const stored=row.value as StoredGateway;const apiKey=decrypt(stored.encryptedApiKey);registerSecret(apiKey);
  const {encryptedApiKey,...publicFields}=stored;
- return {...publicFields,apiKey,apiKeyConfigured:true,source:'admin',updatedAt:row.updated_at.toISOString(),identity:'gateway:'+createHash('sha256').update(JSON.stringify([stored.baseUrl,stored.defaultModelId,stored.primaryModelId,stored.secondaryModelId,stored.jsonMode,stored.revision])).digest('hex')};
+ // A configuration saved before a slot existed has no value for it; fall back to the built-in default
+ // so the admin form never renders an empty selector.
+ const d=defaults();
+ return {...publicFields,searchFallbackSlot:publicFields.searchFallbackSlot??d.searchFallbackSlot,apiKey,apiKeyConfigured:true,source:'admin',updatedAt:row.updated_at.toISOString(),identity:'gateway:'+createHash('sha256').update(JSON.stringify([stored.baseUrl,stored.defaultModelId,stored.primaryModelId,stored.secondaryModelId,stored.jsonMode,stored.revision])).digest('hex')};
 }
 export function gatewayMetadata(gateway:RuntimeGateway):GatewayOverview{const {apiKey,identity,...metadata}=gateway;return metadata;}
 export async function gatewayOverview(){return gatewayMetadata(await runtimeGateway());}

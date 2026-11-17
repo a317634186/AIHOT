@@ -11,7 +11,7 @@ export function ModelGatewaySettings({gateway:g}:{gateway:GatewayOverview}){
  const [reset,setReset]=useState(false);
  function configuration(test=false):GatewayInput{
   const data=new FormData(form.current!);
-  return {baseUrl:String(data.get('baseUrl')??''),defaultModelId:String(data.get('defaultModelId')??''),primaryModelId:String(data.get('primaryModelId')??''),secondaryModelId:String(data.get('secondaryModelId')??''),apiKey:keyInput.current?.value??'',revision:g.revision,reason:String(data.get('reason')??'')||(test?'Connection test':''),jsonMode:data.get('jsonMode')==='on',searchSlot:String(data.get('searchSlot')) as GatewaySlot,reviewSearchSlot:String(data.get('reviewSearchSlot')) as GatewaySlot,reviewFallbackSlot:String(data.get('reviewFallbackSlot')) as GatewaySlot};
+  return {baseUrl:String(data.get('baseUrl')??''),defaultModelId:String(data.get('defaultModelId')??''),primaryModelId:String(data.get('primaryModelId')??''),secondaryModelId:String(data.get('secondaryModelId')??''),apiKey:keyInput.current?.value??'',revision:g.revision,reason:String(data.get('reason')??'')||(test?'Connection test':''),jsonMode:data.get('jsonMode')==='on',searchSlot:String(data.get('searchSlot')) as GatewaySlot,searchFallbackSlot:String(data.get('searchFallbackSlot')) as GatewaySlot,reviewSearchSlot:String(data.get('reviewSearchSlot')) as GatewaySlot,reviewFallbackSlot:String(data.get('reviewFallbackSlot')) as GatewaySlot};
  }
  return <Card title="AI 接口配置" right={<Badge tone={g.source==='admin'?'accent':'muted'}>{g.source==='admin'?'后台配置':'服务器配置'}</Badge>}>
   <p className="mb-4 text-[13px] text-ink-3">填写 OpenAI 兼容接口地址、模型 ID 和 API Key。保存后用于后续任务，无需重启。主模型、辅助模型都可填写其他提供商的模型 ID；在下方为各项任务选择要使用的模型。</p>
@@ -26,7 +26,7 @@ export function ModelGatewaySettings({gateway:g}:{gateway:GatewayOverview}){
    </div>
    <details className="mt-4 text-[13px]">
     <summary className="cursor-pointer text-ink-2">高级设置：搜索模型和 JSON 支持</summary>
-    <div className="mt-3 grid gap-4 md:grid-cols-3">{[['searchSlot','优惠搜索',g.searchSlot],['reviewSearchSlot','评测搜索',g.reviewSearchSlot],['reviewFallbackSlot','评测搜索备用',g.reviewFallbackSlot]].map(([name,label,value])=><Field key={name} label={label}><Select name={name} defaultValue={value}><option value="primary">主模型</option><option value="secondary">辅助模型</option><option value="default">默认模型</option></Select></Field>)}</div>
+    <div className="mt-3 grid gap-4 md:grid-cols-2 xl:grid-cols-4">{[['searchSlot','优惠搜索',g.searchSlot],['searchFallbackSlot','优惠搜索备用',g.searchFallbackSlot],['reviewSearchSlot','评测搜索',g.reviewSearchSlot],['reviewFallbackSlot','评测搜索备用',g.reviewFallbackSlot]].map(([name,label,value])=><Field key={name} label={label}><Select name={name} defaultValue={value}><option value="primary">主模型</option><option value="secondary">辅助模型</option><option value="default">默认模型</option></Select></Field>)}</div>
     <label className="mt-3 flex items-center gap-2"><input name="jsonMode" type="checkbox" defaultChecked={g.jsonMode}/>接口支持 JSON Object 输出</label>
     <p className="mt-2 text-[12px] text-ink-4">搜索需要提供商支持 Responses API 和 web_search 工具。连接测试检查文本生成；不代表已验证联网搜索。</p>
    </details>
