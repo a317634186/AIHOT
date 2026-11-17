@@ -244,6 +244,24 @@ function isBrokenOrUnusableImage(url: string | null | undefined): boolean {
   return false;
 }
 
+// Deal-blog hosts that stamp watermarks or crop press images; the official merchant shot is better.
+const WATERMARKED_IMAGE_HOST=/(?:9to5toys|9to5mac|hip2save|the-gadgeteer|money.?saving.?mom|bensbargains|dlnws)\.com/i;
+function isThirdPartyBlogImage(url:string|null|undefined):boolean{
+ return typeof url==='string'&&WATERMARKED_IMAGE_HOST.test(url);
+}
+
+/**
+ * The official Amazon product image for an ASIN, which is always a clean white-background shot.
+ * Derived from the offer's own buy URL so no extra request is needed at read time.
+ */
+function asinProductImage(buyUrl:unknown):string|null{
+ if(typeof buyUrl!=='string')return null;
+ // Amazon URLs carry a descriptive slug before /dp/ (".../Apple-generation-.../dp/B0HMX69N2K"), so
+ // the marker can appear anywhere in the path.
+ const m=/amazon\.com\/(?:.*\/)?(?:dp|gp\/product|gp\/aw\/d)\/([A-Z0-9]{10})(?:[/?]|$)/i.exec(buyUrl);
+ return m?`https://m.media-amazon.com/images/P/${m[1]}.01._SCLZZZZZZZ_.jpg`:null;
+}
+
 function sanitizeImageUrl(raw: string | null | undefined): string | null {
   if (!raw || typeof raw !== 'string') return null;
   let url = raw.trim().replace(/&#038;/g, '&');
@@ -326,10 +344,18 @@ async function computeShoppingItems(opts:{view?:string;category?:string;merchant
    const preStatus=effectiveStatus(sourceData,now);
    if(preStatus==='Expired'||preTiming?.state==='ended'||preTiming?.state==='likely-ended'){
     const comparisonAmount=cents((`${sourceData.comparison??''} ${sourceData.priceEvidence??''}`).match(/\$\s*(\d[\d,]*(?:\.\d{1,2})?)(?!\d|\.\d)/)?.[1]);
-    const regularCents=sourceData.listedPriceCents&&sourceData.checkoutPriceCents?Math.max(sourceData.listedPriceCents,sourceData.checkoutPriceCents):(sourceData.listedPriceCents??sourceData.checkoutPriceCents??sourceData.recordedDealPriceCents??comparisonAmount??null);
+    // A source stating both a was price and a deal price is not telling us what the retailer charges
+    // today. Promoting the was price to the current price would invent a figure the source never
+    // claimed, so keep the deal price on screen and leave the was price as the reference.
+    const statedWas=sourceData.listedPriceCents!==null&&sourceData.checkoutPriceCents!==null&&sourceData.listedPriceCents>sourceData.checkoutPriceCents?sourceData.listedPriceCents:null;
+    const regularCents=statedWas!==null
+     ? (sourceData.recordedDealPriceCents??sourceData.checkoutPriceCents)
+     : (sourceData.listedPriceCents??sourceData.checkoutPriceCents??sourceData.recordedDealPriceCents??comparisonAmount??null);
     if(regularCents!==null&&regularCents>0){
      const recordedDealCents=sourceData.recordedDealPriceCents??sourceData.checkoutPriceCents??sourceData.listedPriceCents;
-     sourceData={...sourceData,recordedDealPriceCents:recordedDealCents,recordedDealAt:sourceData.recordedDealAt??r.timeline_at.toISOString(),checkoutPriceCents:regularCents,listedPriceCents:regularCents,unitPriceCents:unitPrice(regularCents,sourceData.unitQuantity??null),coupon:null,promotion:null,steps:[],restrictions:[],expiresAt:null,deadlineOriginal:null,priceRestored:true,promotionEndedAt:sourceData.promotionEndedAt??sourceData.expiresAt??new Date(now).toISOString(),status:sourceData.verifiedAt?'Active':'Unverified'};
+     // Keep the stated was price as the reference so the page can still show what it was; only the
+     // current price moves to the recorded deal (or the stated was price when nothing was recorded).
+     sourceData={...sourceData,recordedDealPriceCents:recordedDealCents,recordedDealAt:sourceData.recordedDealAt??r.timeline_at.toISOString(),checkoutPriceCents:regularCents,listedPriceCents:statedWas,unitPriceCents:unitPrice(regularCents,sourceData.unitQuantity??null),coupon:null,promotion:null,steps:[],restrictions:[],expiresAt:null,deadlineOriginal:null,priceRestored:true,promotionEndedAt:sourceData.promotionEndedAt??sourceData.expiresAt??new Date(now).toISOString(),status:sourceData.verifiedAt?'Active':'Unverified'};
     }
    }
   }
@@ -356,14 +382,17 @@ async function computeShoppingItems(opts:{view?:string;category?:string;merchant
   if (isBrokenOrUnusableImage(mediaImage)) {
     mediaImage = null;
   }
+  // A clean merchant image beats a third-party blog thumbnail that often carries a watermark. When the
+  // offer has an Amazon ASIN the official product shot can be built directly and is preferred.
+  const asinImage=asinProductImage(sourceData.buyUrl);
   const hasRetailerImage=retailerImageSource&&!isBrokenOrUnusableImage(effectiveImageUrl);
   const directProductImage=(!retailerImageSource&&!mediaImage)?effectiveImageUrl:null;
-  let productImageUrl=hasRetailerImage?effectiveImageUrl:(mediaImage??directProductImage);
+  let productImageUrl=asinImage??(hasRetailerImage?effectiveImageUrl:(mediaImage??directProductImage));
   if (isBrokenOrUnusableImage(productImageUrl)) {
     const merchantKey = sourceData.merchantId || (sourceData.buyUrl ? merchantFor(sourceData.buyUrl)?.id : null);
     productImageUrl = (merchantKey && MERCHANT_DEFAULT_IMAGES[merchantKey]) ?? articleFirstImage ?? MERCHANT_DEFAULT_IMAGES['amazon'];
   }
-  const productImageSource=hasRetailerImage?(imageOverride?.source??sourceData.imageSource):mediaImage?(sourceData.imageFallbackSource??(sourceData.imageSource===r.url?r.url:(sourceData.buyUrl??r.url))):(directProductImage?(sourceData.imageSource??sourceData.buyUrl??r.url):null);
+  const productImageSource=asinImage?(sourceData.buyUrl??null):hasRetailerImage?(imageOverride?.source??sourceData.imageSource):mediaImage?(sourceData.imageFallbackSource??(sourceData.imageSource===r.url?r.url:(sourceData.buyUrl??r.url))):(directProductImage?(sourceData.imageSource??sourceData.buyUrl??r.url):null);
   const fallbackImageUrl=hasRetailerImage?mediaImage:null;
   const fallbackImageSource=hasRetailerImage?(sourceData.imageFallbackSource??(sourceData.imageSource===r.url?r.url:null)):null;
   const {formerDeal:_formerDeal,imageFallbackWatermarkFree:_legacyWatermarkFlag,...storedOfferData}=sourceData as Offer&{formerDeal?:unknown;imageFallbackWatermarkFree?:unknown};
@@ -388,7 +417,7 @@ async function computeShoppingItems(opts:{view?:string;category?:string;merchant
     ?{state:'ended',amountCents:amount,label:amount===null?'No price recorded':verification==='last-verified'||verification==='merchant-verified'?'Last retailer-verified offer price':'Last source-reported offer price',verification,verifiedAt:offer.verifiedAt,lastCheckedAt:offer.lastCheckedAt}
     :stale
      ?{state:'stale',amountCents:amount,label:amount===null?'Last reported price unavailable':verification==='last-verified'||verification==='merchant-verified'?'Last retailer-verified price':'Last source-reported price',verification,verifiedAt:offer.verifiedAt,lastCheckedAt:offer.lastCheckedAt}
-     :{state:pricePending?'unavailable':'current',amountCents:amount,label:pricePending?'Checking retailer price':amount===null?(needsPriceReview?'Price needs review':'No price reported'):verification==='merchant-verified'?'Retailer-verified price':verification==='last-verified'?'Last retailer-verified price':'Source-reported price',verification,verifiedAt:offer.verifiedAt,lastCheckedAt:offer.lastCheckedAt};
+     :{state:pricePending?'unavailable':'current',amountCents:amount,label:pricePending?'Checking retailer price':amount===null?(needsPriceReview?'Price needs review':'No price reported'):verification==='merchant-verified'?'Retailer-verified price':verification==='last-verified'?'Last retailer-verified price':(offer.merchant?.trim()?`${offer.merchant.trim()} price`:'Retailer price'),verification,verifiedAt:offer.verifiedAt,lastCheckedAt:offer.lastCheckedAt};
   const rawTitle=plainTitle(safeCopy(r.title));const title=isOffer(offer)?productTitle(offer,priceDisplay.state==='current'?amount:null):rawTitle;
   const productName=offer.product??offer.model??'This product',merchantName=offer.merchant??'the retailer';
   const fallbackSummary=timing?.state==='ended'||offer.status==='Expired'?`${productName} was included in an earlier offer from ${merchantName}. Check the retailer for its current price and availability.`:amount!==null?`${offer.verifiedAt?'The retailer lists':'The source reports'} ${productName} at ${new Intl.NumberFormat('en-US',{style:'currency',currency:offer.currency||'USD'}).format(amount/100)} from ${merchantName}. Confirm the exact configuration, seller and purchase terms on the retailer page.`:`This offer concerns ${productName} at ${merchantName}. Check the retailer page for current pricing, availability and terms.`;

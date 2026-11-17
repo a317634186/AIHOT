@@ -22,9 +22,13 @@ export interface PublicComparisonLink { slug: string; title: string; }
  * also share a product noun before it is published.
  */
 function productNoun(item: ShoppingItem): string {
-  const text = `${item.offer.product ?? ''} ${item.title}`.normalize('NFKD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+  // The generated title appends price and retailer wording ("... for $2.99 with code at Amazon"),
+  // which would otherwise become the head noun and pair unrelated products. The stated product name
+  // is the reliable source; the title is only a fallback.
+  const stated = (item.offer.product ?? '').trim();
+  const text = `${stated || item.title}`.normalize('NFKD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
   const words = text.replace(/[^a-z0-9 ]+/g, ' ').split(/\s+/).filter(word => word.length > 2);
-  const stop = new Set(['the','and','for','with','from','pack','set','inch','new','deal','deals','sale','best','buy','amazon','walmart','target','under','over','free','shipping','piece','count','black','white','grey','gray','bundle','kit','model','series','edition','color','colour','size','plus','pro','max','mini','ultra','gen','generation','renewed','refurbished','open','box']);
+  const stop = new Set(['the','and','for','with','from','pack','set','inch','new','deal','deals','sale','best','buy','amazon','walmart','target','under','over','free','shipping','piece','count','black','white','grey','gray','bundle','kit','model','series','edition','color','colour','size','plus','pro','max','mini','ultra','gen','generation','renewed','refurbished','open','box','code','shipped','shipping','coupon','price','save','off','regular','list']);
   // The head noun of an English product name is at the end ("... Ergonomic Optical Mouse"), while an
   // earlier word is usually an adjective. Taking the longest word picked "ergonomic" and paired a
   // mouse with a chair, so the last qualifying word wins.
@@ -65,6 +69,10 @@ function sameProduct(a: ShoppingItem, b: ShoppingItem): boolean {
 function comparable(a: ShoppingItem, b: ShoppingItem): boolean {
   const nounA = productNoun(a), nounB = productNoun(b);
   if (!nounA || !nounB) return false;
+  // The nouns must be the same word, not merely present as a substring: a "puff" is not a "strip",
+  // and "puffs" should still count as "puff".
+  const stem = (word: string) => word.replace(/(?:es|s)$/, '');
+  if (stem(nounA) !== stem(nounB)) return false;
   const textA = normalizeForMatch(a), textB = normalizeForMatch(b);
   return textA.includes(nounB) && textB.includes(nounA);
 }

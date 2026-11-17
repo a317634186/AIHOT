@@ -5,6 +5,7 @@ import { audit } from "./auth.ts";
 import { Conflict } from "./sources.ts";
 import { failureGroupSql, queueProcessing, requeueFailed } from "../jobs/content.ts";
 import { CAPABILITIES } from "../editorial/models.ts";
+import { FEATURES } from "@aihot/industry/features";
 
 const STALE_HEARTBEAT_MS = 3 * 60_000;
 
@@ -48,8 +49,9 @@ export async function runsOverview() {
              (array_agg(id ORDER BY discovered_at DESC))[1] AS example
       FROM articles WHERE processing_state = 'failed' AND discovered_at > now() - interval '30 days' GROUP BY 1 ORDER BY 2 DESC LIMIT 20`,
     sql`SELECT client, kind, status, left(error, 200) AS error, summary, created_at FROM ingest_events ORDER BY created_at DESC LIMIT 20`,
-    sql<{ value: { at: string; sources: Record<string, { ok: boolean; at: string; lastOkAt: string | null; changed?: boolean; rows?: number; error?: string }> } }[]>`
-      SELECT value FROM settings WHERE key = 'leaderboard.fetch'`,
+    // The leaderboard is an optional industry module; a site without it has no evaluation sources to show.
+      FEATURES.leaderboard ? sql<{ value: { at: string; sources: Record<string, { ok: boolean; at: string; lastOkAt: string | null; changed?: boolean; rows?: number; error?: string }> } }[]>`
+        SELECT value FROM settings WHERE key = 'leaderboard.fetch'` : Promise.resolve([] as { value: { at: string; sources: Record<string, { ok: boolean; at: string; lastOkAt: string | null; changed?: boolean; rows?: number; error?: string }> } }[]),
   ]);
   // Articles waiting to retry after a passing provider problem (they are not failed).
   const [retrying] = await sql<{ n: number; next: Date | null }[]>`
@@ -73,7 +75,7 @@ export async function runsOverview() {
     errors,
     retrying: { count: retrying?.n ?? 0, next: retrying?.next ?? null },
     ingest,
-    leaderboard: leaderboard[0]
+    leaderboard: FEATURES.leaderboard && leaderboard[0]
       ? { at: leaderboard[0].value.at, sources: Object.entries(leaderboard[0].value.sources).map(([key, v]) => ({ key, ...v })).sort((a, b) => Number(a.ok) - Number(b.ok) || a.key.localeCompare(b.key)) }
       : null,
   };

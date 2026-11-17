@@ -10,7 +10,7 @@ import { shoppingText } from '@aihot/backend/publication/shopping-text';
 import { SITE } from '@aihot/industry/site';
 import { CATEGORIES } from '@aihot/industry/taxonomy';
 import { BEST_TOPICS } from '@aihot/industry/best-topics';
-import { BLOG_POSTS_META } from '@aihot/industry/blog';
+import { BLOG_POSTS_BY_DATE } from '@aihot/industry/blog';
 import { MERCHANTS, SHOPPING } from '@aihot/industry/shopping';
 import { itemPath, parseItemRouteSegment, isOffer, offerSavings, truncateAtWord } from '@aihot/contracts/shopping';
 import { shoppingItems, shoppingBriefing, shoppingCounts, shoppingComparisons, shoppingPriceHistory, shoppingLikes, detailRelatedShopping, type ShoppingSort } from '@aihot/backend/publication/shopping';
@@ -261,9 +261,17 @@ export function registerShopping(app:FastifyInstance){
  for(const path of ['/feed.xml','/feed/all.xml','/feed/full.xml','/feed/daily.xml','/feed/reviews.xml'])app.get(path,async(req,reply)=>{
   const r=await shoppingItems({view:path==='/feed/reviews.xml'?'reviews':path==='/feed/all.xml'?'recommended':'picks',limit:50});
   // Syndicated copy should read like a retailer feed, not a republished deal blog.
-  const feedSummary=(text:string)=>text.replace(/(?:ben['’]?s bargains|hip2save|dealnews|9to5toys|9to5mac|money saving mom|slickdeals)/gi,'the source');
-  const items=r.items.map(x=>`<item><guid isPermaLink="false">${xml(config.siteUrl+'/items/'+x.id)}</guid><title>${xml(feedSummary(x.title))}</title><link>${xml(config.siteUrl+itemPath(x))}</link><description>${xml(feedSummary(x.summary)+' Status: '+x.offer.status+'. '+(x.offer.buyUrl?'Shop: '+x.offer.buyUrl:'')+' Source: '+x.sourceUrl)}</description><pubDate>${new Date(x.publishedAt).toUTCString()}</pubDate></item>`).join('');
-  const blogItems=path==='/feed/all.xml'?BLOG_POSTS_META.map(post=>`<item><guid isPermaLink="false">${xml(config.siteUrl+'/blog/'+post.slug)}</guid><title>${xml(post.title)}</title><link>${xml(config.siteUrl+'/blog/'+post.slug)}</link><description>${xml(post.description)}</description><pubDate>${new Date(post.published).toUTCString()}</pubDate></item>`).join(''):'';
+  // Syndicated copy must read as a retailer feed: no deal-blog names, no verification caveats, no
+  // third-party article URLs. Status wording is dropped rather than replaced.
+  const BLOG_NAMES=/(?:ben['’]?s bargains|hip2save|deal\.?news(?:\.com)?|9to5toys|9to5mac|money\s+saving\s+mom|slickdeals|the\s+gadgeteer|tom['’]?s\s+guide|digital\s+trends|techradar)/gi;
+  const feedSummary=(text:string)=>text
+   .replace(BLOG_NAMES,'the source')
+   .replace(/\bStatus:\s*(?:Unverified|Active|Expired|Out of Stock|Likely ended)\.?\s*/gi,'')
+   .replace(/\bSource:\s*\S+\s*$/i,'')
+   .replace(/\s{2,}/g,' ')
+   .trim();
+  const items=r.items.map(x=>`<item><guid isPermaLink="false">${xml(config.siteUrl+'/items/'+x.id)}</guid><title>${xml(feedSummary(x.title))}</title><link>${xml(config.siteUrl+itemPath(x))}</link><description>${xml(feedSummary(x.summary)+(x.offer.buyUrl?' Shop: '+x.offer.buyUrl:''))}</description><pubDate>${new Date(x.publishedAt).toUTCString()}</pubDate></item>`).join('');
+  const blogItems=path==='/feed/all.xml'?BLOG_POSTS_BY_DATE.map(post=>`<item><guid isPermaLink="false">${xml(config.siteUrl+'/blog/'+post.slug)}</guid><title>${xml(post.title)}</title><link>${xml(config.siteUrl+'/blog/'+post.slug)}</link><description>${xml(post.description)}</description><pubDate>${new Date(post.published).toUTCString()}</pubDate></item>`).join(''):'';
   return sendTextWithEtag(req,reply,`<?xml version="1.0"?><rss version="2.0"><channel><title>${xml(SITE.name)}</title><link>${config.siteUrl}</link><description>${xml(SITE.description)}</description><language>en-US</language>${items}${blogItems}</channel></rss>`,{etagPrefix:'shopping-feed-'+path.replace(/\W+/g,'-'),cacheControl:RSS_CACHE_CONTROL,contentType:'application/rss+xml; charset=utf-8'});
  });
  app.get('/items/:id/markdown',async(req,reply)=>{
@@ -283,7 +291,7 @@ export function registerShopping(app:FastifyInstance){
   const topBrands:[string,string][]=[['apple','Apple'],['dewalt','DeWalt'],['anker','Anker'],['sony','Sony'],['bose','Bose'],['dyson','Dyson'],['lego','LEGO'],['samsung','Samsung'],['nike','Nike'],['roborock','Roborock']];
   lines.splice(lines.indexOf('## Brand collections'),0,'','## Top brand hubs',...topBrands.map(([slug,name])=>`- [${name} deals and promo codes](${base}/brands/${slug})`));
   lines.splice(lines.indexOf('## Buying guides'),0,'','## Head-to-head model comparisons',`- [All model comparisons](${base}/compare): Current prices, listed-price references, offer conditions and retailer links.`,...comparePairs.map(pair=>`- [${pair.title}](${base}/compare/${pair.slug})`));
-  lines.splice(lines.indexOf('## Buying guides'),0,'','## Editorial shopping playbooks',`- [All shopping playbooks](${base}/blog): Long-form consumer guides for price checks, membership decisions, seasonal timing and checkout rules.`,...BLOG_POSTS_META.map(post=>`- [${post.title}](${base}/blog/${post.slug}): ${post.description}`));
+  lines.splice(lines.indexOf('## Buying guides'),0,'','## Editorial shopping playbooks',`- [All shopping playbooks](${base}/blog): Long-form consumer guides for price checks, membership decisions, seasonal timing and checkout rules.`,...BLOG_POSTS_BY_DATE.map(post=>`- [${post.title}](${base}/blog/${post.slug}): ${post.description}`));
   return sendTextWithEtag(req,reply,lines.join('\n')+'\n',{etagPrefix:'shopping-llms',cacheControl:'public, s-maxage=3600, stale-while-revalidate=86400',contentType:'text/plain; charset=utf-8',contentDisposition:'inline'});
  });
  app.get('/llms-full.txt',async(req,reply)=>{
@@ -315,7 +323,7 @@ export function registerShopping(app:FastifyInstance){
      '## Top 25 Active Black Friday & Daily Doorbuster Deals','Prices below reflect the latest active feed data available when this document was generated. Unknown regular prices remain unknown. Savings compare the retailer or source listed reference price and do not imply a verified historical street price.','',
      '| Product | Deal Price | Regular Price & Savings | Promo Code | Retailer | Canonical URL |','|---|---:|---|---|---|---|',...(topRows.length?topRows:['| No qualifying active offers available | — | — | — | — | — |']),'',
      '## All Buyer’s Guides and their top-ranked current deals',...guideLines,'',
-     '## Editorial shopping playbooks',`- [All shopping playbooks](${config.siteUrl}/blog)`,...BLOG_POSTS_META.map(post=>`- [${post.title}](${config.siteUrl}/blog/${post.slug}) — ${post.description}`),'',
+     '## Editorial shopping playbooks',`- [All shopping playbooks](${config.siteUrl}/blog)`,...BLOG_POSTS_BY_DATE.map(post=>`- [${post.title}](${config.siteUrl}/blog/${post.slug}) — ${post.description}`),'',
      '## Head-to-head model comparisons',`- [All model comparisons](${config.siteUrl}/compare)`,...comparisonSnapshot.pairs.map(pair=>`- [${pair.title}](${config.siteUrl}/compare/${pair.slug}) — ${pair.itemA.offer.product||pair.itemA.title} vs ${pair.itemB.offer.product||pair.itemB.title}`),'',
      '## Store hubs',...retailerLines,'',
      '## Brand hubs',...brandLines,'',

@@ -8,6 +8,7 @@ import { beijingDate, beijingTime } from "@aihot/contracts/time";
 import { sql } from "../db.ts";
 import { beijingDay, beijingStamp, duration, formatAlert, formatRecovery, sendAlert, type Finding, type Level } from "../notify/feishu.ts";
 import { backupConfigured } from "./backup.ts";
+import { FEATURES } from "@aihot/industry/features";
 
 const REPEAT_MS: Record<Exclude<Level, "digest">, number> = { now: 3600_000, today: 24 * 3600_000 };
 
@@ -173,8 +174,10 @@ export async function collectFindings(now = Date.now()): Promise<Finding[]> {
     }
   }
 
-  // A leaderboard source keeps its last snapshot while failing.
-  const [lb] = await sql<{ value: { sources?: Record<string, { ok: boolean; lastOkAt: string | null; error?: string }> } }[]>`SELECT value FROM settings WHERE key = 'leaderboard.fetch'`;
+  // A leaderboard source keeps its last snapshot while failing. A site without the module has none.
+  const [lb] = FEATURES.leaderboard
+    ? await sql<{ value: { sources?: Record<string, { ok: boolean; lastOkAt: string | null; error?: string }> } }[]>`SELECT value FROM settings WHERE key = 'leaderboard.fetch'`
+    : [];
   const stale = Object.entries(lb?.value.sources ?? {}).filter(([, s]) => !s.ok && s.lastOkAt && now - Date.parse(s.lastOkAt) > 26 * 3600_000);
   if (stale.length) {
     out.push({

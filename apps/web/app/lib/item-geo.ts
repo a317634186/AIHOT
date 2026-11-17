@@ -20,7 +20,7 @@ export function sentenceCase(text: string) {
  * reader-facing prose makes Savlume read like a secondary scraper, so they are collapsed to a neutral
  * "the source".
  */
-const AGGREGATOR_SOURCE = /(?:ben['’]?s bargains|hip2save|dealnews|9to5toys|9to5mac|money saving mom|slickdeals)/i;
+const AGGREGATOR_SOURCE = /(?:ben['’]?s bargains|hip2save|dealnews|deal\.?news|9to5toys|9to5mac|money saving mom|slickdeals|the gadgeteer|gadgeteer|tom['’]?s guide|digital trends|techradar|androidauthority|engadget)/i;
 const AGGREGATOR_SOURCE_ALL = new RegExp(AGGREGATOR_SOURCE.source, 'gi');
 
 export function isAggregatorSource(name?: string | null) {
