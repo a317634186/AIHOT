@@ -2,7 +2,7 @@ import { Link, data as routeData, useLoaderData } from 'react-router';
 import { apiGet } from '../lib/api.server';
 import { BlogShell } from '../components/blog-shell';
 import { blogPostMeta, type BlogPostMeta } from '@aihot/industry/blog';
-import { blogArticle, type BlogArticle, type BlogBlock } from '../lib/blog-content';
+import { blogArticle, blogWordCount, type BlogArticle, type BlogBlock } from '../lib/blog-content';
 import { itemPath } from '@aihot/contracts/shopping';
 import { breadcrumbLd, pageMeta, siteUrl } from '../lib/seo';
 import type { Route } from './+types/blog-post';
@@ -46,12 +46,7 @@ export async function loader({ params, request }: Route.LoaderArgs) {
     seen.add(item.id);
     liveDeals.push({ guideSlug: guideSlugs[index]!, guideTitle: page.topic.shortTitle, item });
   }
-  const wordCount = article.blocks.reduce((total, block) => {
-    if (block.type === 'p' || block.type === 'callout') return total + block.text.split(/\s+/).length;
-    if (block.type === 'ul' || block.type === 'ol') return total + block.items.join(' ').split(/\s+/).length;
-    if (block.type === 'table') return total + block.rows.flat().join(' ').split(/\s+/).length;
-    return total;
-  }, 0);
+  const wordCount = blogWordCount(article);
   return routeData<BlogPostData>({ post, article, liveDeals, wordCount }, { headers: { 'Cache-Control': 'public, max-age=0, s-maxage=300, stale-while-revalidate=900' } });
 }
 
